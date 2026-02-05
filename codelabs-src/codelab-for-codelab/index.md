@@ -1,4 +1,4 @@
----
+
 id: codelab-for-codelab
 title: Codelabs to create Codelabs
 summary: Learn how to add new Codelabs
@@ -8,7 +8,7 @@ difficulty: 1
 status: published
 authors: Your Team
 feedback_link: https://github.com/qnx/codelabs/issues
----
+
 # Codelabs to create Codelabs
 
 ## Welcome

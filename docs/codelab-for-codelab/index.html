@@ -51,6 +51,17 @@
   <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
   <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
+   
+
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const done = document.querySelector('button[aria-label="Done"]');
+  const close = document.querySelector('button[aria-label="Close"]');
+  const goHome = () => window.location.href = '/codelabs/docs/';
+  if (done) done.onclick = goHome;
+  if (close) close.onclick = goHome;
+});
+  </script>
 
 </body>
 </html>

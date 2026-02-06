@@ -6,7 +6,7 @@ status: Published
 authors: QNX
 
 
-# Build your own QNX 8.0 Custom Target Image (CTI) for Raspberry Pi 4 on 
+# Build your own QNX 8.0 Custom Target Image (CTI) for Raspberry Pi 4
 
 ## Overview
 Duration: 5

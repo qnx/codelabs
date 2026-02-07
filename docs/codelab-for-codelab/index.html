@@ -24,6 +24,7 @@
                   id="codelab-for-codelab"
                   title="Codelabs to create Codelabs"
                   environment="web"
+                  next="/codelabs"
                   feedback-link="https://github.com/qnx/codelabs/issues">
     
       <google-codelab-step label="Welcome" duration="2">
@@ -45,16 +46,6 @@
   <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
 
-  <!-- JS Patch to fix Done button -->
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const doneBtn = document.querySelector('a.codelab-done');
-    if (doneBtn) {
-      doneBtn.setAttribute('href', '/codelabs'); // Redirect Done to your landing page
-      doneBtn.onclick = null; // Remove CLaaT internal handler to ensure redirect
-    }
-  });
-  </script>
 
 </body>
 </html>

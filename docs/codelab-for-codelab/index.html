@@ -1,4 +1,3 @@
-
 <!doctype html>
 
 <html>
@@ -29,19 +28,13 @@
     
       <google-codelab-step label="Welcome" duration="2">
         <p>This codelab provides how to contribute to codelabs</p>
-
-
       </google-codelab-step>
     
       <google-codelab-step label="Setup Environment" duration="5">
         <p>Install required tools.</p>
-
-
       </google-codelab-step>
     
       <google-codelab-step label="Next Steps" duration="2">
-        
-
       </google-codelab-step>
     
   </google-codelab>
@@ -51,6 +44,17 @@
   <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
   <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
+
+  <!-- JS Patch to fix Done button -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const doneBtn = document.querySelector('a.codelab-done');
+    if (doneBtn) {
+      doneBtn.setAttribute('href', '/codelabs'); // Redirect Done to your landing page
+      doneBtn.onclick = null; // Remove CLaaT internal handler to ensure redirect
+    }
+  });
+  </script>
 
 </body>
 </html>

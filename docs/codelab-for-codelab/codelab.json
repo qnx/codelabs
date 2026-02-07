@@ -3,13 +3,13 @@
   "format": "html",
   "prefix": "https://storage.googleapis.com",
   "mainga": "UA-49880327-14",
-  "updated": "2026-02-05T11:15:59-05:00",
+  "updated": "2026-02-06T19:07:23-05:00",
   "id": "codelab-for-codelab",
   "duration": 9,
   "title": "Codelabs to create Codelabs",
   "authors": "Your Team",
   "summary": "Learn how to add new Codelabs",
-  "source": "./codelabs-src/codelab-for-codelab/index.md",
+  "source": "./markdown/codelab-for-codelab/index.md",
   "theme": "",
   "status": [
     "published"

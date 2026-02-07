@@ -7,8 +7,9 @@ tags: beginner
 difficulty: 1
 status: published
 authors: Your Team
+next: https://qnx.github.io/codelabs/docs
 feedback_link: https://github.com/qnx/codelabs/issues
-next : https://qnx.github.io/codelabs/docs
+
 
 # Codelabs to create Codelabs
 

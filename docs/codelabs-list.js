@@ -29,5 +29,24 @@ window.CODELABS = [
       "qnx",
       "rpi4"
     ]
+  },
+  {
+    "title": "Using NVMe SSD on Raspberry Pi 5 using QNX",
+    "href": "rpi5-using-nvme-ssd/index.html",
+    "id": "rpi5-using-nvme-ssd",
+    "authors": "Karol Frackiewicz",
+    "updated": "2026-03-02T11:14:12-05:00",
+    "category": [
+      "qnx",
+      "embedded",
+      "raspberry-pi"
+    ],
+    "tags": [
+      "embedded-linux",
+      "nvme",
+      "qnx",
+      "rpi5",
+      "ssd"
+    ]
   }
 ];

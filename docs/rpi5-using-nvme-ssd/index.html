@@ -1,0 +1,288 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Using NVMe SSD on Raspberry Pi 5 using QNX</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="rpi5-using-nvme-ssd"
+                  title="Using NVMe SSD on Raspberry Pi 5 using QNX"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="0">
+        <p>This codelab demonstrates how to use NVMe SSD with Rasperry Pi 5 using QNX.</p>
+<p>You will learn how to:</p>
+<ul>
+<li>Where to find and how to install driver and utilities.</li>
+<li>Configure and start the NVMe driver.</li>
+<li>Create and mount the QNX partition.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Prerequisites" duration="0">
+        <p>This guide requires that:</p>
+<ul>
+<li>Raspberry Pi 5 board is equipped with a M.2 HAT and SSD, for example: <ul>
+<li><a href="https://www.raspberrypi.com/products/m2-hat-plus/" target="_blank">Raspberry Pi M.2 HAT+</a></li>
+<li><a href="https://store.freenove.com/products/fnk0098h" target="_blank">Freenove M.2 NVMe Adapter V2 (or V1) for Raspberry Pi 5</a></li>
+<li>An appopriate NVMe SSD should be installed in the M.2 slot</li>
+</ul>
+</li>
+<li>QNX Software Development Platform is installed on the host system. <ul>
+<li>Follow the <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.qnxsdp.quickstart/topic/install_host.html" target="_blank">installation</a> instructions in the <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.qnxsdp.quickstart/topic/about.html" target="_blank">QNX Software Development Platform Quick Start Guide</a> to install QNX Software Development Platform 8.0 or higher (8.0.2 or 8.0.3).</li>
+</ul>
+</li>
+<li>QNX OS is installed on the target device. <ul>
+<li>Follow the instructions in the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html" target="_blank">Quick Start Target Image (QSTI)</a> documentation to install QNX OS on Raspberry Pi 5.</li>
+</ul>
+</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Installing the driver" duration="0">
+        <p>QNX Software Development Platform 8.0 installation of the host machine contains the driver <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/d/devb-nvme.html" target="_blank"><em>devb-nvme</em></a> and filesystem utility <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/m/mkqnx6fs.html" target="_blank"><em>mkqnx6fs</em></a>.</p>
+<p>Copy the driver and the utility to the target device and verify they are available in PATH.  For example. if your target device is reachable by SSH at the IP address <code>192.168.1.10</code>, and QNX SDP 8 is installed under <strong><code>~/qnx800</code></strong>:</p>
+<ol type="1">
+<li>Enable the QNX SDP 8:<pre><code language="language-sh" class="language-sh">source ~/qnx800/qnxsdp-env.sh
+</code></pre>
+</li>
+<li>Copy the driver and utility to target device:<pre><code language="language-sh" class="language-sh">scp ${QNX_TARGET}/aarch64le/sbin/devb-nvme ${QNX_TARGET}/aarch64le/sbin/mkqnx6fs qnxuser@192.168.1.10:.
+</code></pre>
+</li>
+<li>Log into the target device:<pre><code language="language-sh" class="language-sh">ssh qnxuser@192.168.1.10
+</code></pre>
+</li>
+<li>Copy the driver and utility into a directory that is in <code>PATH</code>:<pre><code language="language-sh" class="language-sh">sudo cp devb-nvme /usr/bin/
+sudo cp mkqnx6fs /usr/bin/
+</code></pre>
+</li>
+<li>Ensure the driver and utility are executable:<pre><code language="language-sh" class="language-sh">sudo chmod 755 /usr/bin/devb-nvme
+sudo chmod 755 /usr/bin/mkqnx6fs
+</code></pre>
+</li>
+<li>Verify the driver and utility:<pre><code language="language-sh" class="language-sh">use -i devb-nvme
+use -i mkqnx6fs
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Configuring and starting the driver" duration="0">
+        <p>By default, <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/p/pci-server.html" target="_blank"><em>pci-server</em></a> is installed in the <strong><code>/sbin</code></strong> directories, the libraries it depends on are installed in the <strong><code>/lib</code></strong> and <strong><code>/lib/dll/pci</code></strong> directories, and configuration is installed in the <strong><code>/etc/system/config/pci</code></strong> directory.</p>
+<p>On the QSTI, the PCI server executable, libraries, and configuration are installed under <strong><code>/proc/boot</code></strong> directory.  This requires that the <strong><code>PCI_CAP_MODULE_DIR</code></strong> environment variable be set to execute <code>devb-nvme</code> correctly.</p>
+<ol type="1">
+<li>Ensure that <em>pci-server</em> is using libraries in <strong><code>/proc/boot</code></strong> directory:<pre><code language="language-sh" class="language-sh">sudo pidin -p pci-server lib
+</code></pre>
+Inspect output to verify the shared objects starting with the <strong><code>pci_</code></strong> prefix are located in the <strong><code>/proc/boot</code></strong> directory.  For example:<pre><code>  pid name
+16388 proc/boot/pci-server
+                Address                      DT_SONAME Path
+     0x00000042bb29e000                            PIE /proc/boot/pci-server
+     0x0000002df7f4a000                  libpci.so.3.0 /proc/boot/libpci.so.3.0
+     0x0000002df7f72000                 libsecpol.so.1 /proc/boot/libsecpol.so.1
+     0x0000002df7f0d000                  ldqnx-64.so.2 /usr/lib/ldqnx-64.so.2
+     0x0000002df7f79000                      libc.so.6 /proc/boot/libc.so.6
+     0x0000002df802d000                  libgcc_s.so.1 /proc/boot/libgcc_s.so.1
+     0x0000002df8042000               pci_slog2.so.3.0 /proc/boot/pci_slog2.so.3.0
+     0x0000002df8046000                  libslog2.so.1 /proc/boot/libslog2.so.1
+     0x0000002df804d000              pci_debug2.so.3.0 /proc/boot/pci_debug2.so.3.0
+     0x0000002df8050000     pci_hw-bcm2712-rpi5.so.3.0 /proc/boot/pci_hw-bcm2712-rpi5.so.3.0
+     0x0000002df806e000            pci_cap-0x10.so.3.0 /proc/boot/pci_cap-0x10.so.3.0
+     0x0000002df8077000 pci_server-buscfg-generic.so.3 /proc/boot/pci_server-buscfg-generic.so.3.0
+     0x0000002df8083000            pci_cap-0x11.so.3.0 /proc/boot/pci_cap-0x11.so.3.0
+     0x0000002df808b000            pci_cap-0x05.so.3.0 /proc/boot/pci_cap-0x05.so.3.0
+</code></pre>
+</li>
+<li>Set and expect the <strong><code>PCI_CAP_MODULE_DIR</code></strong> environment variable:<pre><code language="language-sh" class="language-sh">export PCI_CAP_MODULE_DIR=/proc/boot
+</code></pre>
+</li>
+<li>Start the driver:<pre><code language="language-sh" class="language-sh">sudo -E devb-nvme disk name=nvme
+</code></pre>
+</li>
+<li>Ensure that SSD is showing in the device list:<pre><code language="language-sh" class="language-sh">ls /dev/nvme*
+</code></pre>
+For example:<pre><code>/dev/nvme0  /dev/nvme0t12
+</code></pre>
+The output above indicates one NVMe SSD with a single FAT32 partition.  Your output may differ, depending on the content of your SSD.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Creating and using QNX partition" duration="0">
+        <p>To create and mount QNX partition, you must remove the existing FAT32 partition, create a new QNX partition and create the QNX Power-Safe filesystem.</p>
+<p><strong>Warning:</strong> Following steps will erase all existing partitions and content on the SSD.</p>
+<ol type="1">
+<li>Use the <a href="https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/f/fdisk.html" target="_blank"><em>fdisk</em></a> utility to manipulate the partitions:<pre><code language="language-sh" class="language-sh">sudo fdisk /dev/nvme0
+</code></pre>
+Use the up and down arrows to select partition to delete:<pre><code>FDISK
+Ignore Next Prev Change Delete Boot Unboot Restore Loader Save Quit
+
+        _____OS_____     Start      End     ______Number_____    Size    Boot
+        name    type    Cylinder  Cylinder  Cylinders  Blocks
+
+--&gt; 1.  FAT32  ( 12)            0    122104  122105   250069648    119 GB
+    2.  ______ (___)    _______   _______   _______   _________  _____
+    3.  ______ (___)    _______   _______   _______   _________  _____
+    4.  ______ (___)    _______   _______   _______   _________  _____
+
+
+ Choose a partition by typing the partition number OR moving the pointer
+ with the UP/DOWN arrows.
+ Then, choose one of the actions on the top line of the screen.
+
+
+
+Drive : /dev/nvme0                  Config:    64 Heads
+Size  : 122104 Mbytes                          32 Sectors/track
+Loader: Unknown                            122104 Cylinders
+Blocks: 250068992                             512 Block Size
+
+                                    Last cylinder is 122103
+</code></pre>
+Press <code>D</code> to delete the highlighted partition:<pre><code>FDISK
+Ignore Next Prev Change Delete Boot Unboot Restore Loader Save Quit
+
+        _____OS_____     Start      End     ______Number_____    Size    Boot
+        name    type    Cylinder  Cylinder  Cylinders  Blocks
+
+--&gt; 1.  ______ (___)    _______   _______   _______   _________  _____
+    2.  ______ (___)    _______   _______   _______   _________  _____
+    3.  ______ (___)    _______   _______   _______   _________  _____
+    4.  ______ (___)    _______   _______   _______   _________  _____
+
+
+Choose a partition by typing the partition number OR moving the pointer
+with the UP/DOWN arrows.
+Then, choose one of the actions on the top line of the screen.
+
+
+
+Drive : /dev/nvme0                  Config:    64 Heads
+Size  : 122104 Mbytes                          32 Sectors/track
+Loader: Unknown                            122104 Cylinders
+Blocks: 250068992                             512 Block Size
+
+                                    Last cylinder is 122103
+</code></pre>
+Press <code>C</code> to create a new partition, enter <code>179</code> for the partition type and accept defaults for other fields:<pre><code>FDISK
+Ignore Next Prev Change Delete Boot Unboot Restore Loader Save Quit
+
+        _____OS_____     Start      End     ______Number_____    Size    Boot
+        name    type    Cylinder  Cylinder  Cylinders  Blocks
+
+--&gt; 1.  QNX6   (179)            0    122104  122105   250069648    119 GB
+    2.  ______ (___)    _______   _______   _______   _________  _____
+    3.  ______ (___)    _______   _______   _______   _________  _____
+    4.  ______ (___)    _______   _______   _______   _________  _____
+
+
+Choose a partition by typing the partition number OR moving the pointer
+with the UP/DOWN arrows.
+Then, choose one of the actions on the top line of the screen.
+
+
+
+Drive : /dev/nvme0                  Config:    64 Heads
+Size  : 122104 Mbytes                          32 Sectors/track
+Loader: Unknown                            122104 Cylinders
+Blocks: 250068992                             512 Block Size
+
+                                    Last cylinder is 122103
+</code></pre>
+Press <code>S</code> to save the new partition table, followed by <code>Q</code> to exit <em>fdisk</em>.</li>
+<li>Re-enumerate the NVMe SSD partitions:<pre><code language="language-sh" class="language-sh">mount -e /dev/nvme0
+</code></pre>
+Verify new partition is available:<pre><code language="language-sh" class="language-sh">ls /dev/nvme*
+</code></pre>
+For example:<pre><code>/dev/nvme0  /dev/nvme0t179
+</code></pre>
+Notice that <code>/dev/nvme0t12</code> has been replaced with <code>/dev/nvme0t179</code>.</li>
+<li>Create QNX Power-Safe filesystem on the new partition:<pre><code language="language-sh" class="language-sh">sudo mkqnx6fs /dev/nvme0t179
+</code></pre>
+Press <code>y</code> to confirm re-formatting filesystem, when prompted.For example:<pre><code>All files on /dev/nvme0t179 will be lost!
+Confirm filesystem re-format (y) or (n): y
+Format fs-qnx6: 31258702 blocks, 488448 inodes, 16 groups
+</code></pre>
+</li>
+<li>Mount the new QNX partition. For example, to mount the partition as <code>/mydata</code>, execute:<pre><code language="language-sh" class="language-sh">sudo mount /dev/nvme0t179 /mydata
+</code></pre>
+Verify the partition is mounted:<pre><code language="language-sh" class="language-sh">mount
+</code></pre>
+For example:<pre><code>ifs on / type ifs
+/dev/nvme0t179 on /mydata type qnx6
+...
+</code></pre>
+Verify the partition size:<pre><code language="language-sh" class="language-sh">df -h /mydata
+</code></pre>
+For example:<pre><code>/dev/nvme0t179              119G      3.7G      116G       4%  /mydata/
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Mounting the drive on startup" duration="0">
+        <p>To mount the drive during boot, modify the post-startup script <code>/system/etc/startup/post_startup.sh</code> file to add the commands that will start the NVMe driver and mount the partition.  Since <em>pci-server</em> is started during in the startup script, it should not matter where in the post-statup script the commands are inserted:</p>
+<pre><code>export PCI_CAP_MODULE_DIR=/proc/boot
+devb-nvme disk name=nvme
+waitfor /dev/nvme0
+mount -e /dev/nvme0
+waitfor /dev/nvme0t179
+mount /dev/nvme0t179 /mydata
+</code></pre>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

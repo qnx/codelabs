@@ -16,8 +16,6 @@ using QNX
 ## Introduction
 ![Pong with God on QNX](pong1.png) 
 
-With the release of the QNX Self-Hosted Developer Desktop, the open-source **Godot Engine** has been ported to QNX. It is now included in the official APK package repository, enabling 2D and 3D visualizations directly on the QNX target.
-
 What you will learn:
 * How to clone a Godot project for QNX.
 * How to install the Godot templates on a QNX target.

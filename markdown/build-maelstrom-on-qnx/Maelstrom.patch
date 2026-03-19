@@ -1,0 +1,114 @@
+diff --git a/CREDITS.txt b/AUTHORS
+similarity index 100%
+rename from CREDITS.txt
+rename to AUTHORS
+diff --git a/ChangeLog b/ChangeLog
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Maelstrom-netd.c b/Maelstrom-netd.c
+index 530afd9..ec9047d 100644
+--- a/Maelstrom-netd.c
++++ b/Maelstrom-netd.c
+@@ -7,6 +7,7 @@
+ #include <signal.h>
+ #include <errno.h>
+ #include <sys/types.h>
++#include <sys/select.h>
+ #include <time.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+diff --git a/Maelstrom.geany b/Maelstrom.geany
+new file mode 100644
+index 0000000..e01e3e7
+--- /dev/null
++++ b/Maelstrom.geany
+@@ -0,0 +1,44 @@
++[editor]
++line_wrapping=false
++line_break_column=72
++auto_continue_multiline=true
++
++[file_prefs]
++final_new_line=true
++ensure_convert_new_lines=false
++strip_trailing_spaces=false
++replace_tabs=false
++
++[indentation]
++indent_width=4
++indent_type=1
++indent_hard_tab_width=4
++detect_indent=true
++detect_indent_width=true
++indent_mode=2
++
++[project]
++name=Maelstrom
++base_path=/data/home/qnxuser/projects/Maelstrom/
++description=
++file_patterns=
++
++[long line marker]
++long_line_behaviour=1
++long_line_column=72
++
++[files]
++current_page=0
++FILE_NAME_0=0;Make;0;EUTF-8;1;1;0;%2Fhome%2Fqnxuser%2Fprojects%2FMaelstrom%2FMakefile.am;0;4
++
++[VTE]
++last_dir=/data/home/root
++
++[build-menu]
++MakeFT_00_LB=Configure
++MakeFT_00_CM=bash ./autogen.sh && bash autoreconf -fi && CC=clang CXX=clang++ CFLAGS="${CFLAGS} -Wno-reserved-user-defined-literal -Wno-register -Wno-implicit-function-declaration" LDFLAGS=" -L/usr/lib -lSDL2 -lm -liconv -lscreen -lEGL -lsocket" ./configure --with-sdl-prefix=/usr --prefix=/usr --disable-sdltest
++MakeFT_00_WD=
++MakeFT_01_LB=Install
++MakeFT_01_CM=xfce4-terminal -e 'bash -c "sudo make install install-exec install-data install-am && sudo chmod -R a+r /usr/games/maelstrom/* "'
++MakeFT_01_WD=
++filetypes=Make;
+diff --git a/NEWS b/NEWS
+new file mode 100644
+index 0000000..e69de29
+diff --git a/README.txt b/README
+similarity index 100%
+rename from README.txt
+rename to README
+diff --git a/configure.in b/configure.ac
+similarity index 95%
+rename from configure.in
+rename to configure.ac
+index b7f4f84..a5fb885 100644
+--- a/configure.in
++++ b/configure.ac
+@@ -1,12 +1,14 @@
+ dnl Process this file with autoconf to produce a configure script.
+-AC_INIT(README.txt)
++AC_INIT(Maelstrom, 3.0.7)
++AC_CONFIG_SRCDIR([README])
++AC_CONFIG_AUX_DIR(build-scripts)
+ 
+ dnl Detect the canonical target build environment
+ AC_CANONICAL_HOST
+ AC_CANONICAL_TARGET
+ 
+ dnl Setup for automake
+-AM_INIT_AUTOMAKE(Maelstrom, 3.0.7)
++AM_INIT_AUTOMAKE
+ 
+ dnl Check for tools
+ 
+@@ -115,7 +117,7 @@ dnl C++ flags are the same as the C flags
+ CXXFLAGS="$CXXFLAGS $CFLAGS"
+ 
+ # Finally create all the generated files
+-AC_OUTPUT([
++AC_CONFIG_FILES([
+ Makefile
+ netlogic/Makefile
+ screenlib/Makefile
+@@ -124,3 +126,4 @@ Images/Makefile
+ Docs/Makefile
+ Maelstrom.spec
+ ])
++AC_OUTPUT

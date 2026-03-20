@@ -1,5 +1,18 @@
 window.CODELABS = [
   {
+    "title": "Build Maelstrom on QNX",
+    "href": "build-maelstrom-on-qnx/index.html",
+    "id": "build-maelstrom-on-qnx",
+    "authors": "Roberto Speranza",
+    "updated": "2026-03-20T18:02:53-04:00",
+    "category": [
+      "self-hostingsdlgames"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "How to Create Your Own Codelab and Contribute to QNX",
     "href": "codelab-to-create-codelab/index.html",
     "id": "codelab-to-create-codelab",

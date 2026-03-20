@@ -1,7 +1,7 @@
 id: epiphany-standalone-qnx
 title: Standalone Epiphany Browser on QNX
 summary: Running the Epiphany web browser on a minimal QNX 8.0 image without the full desktop stack
-categories: qnx, epiphany, webkit
+categories: qnx, epiphany, webkit , target
 tags: intermediate
 difficulty: 3
 status: published

@@ -45,6 +45,21 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Standalone Epiphany Browser on QNX 8.0",
+    "href": "epiphany-standalone-qnx/index.html",
+    "id": "epiphany-standalone-qnx",
+    "authors": "Elliott Mazzuca",
+    "updated": "2026-03-20T13:18:27-04:00",
+    "category": [
+      "qnx",
+      "epiphany",
+      "webkit"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "How to run Pong with Godot on QNX",
     "href": "godot-codelab/index.html",
     "id": "godot-codelab",
@@ -76,23 +91,5 @@ window.CODELABS = [
       "rpi5",
       "ssd"
     ]
-  },
-  {
-  "title": "Standalone Epiphany Browser on Minimal QNX 8.0",
-  "href": "epiphany-standalone-qnx/index.html",
-  "id": "epiphany-standalone-qnx",
-  "authors": "Elliott Mazzuca",
-  "updated": "2026-03-20T00:00:00-05:00",
-  "category": [
-    "qnx",
-    "embedded",
-    "browser"
-  ],
-  "tags": [
-    "epiphany",
-    "webkit",
-    "wayland",
-    "qnx"
-  ]
- }
+  }
 ];

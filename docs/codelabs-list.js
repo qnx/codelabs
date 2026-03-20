@@ -4,7 +4,7 @@ window.CODELABS = [
     "href": "build-maelstrom-on-qnx/index.html",
     "id": "build-maelstrom-on-qnx",
     "authors": "Roberto Speranza",
-    "updated": "2026-03-20T18:07:48-04:00",
+    "updated": "2026-03-20T18:37:28-04:00",
     "category": [
       "self-hosting",
       "sdlgames"
@@ -49,11 +49,12 @@ window.CODELABS = [
     "href": "epiphany-standalone-qnx/index.html",
     "id": "epiphany-standalone-qnx",
     "authors": "Elliott Mazzuca",
-    "updated": "2026-03-20T13:18:27-04:00",
+    "updated": "2026-03-20T18:40:40-04:00",
     "category": [
       "qnx",
       "epiphany",
-      "webkit"
+      "webkit",
+      "target"
     ],
     "tags": [
       "intermediate"

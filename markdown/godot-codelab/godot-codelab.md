@@ -14,7 +14,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 using QNX
 
 ## Introduction
-![Pong with God on QNX](pong1.png) 
+![Pong with Godot on QNX](pong1.png) 
 
 What you will learn:
 * How to clone a Godot project for QNX.
@@ -23,7 +23,7 @@ What you will learn:
 
 Prerequisites:
 * A host machine (Linux, macOS, or Windows) with `git` installed.
-* A target running **QNX Developer Desktop** (QEMU VM, Raspberry Pi 4, or Raspberry Pi 5).
+* A target running [**QNX Developer Desktop**](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html) (QEMU VM, Raspberry Pi 4, or Raspberry Pi 5).
 * Network connectivity between the host and the target.
 
 ---
@@ -68,7 +68,7 @@ You need to move the project file from your host to the QNX Developer Desktop.
 ---
 
 ## Install Godot on QNX
-The Godot engine is available via the QNX APK repository. Ensure your target has internet access to fetch the packages.
+The Godot engine is available via the [QNX Open Source Ports](https://oss.qnx.com/). Ensure your target has internet access to fetch the packages.
 
 1.  **Search for available templates:**
     ```sh

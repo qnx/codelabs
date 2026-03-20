@@ -1,0 +1,175 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>How to run Pong with Godot on QNX</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="godot-codelab"
+                  title="How to run Pong with Godot on QNX"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p class="image-container"><img alt="Pong with Godot on QNX" src="img/b8f44c5a4a40222b.png"></p>
+<p>What you will learn:</p>
+<ul>
+<li>How to clone a Godot project for QNX.</li>
+<li>How to install the Godot templates on a QNX target.</li>
+<li>How to launch a Godot game using the command line.</li>
+</ul>
+<p>Prerequisites:</p>
+<ul>
+<li>A host machine (Linux, macOS, or Windows) with <code>git</code> installed.</li>
+<li>A target running <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html" target="_blank"><strong>QNX Developer Desktop</strong></a> (QEMU VM, Raspberry Pi 4, or Raspberry Pi 5).</li>
+<li>Network connectivity between the host and the target.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Prepare the Project (Host Machine)" duration="0">
+        <p>Because this specific project is set up for cross-compilation environments, we will first clone it on your development host and then package it for the target.</p>
+<ol type="1">
+<li><strong>Clone the repository:</strong><pre><code language="language-sh" class="language-sh">git clone https://github.com/yulee-qnx/pong-qdd/
+</code></pre>
+</li>
+<li><strong>Zip the project:</strong> Navigate to the directory and compress the folder to make transferring it easier.<pre><code language="language-sh" class="language-sh">zip -r pong-qdd.zip pong-qdd
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Transfer to QNX Target" duration="0">
+        <p>You need to move the project file from your host to the QNX Developer Desktop.</p>
+<ol type="1">
+<li><strong>Find your Target IP:</strong> On your QNX terminal, run:<pre><code language="language-sh" class="language-sh">ifconfig
+</code></pre>
+</li>
+<li><strong>Secure Copy (SCP) the file:</strong> From your <strong>host machine</strong>, run (replace the IP with your target&#39;s actual IP):<pre><code language="language-sh" class="language-sh">scp pong-qdd.zip qnxuser@192.168.122.242:/data/home/qnxuser
+</code></pre>
+</li>
+<li><strong>Unzip on the Target:</strong> Switch back to your <strong>QNX target terminal</strong> and run:<pre><code language="language-sh" class="language-sh">unzip pong-qdd.zip
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install Godot on QNX" duration="0">
+        <p>The Godot engine is available via the <a href="https://oss.qnx.com/" target="_blank">QNX Open Source Ports</a>. Ensure your target has internet access to fetch the packages.</p>
+<ol type="1">
+<li><strong>Search for available templates:</strong><pre><code language="language-sh" class="language-sh">sudo apk search godot-templates
+</code></pre>
+</li>
+<li><strong>Install the templates:</strong><pre><code language="language-sh" class="language-sh">sudo apk add godot-templates
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Launch the Game" duration="0">
+        <p>Now that the engine is installed and the project files are present, you can launch the game using the rendering driver compatible with QNX Screen.</p>
+<ol type="1">
+<li><strong>Run the Godot binary:</strong> From the QNX terminal, execute: <pre><code language="language-sh" class="language-sh">godot-template-release --path pong-qdd --rendering-driver opengl3_es
+</code></pre>
+</li>
+</ol>
+<p>Game Controls</p>
+<ul>
+<li><strong>Player 1: </strong><code>W</code> (Up), <code>S</code> (Down)</li>
+<li><strong>Player 2: </strong><code>Up Arrow</code> (Up), <code>Down Arrow</code> (Down)</li>
+<li><strong>Exit: </strong><code>ESC</code> (Initiates a proper shutdown sequence)</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Technical Notes &amp; Limitations" duration="0">
+        <p>When developing with Godot on QNX, keep the following in mind:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Feature</p>
+</td><td colspan="1" rowspan="1"><p>Support Level</p>
+</td><td colspan="1" rowspan="1"><p>Note</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Windowing</strong></p>
+</td><td colspan="1" rowspan="1"><p>QNX Screen</p>
+</td><td colspan="1" rowspan="1"><p>Wayland is not currently supported for this port.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>2D Graphics</strong></p>
+</td><td colspan="1" rowspan="1"><p>High</p>
+</td><td colspan="1" rowspan="1"><p>Excellent for HMI and UI visualizations.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>3D Graphics</strong></p>
+</td><td colspan="1" rowspan="1"><p>Basic</p>
+</td><td colspan="1" rowspan="1"><p>Optimized assets required; avoid heavy GPU effects.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Audio</strong></p>
+</td><td colspan="1" rowspan="1"><p>Functional</p>
+</td><td colspan="1" rowspan="1"><p>Best supported on Raspberry Pi 4/5 environments.</p>
+</td></tr>
+</table>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You have successfully deployed a Godot game to QNX! This workflow opens the door for high-quality graphical interfaces and visualizations on a hard real-time operating system.</p>
+<p><strong>Next Steps:</strong></p>
+<ul>
+<li>Explore the source code in the <code>pong-qdd</code> folder.</li>
+<li>Try modifying the physics logic and re-running the game on your target.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

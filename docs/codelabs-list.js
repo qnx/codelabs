@@ -4,9 +4,10 @@ window.CODELABS = [
     "href": "build-maelstrom-on-qnx/index.html",
     "id": "build-maelstrom-on-qnx",
     "authors": "Roberto Speranza",
-    "updated": "2026-03-20T18:02:53-04:00",
+    "updated": "2026-03-20T18:07:48-04:00",
     "category": [
-      "self-hostingsdlgames"
+      "self-hosting",
+      "sdlgames"
     ],
     "tags": [
       "intermediate"

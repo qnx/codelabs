@@ -16,7 +16,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 Duration: 1:00
 
 ### Overview
-This codelab is meant to be a step by step tutorial to help you get started with the QSTI in a virtualized environment on a Windows device. QEMU is typically used to run QSTI within the context of an Ubuntu system. Detailed documentation for using QSTI on QEMU on Ubuntu can be found [here.](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html) In this tutorial, we will use WSL which allows for Linux programs to run on Windows systems with minimal setup required. Therefore, the aformentioned documentation is mostly applicable and will be referenced in this tutorial.
+This codelab is meant to be a step by step tutorial to help you get started with the QSTI in a virtualized environment on a Windows device. QEMU is typically used to run QSTI within the context of an Ubuntu system. Detailed documentation for using QSTI on QEMU on Ubuntu can be found [here.](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html) In this tutorial, we will use WSL which allows for Linux programs to run on Windows systems with minimal setup required. Therefore, the aforementioned documentation is mostly applicable and will be referenced in this tutorial.
 
 
 ### Prerequisites
@@ -35,7 +35,7 @@ Duration: 2:00
     wsl --install
     ```
     * At the time of writing, by default, this will install WSL 2 with the Ubuntu 24.04 distribution.
-    * You can now start open the Linux terminal by executing `wsl` from PowerShell or the Windows Command Prompt.
+    * You can now open the Linux terminal by executing `wsl` from PowerShell or the Windows Command Prompt.
 2. **Update Ubuntu Packages** by executing the following command from the linux terminal:
     ```bash
     sudo apt update && sudo apt upgrade
@@ -52,7 +52,7 @@ Duration: 2:00
     sudo apt install qemu-system qemu-system-x86 qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils qemu-kvm virt-manager
     ```
 <!--![qvm install](install.png)-->
-2. **Set up the networking bridge** that QEMU will use for internet access by executing the following commnads from the Linux terminal:
+2. **Set up the networking bridge** that QEMU will use for internet access by executing the following commands from the Linux terminal:
     ```bash
     sudo systemctl enable --now libvirtd
     sudo virsh net-start default
@@ -81,9 +81,9 @@ Duration: 2:00
 
 ### Specifications
 1. Starting with the default options [documented here](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/additional_specs.html), let's add some more options to get things working well.
-2. To improve performance, add the CPU and RAM specifications. This will depend on your system, but assuming a modern system with 16 GB of ram, try `-smp 4` and `-m 8G` to specify 4 cores and 8 GB of RAM assigned to QEMU. With a more powerful system, you could increase that to 8 cores and 16 GB of ram.
+2. To improve performance, add the CPU and RAM specifications. This will depend on your system, but assuming a modern system with 16 GB of RAM, try `-smp 4` and `-m 8G` to specify 4 cores and 8 GB of RAM assigned to QEMU. With a more powerful system, you could increase that to 8 cores and 16 GB of RAM.
 3. Since we are using QEMU, add the [physical bit specification](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/additional_specs.html#additional-qemu-specifications__physical-bit-specification) according to whether you have an AMD or Intel CPU.
-4. Specify the standar Virtio GPU driver with `-device virtio-vga-gl`.
+4. Specify the standard Virtio GPU driver with `-device virtio-vga-gl`.
 5. Modify display specifications to ensure mouse input is captured correctly by adding `,show-cursor=on`.
 
 ### Execution
@@ -137,13 +137,13 @@ By default, Alt+Tab is used to switch between windows on the QSTI, but this does
 
 1. Run QEMU as you did in the previous step.
 2. In the terminal, log in as root (default password is root).
-3. Choose a prefered hotkey combination. I am choosing Alt+q, but you can see all the valid hotkeys and modifier keys by executing `use fullscreen-winmgr`.
+3. Choose a preferred hotkey combination. I am choosing Alt+q, but you can see all the valid hotkeys and modifier keys by executing `use fullscreen-winmgr`.
 4. Execute the following command to make the change:
     ```
     sed -i '2i export WINMGR_HOTKEY=q\
     export WINMGR_KEYMOD=Alt' /system/etc/startup/full_startup.sh && sync
     ```
 5. Close the QEMU graphical interface window.
-5. Launch QEMU again and observe your specified hotkey now shows on the splash screen.
+6. Launch QEMU again and observe your specified hotkey now shows on the splash screen.
 
 <!--![hotkey](hotkey.png)-->

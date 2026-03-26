@@ -40,7 +40,6 @@ Duration: 2:00
     ```bash
     sudo apt update && sudo apt upgrade
     ```
-<!--![update linux packages](update.png)-->
 
 ---
 
@@ -51,7 +50,6 @@ Duration: 2:00
     ```bash
     sudo apt install qemu-system qemu-system-x86 qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils qemu-kvm virt-manager
     ```
-<!--![qvm install](install.png)-->
 2. **Set up the networking bridge** that QEMU will use for internet access by executing the following commands from the Linux terminal:
     ```bash
     sudo systemctl enable --now libvirtd
@@ -63,7 +61,7 @@ Duration: 2:00
     sudo chown root:kvm /etc/qemu/bridge.conf
     ```
     * Verify that the virbr0 interface is up.
-<!--![networking bridge](bridge.png)-->
+![networking bridge](bridge.png)
 
 ---
 
@@ -72,7 +70,7 @@ Duration: 5:00
 
 1. Follow the steps here to [get the image.](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#getting-started__get-the-image)
 2. Transfer the resulting qemu directory to the WSL filesystem using the Windows File Explorer.
-<!--![file explorer](explorer.png)-->
+![file explorer](explorer.png)
 
 ---
 
@@ -146,4 +144,4 @@ By default, Alt+Tab is used to switch between windows on the QSTI, but this does
 5. Close the QEMU graphical interface window.
 6. Launch QEMU again and observe your specified hotkey now shows on the splash screen.
 
-<!--![hotkey](hotkey.png)-->
+![hotkey](hotkey.png)

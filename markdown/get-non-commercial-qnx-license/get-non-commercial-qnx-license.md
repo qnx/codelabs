@@ -40,9 +40,9 @@ You are now able to access the [QNX Software Center](https://www.qnx.com/downloa
 ## Managing QNX Licenses
 
 You can manage your QNX license(s) from within the [myQNX License Manager](https://www.qnx.com/account/dashboard/)
-This is where you can deploy and redeploy the license you want to use.
+This is where you can deploy, revoke and redeploy the license you want to use.
 If you have both commercial and non-commercial QNX 8.0 licenses you can check which license is currently being used in the QSC.
-You can also switch which QNX license is being used by activating the one to use and deactivating licenses you do not want to use.
+Once you have deployed the QNX license you want to use you will need to activate it in the QSC and deactive other licenses not in use.
 
 ### Checking Active QNX License(s)
 To determine if a license is in use:

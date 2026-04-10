@@ -106,5 +106,19 @@ window.CODELABS = [
       "rpi5",
       "ssd"
     ]
+  },
+  {
+    "title": "Learn How to Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
+    "href": "setup-qsti-qemu-on-ubuntu/index.html",
+    "id": "setup-qsti-qemu-on-ubuntu",
+    "authors": "Anna Likozar",
+    "updated": "2026-04-10T17:00:25-04:00",
+    "category": [
+      "qnx",
+      "qemu"
+    ],
+    "tags": [
+      "beginner"
+    ]
   }
 ];

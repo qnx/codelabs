@@ -28,37 +28,15 @@ Once you have a myQNX account, log into your account [https://www.qnx.com/accoun
 ## Accept and Deploy your Non-Commercial QNX License
 
 Once you receive notification that your license is available, you can accept and deploy it in your myQNX License Manager.  
-This is where your license will appear once your request has been processed.
-Open the [myQNX License Manager](https://www.qnx.com/account/dashboard/) 
+To do this follow the steps outlined in **Step 2: Accept and deploy the license in your myQNX Account** here [https://www.qnx.com/products/everywhere/](https://www.qnx.com/products/everywhere/)
 
-* Click **Accept License**.
-* Click the product's Users field, then click **Deploy**.
-* Enter you own myQNX account email address to deploy the license to yourself, then click **Save**.
-
-You are now able to access the [QNX Software Center](https://www.qnx.com/download/group.html?programid=29178). 
+You are now able to access the QNX Software Center and QNX SDP 8.0.  To do this follow the steps in **Step 3: Download Software Center and install QNX SDP 8.0** here [https://www.qnx.com/products/everywhere/](https://www.qnx.com/products/everywhere/)
 
 ## Managing QNX Licenses
 
-You can manage your QNX license(s) from within the [myQNX License Manager](https://www.qnx.com/account/dashboard/)
-This is where you can deploy, revoke and redeploy the license you want to use.
-If you have both commercial and non-commercial QNX 8.0 licenses you can check which license is currently being used in the QSC.
-Once you have deployed the QNX license you want to use you will need to activate it in the QSC and deactive other licenses not in use.
+You can manage your QNX license(s) from within the [myQNX License Manager](https://www.qnx.com/account/dashboard/).
+This is where you can deploy and revoke your QNX Licenses.
 
-### Checking Active QNX License(s)
-To determine if a license is in use:
-* Launch QSC
-* From the Welcome screen, select **Manage License Keys**
-* The license in use will be listed as **Actived** in the right hand column.
+### Activate/Deactivate a QNX License
 
-### Activate a QNX License
-To activate a QNX License:
-* Launch QSC
-* From the Welcome screen, select **Manage License Keys**
-* Click on the license key and click **Activate** in the bottom right corner or right-click on the license key and select **Activate**, then click OK to confirm.
-
-### Deactivate a QNX License
-To deactivate a QNX License:
-* Launch QSC
-* From the Welcome screen, select **Manage License Keys**
-* Click on the license key and click **Deactivate** in the bottom right corner or right-click on the license key and select **Deactivate**, then click OK to confirm.
-
+To activate or deactivate a QNX License see the [Manage Your Product Licenses](https://www.qnx.com/developers/docs/qsc/com.qnx.doc.qsc.user_guide/topic/manage_licenses.html).

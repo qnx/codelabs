@@ -1,0 +1,252 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Build Maelstrom on QNX</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="build-maelstrom-on-qnx"
+                  title="Build Maelstrom on QNX"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="1">
+        <p class="image-container"><img alt="Maelstrom launch screen" src="img/8f0e1a2345ccb683.png"></p>
+<p>Maelstrom is an Asteroids clone, ported to SDL, but was originally created in 1992 for Mac OS. Refer to the Maelstrom Wikipedia entry for more information about the game:</p>
+<p><a href="https://en.wikipedia.org/wiki/Maelstrom_(1992_video_game)" target="_blank">https://en.wikipedia.org/wiki/Maelstrom_(1992_video_game)</a></p>
+<p>The purpose of this project is to build a patched version of the game, ported to QNX, on the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html" target="_blank">QNX Developer Desktop</a>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Setup the Project" duration="1">
+        <aside class="special"><p>Note: We will use ~/repos as an example development workspace for the rest of this exercise.  Feel free to use the folder of your choice instead.</p>
+</aside>
+<ol type="1">
+<li>Navigate to your development workspace:<pre><code language="language-bash" class="language-bash">cd ~/repos
+</code></pre>
+</li>
+<li>Run the following command to clone the Maelstrom repo:<pre><code language="language-bash" class="language-bash">git clone https://github.com/libsdl-org/Maelstrom.git -b Maelstrom3
+cd ~/repos/Maelstrom
+git checkout 063c388fb6e4b7365d005cd25f56844ef94aca51
+</code></pre>
+This command will checkout a specific commit from the Maelstrom3 branch.</li>
+<li>Download the patch from the link below and save it in the repo folder:<a href="./Maelstrom.patch" target="_blank">Maelstrom.patch</a></li>
+<li>Run the following command to apply the patch:<pre><code language="language-bash" class="language-bash">git apply ./Maelstrom.patch
+</code></pre>
+</li>
+<li>Delete the patch after it is applied.<pre><code language="language-bash" class="language-bash">rm ./Maelstrom.patch
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Building Maelstrom" duration="1">
+        <p>This project can be built two ways:</p>
+<ul>
+<li>via command line (Terminal)</li>
+<li>using the Geany IDE</li>
+</ul>
+<p>Proceed to the next sections matching your build preference.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Configuring via command line" duration="2">
+        <ol type="1">
+<li>Prepare to configure the project.<pre><code language="language-bash" class="language-bash">autoreconf -fi
+chmod u+x autogen.sh
+./autogen.sh
+</code></pre>
+</li>
+<li>Configure the project.<pre><code language="language-bash" class="language-bash">CC=clang CXX=clang++ \
+CFLAGS=&#34;${CFLAGS} -Wno-reserved-user-defined-literal -Wno-register -Wno-implicit-function-declaration&#34; \
+ LDFLAGS=&#34; -L/usr/lib -lSDL2 -lm -liconv -lscreen -lEGL -lsocket&#34; \
+./configure --with-sdl-prefix=/usr --prefix=/usr --disable-sdltest
+</code></pre>
+This step configures the project to generate the Makefiles needed to build it.  It will take several seconds to complete.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Building via command line" duration="5">
+        <ol type="1">
+<li>Build the project.<pre><code language="language-bash" class="language-bash">make -j4
+</code></pre>
+This step builds the project.  It will take several seconds to complete.</li>
+<li>Install the game and its assets.<pre><code language="language-bash" class="language-bash">sudo make install install-exec install-data install-am
+</code></pre>
+</li>
+<li>Update the game folder permissions to make it reaable by all users.<pre><code language="language-bash" class="language-bash">sudo chmod -R a+r /usr/games/maelstrom/*
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Building Maelstrom with Geany" duration="7">
+        <ol type="1">
+<li>Launch Geany. From the desktop, select <strong>Applications &gt; Development &gt; Geany</strong>.</li>
+<li>Select the <strong>Project</strong> menu, then <strong>Open</strong>.</li>
+<li>Navigate to the Maelstrom project folder <strong>(~/repos/Maelstrom)</strong> and select <strong>Maelstrom.geany</strong>.</li>
+<li>Select <strong>Build &gt; Configure</strong>.This step configures the project to generate the Makefiles needed to build it.  It will take several seconds to complete.</li>
+<li>Select <strong>Build &gt; Make</strong> to build the project.This step builds the project.  It will take several seconds to complete.</li>
+<li>Select <strong>Build &gt; Install</strong> to install the game.<img alt="Maelstrom Geany install" src="img/2246721d9b55b70f.png">A terminal opens. Enter your password when prompted and then the game and its assets will be installed.  It will take a few seconds to complete.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Running Maelstrom" duration="1">
+        <ol type="1">
+<li>Open a Terminal (if one is not open already).</li>
+<li>Create a script to launch the game to launch it with the QNX screen backend by default.<pre><code language="language-bash" class="language-bash">sudo vi /usr/bin/launchMaelstrom
+</code></pre>
+</li>
+<li>Paste this content.<pre><code language="language-bash" class="language-bash">#!/bin/bash
+
+SDL_VIDEODRIVER=qnx Maelstrom -windowed
+</code></pre>
+</li>
+<li>Make the script executable.<pre><code language="language-bash" class="language-bash">sudo chmod a+x /usr/bin/launchMaelstrom
+</code></pre>
+</li>
+<li>Launch the game and have fun.<pre><code language="language-bash" class="language-bash">launchMaelstrom
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="How to Play" duration="1">
+        <h2 is-upgraded>Keyboard</h2>
+<h3 is-upgraded>Launch Screen</h3>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Key</p>
+</td><td colspan="1" rowspan="1"><p>Action</p>
+</td><td colspan="1" rowspan="1"><p>Notes</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>L</p>
+</td><td colspan="1" rowspan="1"><p>Cheat Menu</p>
+</td><td colspan="1" rowspan="1"><p>Allows selecting the number of lives, the wave number up to 40, and Turbofunk, or fast motion.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>X</p>
+</td><td colspan="1" rowspan="1"><p>Hidden Poem</p>
+</td><td colspan="1" rowspan="1"><p>popup with a hidden poem</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>A</p>
+</td><td colspan="1" rowspan="1"><p>About</p>
+</td><td colspan="1" rowspan="1"><p>popups with About info for the game</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>M</p>
+</td><td colspan="1" rowspan="1"><p>Multiplayer</p>
+</td><td colspan="1" rowspan="1"><p>See the <a href="https://github.com/libsdl-org/Maelstrom/blob/main/README.network" target="_blank">networking README</a> for details to set up</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>C</p>
+</td><td colspan="1" rowspan="1"><p>Settings</p>
+</td><td colspan="1" rowspan="1"><p>Adjust the keyboard controls</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>S</p>
+</td><td colspan="2" rowspan="1"><p>Game Center</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p>P</p>
+</td><td colspan="2" rowspan="1"><p>Play</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p>Q</p>
+</td><td colspan="2" rowspan="1"><p>Quit</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+</table>
+<h3 is-upgraded>In-game controls</h3>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Key</p>
+</td><td colspan="1" rowspan="1"><p>Action</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Tab</p>
+</td><td colspan="1" rowspan="1"><p>Fire</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Up Arrow</p>
+</td><td colspan="1" rowspan="1"><p>Thrust</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Left Arrow</p>
+</td><td colspan="1" rowspan="1"><p>Rotate Ship Left</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Right Arrow</p>
+</td><td colspan="1" rowspan="1"><p>Rotate Ship Right</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>P</p>
+</td><td colspan="1" rowspan="1"><p>Pause Game</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Esc</p>
+</td><td colspan="1" rowspan="1"><p>Quit Game</p>
+</td></tr>
+</table>
+<h2 is-upgraded>References</h2>
+<ul>
+<li><a href="https://gamefaqs.gamespot.com/mac/564854-maelstrom/cheats" target="_blank">https://gamefaqs.gamespot.com/mac/564854-maelstrom/cheats</a></li>
+<li><a href="https://tcrf.net/Maelstrom_(Mac_OS_Classic)" target="_blank">https://tcrf.net/Maelstrom_(Mac_OS_Classic)</a></li>
+<li><a href="https://majorslack.com/play-arcade-games/maelstrom/" target="_blank">https://majorslack.com/play-arcade-games/maelstrom/</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Next Steps" duration="5">
+        <p>Want to learn more about SDL?</p>
+<p>Here are two SDL tutorial sites found while researching SDL integration into the Quickstart image, which also include sample code you can download and build:</p>
+<ul>
+<li><a href="https://github.com/aminosbh/sdl2-samples-and-projects" target="_blank">https://github.com/aminosbh/sdl2-samples-and-projects</a></li>
+<li><a href="https://lazyfoo.net/tutorials/SDL/index.php" target="_blank">https://lazyfoo.net/tutorials/SDL/index.php</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

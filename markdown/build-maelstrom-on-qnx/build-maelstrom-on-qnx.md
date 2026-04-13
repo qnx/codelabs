@@ -1,8 +1,14 @@
 
 id: build-maelstrom-on-qnx
+<<<<<<< HEAD
 title: Building Maelstrom on QNX
 summary: Learn how to modify and build the game Maelstrom on QNX
 categories: self-hosting SDL games
+=======
+title: Building Maelstrom on QNX 
+summary: Learn how to modify and build the game Maelstrom on QNX
+categories: self-hosting, SDL games
+>>>>>>> origin/main
 tags: intermediate
 difficulty: 3
 status: published
@@ -22,7 +28,11 @@ for Mac OS. Refer to the Maelstrom Wikipedia entry for more information about th
 
 [https://en.wikipedia.org/wiki/Maelstrom_(1992_video_game)](https://en.wikipedia.org/wiki/Maelstrom_(1992_video_game))
 
+<<<<<<< HEAD
 The purpose of this project is to build a patched version of the game, ported to QNX, on the QNX Developer Desktop.
+=======
+The purpose of this project is to build a patched version of the game, ported to QNX, on the [QNX Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html).
+>>>>>>> origin/main
 
 ---
 

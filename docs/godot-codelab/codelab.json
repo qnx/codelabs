@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-03-20T16:47:53-04:00",
+  "id": "godot-codelab",
+  "duration": 0,
+  "title": "How to run Pong with Godot on QNX",
+  "authors": "Yun Lee",
+  "summary": "Running Pong with Godot on QNX",
+  "source": "./markdown/godot-codelab/godot-codelab.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "godot"
+  ],
+  "tags": [
+    "beginner"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "godot-codelab"
+}

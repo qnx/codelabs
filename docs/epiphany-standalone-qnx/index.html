@@ -1,0 +1,450 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Standalone Epiphany Browser on QNX 8.0</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="epiphany-standalone-qnx"
+                  title="Standalone Epiphany Browser on QNX 8.0"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p class="image-container"><img alt="Epiphany Browser running on QNX" src="img/f1c9848faadd8424.png"></p>
+<p>One of the goals of the QNX porting team is to enable rich browser-based UI experiences on QNX targets without requiring the full QNX Developer Desktop. This codelab walks through running <strong>Epiphany (GNOME Web)</strong> — a WebKit2GTK-based browser — on a <strong>minimal QNX 8.0 image</strong> with no XFCE desktop stack.</p>
+<p>The target use case is embedded platforms like the <strong>Ezurio i.MX8</strong>, where a customer may want a working browser without shipping a full desktop environment. This codelab proves the concept on QEMU x86_64 first.</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>How to build a minimal QNX 8.0 QEMU image using <code>qapkimgen</code></li>
+<li>How to bootstrap APK on a fresh minimal image</li>
+<li>How to bring up the QNX graphics stack (Screen → Weston) on a minimal image</li>
+<li>How to configure mouse input on a minimal image without the full HID stack</li>
+<li>How to launch Epiphany with a full browser UI using <code>desktop-shell</code></li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A Linux host machine with QEMU and the QNX 8.0 SDP installed</li>
+<li>Access to the QNX APK package repository</li>
+<li>Familiarity with basic QNX concepts (Screen, APK, QEMU)</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="How it works — Architecture Overview" duration="0">
+        <p>Before diving into steps, it helps to understand what we&#39;re building and why each piece exists.</p>
+<p>A standard QNX Developer Desktop image includes a full init system, XFCE desktop, and pre-configured graphics stack. On a minimal image, <strong>none of that exists</strong> — you get a kernel, a shell, and not much else. We need to build up the stack ourselves.</p>
+<p>The layers, from bottom to top:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p><strong>Layer</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>Component</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>What it does</strong></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Hardware input</p>
+</td><td colspan="1" rowspan="1"><p><code>io-hid</code> + <code>devh-ps2ser-vm</code></p>
+</td><td colspan="1" rowspan="1"><p>Captures mouse and keyboard from QEMU&#39;s emulated PS/2 devices</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Display driver</p>
+</td><td colspan="1" rowspan="1"><p><code>drm-virtio</code></p>
+</td><td colspan="1" rowspan="1"><p>Drives the virtio GPU exposed by QEMU</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Display server</p>
+</td><td colspan="1" rowspan="1"><p>QNX Screen</p>
+</td><td colspan="1" rowspan="1"><p>Low-level window/surface manager. Everything graphical goes through Screen</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Compositor</p>
+</td><td colspan="1" rowspan="1"><p>Weston</p>
+</td><td colspan="1" rowspan="1"><p>Wayland compositor. Manages windows, provides the desktop environment</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Browser</p>
+</td><td colspan="1" rowspan="1"><p>Epiphany + WebKit2GTK</p>
+</td><td colspan="1" rowspan="1"><p>The browser itself. WebKit splits into multiple processes that communicate over dbus</p>
+</td></tr>
+</table>
+<p>The key insight is <strong>order matters</strong>. Mouse input must be initialized before Screen starts, Screen must be running before Weston starts, and Weston and Epiphany must share a single dbus session for WebKit&#39;s inter-process communication to work.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 1 — Prepare config files on the host" duration="0">
+        <p>We create all configuration files on the host machine before touching the QNX image. This is a hard rule: the minimal image has no <code>/tmp</code> or pipes at first boot, making it impossible to create multi-line files directly on the target.</p>
+<p>Create a working directory:</p>
+<pre><code language="language-bash" class="language-bash">mkdir -p ~/qnx-browser-setup
+</code></pre>
+<h2 is-upgraded><code>/bin/init</code> — the boot script</h2>
+<p>On the minimal image there is no init system yet (OpenRC is planned but not ready). The IFS bootloader checks for <code>/bin/init</code> on the real filesystem and runs it if found. This script is our hand-rolled replacement — it brings up every service the system needs before handing off to a login prompt.</p>
+<p>It does three broad things:</p>
+<ol type="1">
+<li><strong>Core OS primitives</strong> — pipe server, message queues, and a RAM-backed <code>/tmp</code>. These are things Linux provides automatically; on QNX they are separate servers that must be started explicitly. Without them, <code>sudo</code> fails, dbus fails, and nothing works.</li>
+<li><strong>Networking</strong> — socket stack, DHCP, and SSH. Gets you network access and lets you connect from a host terminal.</li>
+<li><strong>Graphics stack in the correct order</strong> — mouse driver first, then the DRM driver, then QNX Screen. Order is critical here; we confirmed this by reading <code>/bin/init</code> on the desktop image.</li>
+</ol>
+<pre><code language="language-bash" class="language-bash">cat &gt; ~/qnx-browser-setup/bin-init &lt;&lt; &#39;EOF&#39;
+#!/usr/bin/bash
+
+echo &#34;FSEVMGR INIT&#34;
+on -p 98 /usr/bin/fsevmgr
+
+echo &#34;PIPE INIT&#34;
+on -p 98 /usr/bin/pipe
+/ifs/usr/bin/waitfor /dev/pipe
+
+echo &#34;MQUEUE INIT&#34;
+on -p 98 /usr/bin/mqueue
+/ifs/usr/bin/waitfor /dev/mqueue
+
+echo &#34;TMPFS INIT&#34;
+tmem=$(($(cat /proc/vm/stats | grep page_count | cut -d&#39;=&#39; -f2 | cut -d&#39; &#39; -f1)))
+tmpfs_size=$((tmem / 20 * 4096))
+devb-ram ram capacity=1 blk ramdisk=&#34;$tmpfs_size&#34;
+/ifs/usr/bin/waitfor /dev/ram0
+mkqnx6fs -q /dev/ram0
+mount /dev/ram0 /tmp
+chmod 1777 /tmp
+
+echo &#34;RANDOM INIT&#34;
+on -p 98 sh -c &#39;random -l devr-virtio.so&#39;
+/ifs/usr/bin/waitfor /dev/random
+
+echo &#34;SOCKET INIT&#34;
+on -p 98 sh -c &#39;io-sock -m phy -m pci -d vtnet_pci&#39;
+/ifs/usr/bin/waitfor /dev/socket
+
+echo &#34;DHCPCD INIT&#34;
+on -p 20 dhcpcd -bq
+
+echo &#34;SSHD INIT&#34;
+if ! [[ -f /etc/ssh/ssh_host_rsa_key ]]; then
+    ssh-keygen -A
+fi
+on -p 20 /usr/bin/sshd
+
+echo &#34;IO-HID INIT&#34;
+io-hid -dps2ser-vm kbd:kbddev:vmware:mousedev
+/ifs/usr/bin/waitfor /dev/io-hid/io-hid
+
+echo &#34;DRM INIT&#34;
+drm-virtio -u qnx &amp;
+sleep 2
+
+echo &#34;SCREEN INIT&#34;
+screen -c /usr/share/screen/graphics-virtio-virgl.conf -u qnx
+/ifs/usr/bin/waitfor /dev/screen/command
+echo &#34;drop_privileges&#34; &gt; /dev/screen/command
+
+mkdir -p /var/run/1000
+chown 1000:1000 /var/run/1000
+chmod 700 /var/run/1000
+
+echo &#34;LOGIN&#34;
+on -d -t /dev/ser1 sh -c &#39;/ifs/usr/bin/reopen /dev/ser1 &amp;&amp; while true; do login; sleep 1; done&#39;
+EOF
+</code></pre>
+<h2 is-upgraded><code>start-browser.sh</code> — the launch script</h2>
+<p>This is the single command you run after logging in. It starts Weston and Epiphany inside one shared dbus session. They must share a session because WebKit splits into multiple processes (UI, web, network) and uses dbus to coordinate between them — separate sessions causes the browser to open with a blank white screen and no error.</p>
+<pre><code language="language-bash" class="language-bash">cat &gt; ~/qnx-browser-setup/start-browser.sh &lt;&lt; &#39;EOF&#39;
+#!/usr/bin/bash
+dbus-run-session bash -c &#34;
+  export XDG_RUNTIME_DIR=/var/run/1000
+  export XKB_CONFIG_ROOT=/usr/share/X11/xkb
+  export XDG_DATA_DIRS=/usr/share
+  export XDG_CACHE_HOME=/var/home/qnx/.cache
+  export XDG_DATA_HOME=/var/home/qnx/.local/share
+  export XDG_CONFIG_HOME=/var/home/qnx/.config
+  export XDG_STATE_HOME=/var/home/qnx/.local/state
+  export __GL_SHADER_CACHE=1
+  export WAYLAND_DISPLAY=wayland-1
+  weston --backend=qnx-screen-backend.so -c ~/.config/weston.ini &amp;
+  sleep 3
+  epiphany https://example.com
+&#34;
+EOF
+</code></pre>
+<h2 is-upgraded><code>graphics-virtio-virgl.conf</code> — the Screen config</h2>
+<p>Tells QNX Screen how to initialize the virtio GPU and what resolution to use. The QNX virtio WFD driver caps at <strong>1024x600</strong> regardless of what you request — so we set <code>video-mode</code> to match that reality. This must always match the <code>xres/yres</code> value in the QEMU launch command; if they differ, the SDL window is larger than QNX&#39;s output and you get black borders.</p>
+<pre><code language="language-bash" class="language-bash">cat &gt; ~/qnx-browser-setup/graphics-virtio-virgl.conf &lt;&lt; &#39;EOF&#39;
+begin khronos
+
+  begin egl display 1
+    egl-dlls = virtio_dri.so EGL-mesa.so
+    glesv2-dlls = virtio_dri.so GLESv2-mesa.so
+    gpu-dlls = virtio_dri.so gpu_virtio.so
+    vk-icds = virtio_icd.json
+  end egl display
+
+  explicit-screen-buffer-coherency=true
+
+  begin wfd device 1
+    wfd-dlls = libwfdcfg-virtio.so libWFDvirtio.so
+  end wfd device
+
+end khronos
+
+begin winmgr
+
+  begin globals
+    blit-config = gles2blt
+    alloc-config = alloc-virtio-virgl
+  end globals
+
+  begin display 1
+    video-mode = 1024 x 600 @ 60
+    defer-framebuffer-creation = false
+    force-composition = true
+    allow-bypass = false
+  end display
+
+  begin class framebuffer-1
+    display = 1
+    format = rgbx8888
+    usage = gles2blt
+    buffer-count = 4
+  end class
+
+end winmgr
+EOF
+</code></pre>
+<h2 is-upgraded><code>weston.ini</code> — the Weston config</h2>
+<p>Selects <code>desktop-shell.so</code> as the Weston shell plugin, which gives Epiphany a normal windowed environment with its toolbar and address bar visible. The alternative <code>kiosk-shell.so</code> forces fullscreen and hides the entire browser UI — useful for locked-down customer delivery, but not for general use.</p>
+<pre><code language="language-bash" class="language-bash">cat &gt; ~/qnx-browser-setup/weston.ini &lt;&lt; &#39;EOF&#39;
+[core]
+shell=desktop-shell.so
+EOF
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 2 — Create the QEMU launch script" duration="0">
+        <p>Create <code>~/qapkimgen/run_browser.sh</code>:</p>
+<pre><code language="language-bash" class="language-bash">cat &gt; ~/qapkimgen/run_browser.sh &lt;&lt; &#39;EOF&#39;
+qemu-system-x86_64 \
+    -smp $(nproc) \
+    --enable-kvm \
+    --cpu host,host-phys-bits-limit=39 \
+    -machine pc \
+    -m 16G \
+    -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+    -drive if=pflash,format=raw,file=./OVMF_VARS.fd \
+    -drive file=./out/x86_64-qemu-uefi-&lt;date&gt;.img,if=virtio,id=drv0,driver=raw \
+    -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+    -device virtio-net-pci,netdev=net0 \
+    -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0 \
+    -serial mon:stdio \
+    -vga none \
+    -device virtio-vga-gl,xres=1024,yres=600 \
+    -display sdl,gl=on
+EOF
+chmod +x ~/qapkimgen/run_browser.sh
+</code></pre>
+<p>A few important notes about this command:</p>
+<ul>
+<li><strong><code>xres=1024,yres=600</code></strong> must match <code>video-mode</code> in the screen config. Both must always be changed together.</li>
+<li><strong>No </strong><strong><code>-device virtio-mouse-pci</code></strong><strong> or </strong><strong><code>-device virtio-keyboard-pci</code></strong> — the mouse driver uses QEMU&#39;s implicit PS/2 emulation from <code>-machine pc</code>. Adding virtio input devices on top breaks mouse input.</li>
+<li><strong>Split OVMF</strong> (<code>OVMF_CODE.fd</code> read-only + separate <code>OVMF_VARS.fd</code>) prevents QEMU from corrupting the EFI NVRAM when the launch command changes. If you ever see a PXE boot loop, reset with: <code>cp /usr/share/OVMF/OVMF_VARS.fd ./OVMF_VARS.fd</code></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 3 — Build the minimal image" duration="0">
+        <pre><code language="language-bash" class="language-bash">cd ~/qapkimgen
+source ~/qnx800/qnxsdp-env.sh
+export LD_LIBRARY_PATH=$HOME/.local/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+./qapkimgen ./presets/x86_64-qemu-uefi.preset
+</code></pre>
+<p>Once built, set up OVMF and launch:</p>
+<pre><code language="language-bash" class="language-bash">cp /usr/share/OVMF/OVMF_VARS.fd ./OVMF_VARS.fd
+./run_browser.sh
+</code></pre>
+<p>Update the image filename in <code>run_browser.sh</code> to match the output file from <code>qapkimgen</code>.</p>
+<p>Log in on the serial console with username <code>qnx</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 4 — Bootstrap APK" duration="0">
+        <p>The minimal image has no certificate trust store, so APK cannot verify HTTPS connections to the package repositories. We fix this using a utility bundled in the image build artifacts — no manual certificate copying required.</p>
+<p><strong>On the host:</strong></p>
+<pre><code language="language-bash" class="language-bash">scp -P 2222 ~/qapkimgen/tmp/x86_64-qemu-uefi/apkroot/usr/bin/update-ca-trust qnx@localhost:/tmp
+</code></pre>
+<p><strong>On the target:</strong></p>
+<pre><code language="language-bash" class="language-bash">sudo cp /tmp/update-ca-trust /usr/bin/
+sudo /usr/bin/update-ca-trust extract --init
+sudo apk update
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 5 — Install packages" duration="0">
+        <pre><code language="language-bash" class="language-bash">sudo apk add \
+    lz4-libs \
+    epiphany \
+    font-dejavu \
+    weston \
+    weston-backend-qnx-screen \
+    weston-shell-desktop \
+    qnx-screen-virtio \
+    qnx-hid \
+    qnx-devh \
+    qnx-devh-vmmouse \
+    dbus
+</code></pre>
+<p>Two packages are easy to miss and cause confusing silent failures:</p>
+<ul>
+<li><strong><code>font-dejavu</code></strong> — Without fonts installed, WebKit renders a completely blank white page with no error message. It looks identical to a crash.</li>
+<li><strong><code>weston-shell-desktop</code></strong> — A separate package from Weston itself. Without it, the only available shell is <code>kiosk-shell</code>, which hides Epiphany&#39;s entire toolbar and UI.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 6 — Transfer and install config files" duration="0">
+        <p>Transfer all config files in one scp command:</p>
+<pre><code language="language-bash" class="language-bash">scp -P 2222 \
+    ~/qnx-browser-setup/bin-init \
+    ~/qnx-browser-setup/start-browser.sh \
+    ~/qnx-browser-setup/graphics-virtio-virgl.conf \
+    ~/qnx-browser-setup/weston.ini \
+    qnx@localhost:/var/home/qnx/
+</code></pre>
+<p>Then install them on the target:</p>
+<pre><code language="language-bash" class="language-bash">sudo cp /var/home/qnx/bin-init /bin/init
+sudo chmod +x /bin/init
+
+sudo cp /var/home/qnx/start-browser.sh /usr/bin/start-browser.sh
+sudo chmod +x /usr/bin/start-browser.sh
+
+sudo mkdir -p /usr/share/screen
+sudo cp /var/home/qnx/graphics-virtio-virgl.conf /usr/share/screen/graphics-virtio-virgl.conf
+
+mkdir -p ~/.config
+cp /var/home/qnx/weston.ini ~/.config/weston.ini
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Phase 7 — Reboot and launch" duration="0">
+        <p>Reboot the image:</p>
+<pre><code language="language-bash" class="language-bash">sudo shutdown
+</code></pre>
+<p>Watch the serial console during boot. You should see each INIT step print in sequence:</p>
+<pre><code>FSEVMGR INIT
+PIPE INIT
+MQUEUE INIT
+TMPFS INIT
+RANDOM INIT
+SOCKET INIT
+DHCPCD INIT
+SSHD INIT
+IO-HID INIT
+DRM INIT
+SCREEN INIT
+LOGIN
+</code></pre>
+<p>Once you see the login prompt, log in and run:</p>
+<pre><code language="language-bash" class="language-bash">start-browser.sh
+</code></pre>
+<p>Epiphany will launch with a full browser UI — address bar, navigation buttons, and working mouse input.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Troubleshooting" duration="0">
+        <table>
+<tr><td colspan="1" rowspan="1"><p><strong>Symptom</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>Cause</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>Fix</strong></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>dbus-run-session: failed to create pipe</code></p>
+</td><td colspan="1" rowspan="1"><p><code>/dev/pipe</code> not running — <code>/bin/init</code> failed partway through</p>
+</td><td colspan="1" rowspan="1"><p>Check serial console for last INIT line printed</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>fatal: failed to create compositor backend</code></p>
+</td><td colspan="1" rowspan="1"><p>QNX Screen not running</p>
+</td><td colspan="1" rowspan="1"><p>Run <code>pidin | grep screen</code> to confirm; check <code>/bin/init</code> ran fully</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>fatal: XDG_RUNTIME_DIR is not a directory</code></p>
+</td><td colspan="1" rowspan="1"><p><code>/var/run/1000</code> doesn&#39;t exist — <code>/bin/init</code> didn&#39;t finish</p>
+</td><td colspan="1" rowspan="1"><p>Check serial console</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Black borders around desktop</p>
+</td><td colspan="1" rowspan="1"><p><code>xres/yres</code> and <code>video-mode</code> don&#39;t match</p>
+</td><td colspan="1" rowspan="1"><p>Both must be <code>1024x600</code> — change together</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Browser toolbar missing</p>
+</td><td colspan="1" rowspan="1"><p>Wrong Weston shell, or Epiphany saved fullscreen state</p>
+</td><td colspan="1" rowspan="1"><p>Verify <code>weston.ini</code> has <code>shell=desktop-shell.so</code>; clear <code>~/.local/share/epiphany/</code> and <code>~/.config/epiphany/</code></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Mouse not working</p>
+</td><td colspan="1" rowspan="1"><p>Virtio mouse device in QEMU, or io-hid not started before Screen</p>
+</td><td colspan="1" rowspan="1"><p>Remove <code>-device virtio-mouse-pci</code> from QEMU launch; check <code>pidin | grep io-hid</code> shows 8 threads with 2 INTR threads</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>sudo: unable to allocate memory</code></p>
+</td><td colspan="1" rowspan="1"><p><code>/tmp</code> not mounted — <code>/bin/init</code> failed before TMPFS step</p>
+</td><td colspan="1" rowspan="1"><p>Cannot fix on target without SSH; mount image on host to repair <code>/bin/init</code></p>
+</td></tr>
+</table>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You have successfully deployed a standalone Epiphany browser on a minimal QNX 8.0 image. The key takeaways from this work:</p>
+<ul>
+<li>The QNX graphics and input stack can be brought up manually without a full desktop environment</li>
+<li>Service startup order matters — mouse input before display server, display server before compositor</li>
+<li>WebKit requires a shared dbus session between all its processes and the compositor</li>
+<li>Multi-line config files must always be created on the host and transferred via scp — never written directly on a minimal target</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

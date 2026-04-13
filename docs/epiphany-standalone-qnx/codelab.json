@@ -1,0 +1,28 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-03-20T18:40:40-04:00",
+  "id": "epiphany-standalone-qnx",
+  "duration": 0,
+  "title": "Standalone Epiphany Browser on QNX 8.0",
+  "authors": "Elliott Mazzuca",
+  "summary": "Running the Epiphany web browser on a minimal QNX 8.0 image without the full desktop stack",
+  "source": "./markdown/epiphany-standalone-qnx/epiphany-standalone-qnx.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "epiphany",
+    "webkit",
+    "target"
+  ],
+  "tags": [
+    "intermediate"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "epiphany-standalone-qnx"
+}

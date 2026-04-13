@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-04-06T10:45:27-04:00",
+  "id": "qsti-qemu-on-wsl",
+  "duration": 12,
+  "title": "How to Run the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
+  "authors": "Anthony Sabbagh",
+  "summary": "Install prerequisites, configure, and run QSTI on QEMU with WSL on Windows 11.",
+  "source": "./markdown/qsti-qemu-on-wsl/qsti-qemu-on-wsl.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "windows"
+  ],
+  "tags": [
+    "beginner"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "qsti-qemu-on-wsl"
+}

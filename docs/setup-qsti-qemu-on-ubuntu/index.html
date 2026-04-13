@@ -1,0 +1,106 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Learn How to Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="setup-qsti-qemu-on-ubuntu"
+                  title="Learn How to Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="1">
+        <p>This codelab is meant to provide step by step instructions to get you started using QSTI on QEMU on an Ubuntu system.</p>
+<h2 is-upgraded>Prerequisites</h2>
+<ul>
+<li>Ubuntu 22.04 or 24.04</li>
+<li>A free non-commercial QNX SDP 8.0 license.  See <a href="https://www.qnx.com/getqnx" target="_blank">https://www.qnx.com/getqnx</a></li>
+<li>QNX Software Center (QSC) installed.  <a href="https://www.qnx.com/download/group.html?programid=29178" target="_blank">Download QSC</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install QEMU" duration="2">
+        <p>Follow the steps here to <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html" target="_blank">Install QEMU</a></p>
+<h2 is-upgraded>Upgrade to QEMU 10</h2>
+<p>If you want to run your image with the default resolution (720p) and no Vulkan support you can skip upgrading to QEMU 10.  However it is recommended to upgrade to QEMU version 10.</p>
+<p>To upgrade follow the steps here <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#getting-started__upgrade-to-qemu-10" target="_blank">Upgrade to QEMU 10</a>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Get the Quick Start Target Image (QSTI) for QEMU" duration="5">
+        <p>Follow the steps here to <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#getting-started__get-the-image" target="_blank">get the image</a></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Run and configure QEMU" duration="2">
+        <p>To start the VM follow the instructions here <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#getting-started__launching-qemu" target="_blank">Launching QEMU</a>.  This will walk you through launching the VM with default options.</p>
+<p>Tips on navigating QEMU can be found here <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#navigating-qemu" target="_blank">Navigating QEMU</a></p>
+<p>To run the VM with additional specifications see <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/additional_specs.html" target="_blank">Additional QEMU Specifications</a>.</p>
+<p><a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#qemu-version-and-recommended-options" target="_blank">QEMU version and recommended options</a> provides recommendations depending on your QEMU verison.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Troubleshooting" duration="0">
+        <p>The following guide describes how to troubleshoot common issues <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/troubleshooting.html" target="_blank">Troubleshooting</a>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Next Steps" duration="2">
+        <p>The QNX Developer Desktop is available within the QSTI image.  Detail documentation for using the QNX Developer Desktop can be found here <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html" target="_blank">Self-Hosted Developer Desktop Guide</a></p>
+<h2 is-upgraded>Compile and run a C++ program</h2>
+<p>To get started the following guide will walk you through compiling and running a simple application on the QNX Developer Desktop <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/hello_world_cpp.html" target="_blank">Write a Hello World application with C++</a></p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

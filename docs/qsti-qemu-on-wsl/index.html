@@ -1,0 +1,196 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>How to Run the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="qsti-qemu-on-wsl"
+                  title="How to Run the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="1">
+        <h2 is-upgraded>Overview</h2>
+<p>This codelab is meant to be a step by step tutorial to help you get started with the QSTI in a virtualized environment on a Windows device. QEMU is typically used to run QSTI within the context of an Ubuntu system. Detailed documentation for using QSTI on QEMU on Ubuntu can be found <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html" target="_blank">here.</a> In this tutorial, we will use WSL which allows for Linux programs to run on Windows systems with minimal setup required. Therefore, the aforementioned documentation is mostly applicable and will be referenced in this tutorial.</p>
+<h2 is-upgraded>Prerequisites</h2>
+<ul>
+<li>Supported platform: Windows 11 x86_64</li>
+<li>In the Windows settings, Scale is set to 100% (found in System → Display →  Scale &amp; Layout). Other scaling may cause issues with the QEMU cursor.</li>
+<li><a href="https://www.qnx.com/download/group.html?programid=29178" target="_blank">QNX Software Center</a> installed.</li>
+<li>myQNX account with a <a href="https://www.qnx.com/products/everywhere/" target="_blank">QNX SDP 8.0 Non-Commercial license</a>.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Installing WSL" duration="2">
+        <ol type="1">
+<li><strong>Install WSL with PowerShell:</strong> (refer to the <a href="https://learn.microsoft.com/en-us/windows/wsl/install" target="_blank">official documentation</a> for more information) <pre><code language="language-powershell" class="language-powershell">wsl --install
+</code></pre>
+<ul>
+<li>At the time of writing, by default, this will install WSL 2 with the Ubuntu 24.04 distribution.</li>
+<li>You can now open the Linux terminal by executing <code>wsl</code> from PowerShell or the Windows Command Prompt.</li>
+</ul>
+</li>
+<li><strong>Update Ubuntu Packages</strong> by executing the following command from the linux terminal: <pre><code language="language-bash" class="language-bash">sudo apt update &amp;&amp; sudo apt upgrade
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install QEMU" duration="2">
+        <ol type="1">
+<li><strong>Install required packages</strong> including the QEMU packages by executing the following command from the Linux shell: <pre><code language="language-bash" class="language-bash">sudo apt install qemu-system qemu-system-x86 qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils qemu-kvm virt-manager
+</code></pre>
+</li>
+<li><strong>Set up the networking bridge</strong> that QEMU will use for internet access by executing the following commands from the Linux terminal: <pre><code language="language-bash" class="language-bash">sudo systemctl enable --now libvirtd
+sudo virsh net-start default
+sudo virsh net-autostart default
+sudo mkdir -p /etc/qemu
+echo &#34;allow virbr0&#34; | sudo tee /etc/qemu/bridge.conf
+sudo chmod 640 /etc/qemu/bridge.conf
+sudo chown root:kvm /etc/qemu/bridge.conf
+</code></pre>
+<ul>
+<li>Verify that the virbr0 interface is up. <img alt="networking bridge" src="img/fdca7f1b48d46554.png"></li>
+</ul>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Acquire the QSTI Image" duration="5">
+        <ol type="1">
+<li>Follow the steps here to <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/getting_started.html#getting-started__get-the-image" target="_blank">get the image.</a></li>
+<li>Transfer the resulting qemu directory to the WSL filesystem using the Windows File Explorer. <img alt="file explorer" src="img/e47fe9c7d09c08ed.png"></li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Run QEMU with correct arguments" duration="2">
+        <h2 is-upgraded>Specifications</h2>
+<ol type="1">
+<li>Starting with the default options <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/additional_specs.html" target="_blank">documented here</a>, let&#39;s add some more options to get things working well.</li>
+<li>To improve performance, add the CPU and RAM specifications. This will depend on your system, but assuming a modern system with 16 GB of RAM, try <code>-smp 4</code> and <code>-m 8G</code> to specify 4 cores and 8 GB of RAM assigned to QEMU. With a more powerful system, you could increase that to 8 cores and 16 GB of RAM.</li>
+<li>Since we are using QEMU, add the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/additional_specs.html#additional-qemu-specifications__physical-bit-specification" target="_blank">physical bit specification</a> according to whether you have an AMD or Intel CPU.</li>
+<li>Specify the standard Virtio GPU driver with <code>-device virtio-vga-gl</code>.</li>
+<li>Modify display specifications to ensure mouse input is captured correctly by adding <code>,show-cursor=on</code>.</li>
+</ol>
+<h2 is-upgraded>Execution</h2>
+<ol type="1">
+<li>Open the Linux terminal (with <code>wsl</code>) and navigate with <code>cd</code> to the &#34;qemu&#34; directory you added to the WSL filesystem.</li>
+<li>Execute the final version of the command: <ul>
+<li>AMD:</li>
+</ul>
+<pre><code>sudo qemu-system-x86_64 \
+--enable-kvm \
+-drive file=output/disk-qemu.vmdk,if=ide,id=drv0 \
+-netdev bridge,br=virbr0,id=net0 \
+-device virtio-net-pci,netdev=net0,mac=52:54:00:91:01:ea \
+-pidfile output/qemu.pid \
+-nographic \
+-kernel output/ifs.bin \
+-serial mon:stdio \
+-object rng-random,filename=/dev/urandom,id=rng0 \
+-device virtio-rng-pci,rng=rng0 \
+-vga none \
+-display sdl,gl=on,show-cursor=on \
+-smp 4 \
+-m 8G \
+--cpu host,host-phys-bits-limit=40 \
+-device virtio-vga-gl
+</code></pre>
+<ul>
+<li>Intel:</li>
+</ul>
+<pre><code>sudo qemu-system-x86_64 \
+--enable-kvm \
+-drive file=output/disk-qemu.vmdk,if=ide,id=drv0 \
+-netdev bridge,br=virbr0,id=net0 \
+-device virtio-net-pci,netdev=net0,mac=52:54:00:91:01:ea \
+-pidfile output/qemu.pid \
+-nographic \
+-kernel output/ifs.bin \
+-serial mon:stdio \
+-object rng-random,filename=/dev/urandom,id=rng0 \
+-device virtio-rng-pci,rng=rng0 \
+-vga none \
+-display sdl,gl=on,show-cursor=on \
+-smp 4 \
+-m 8G \
+--cpu host,host-phys-bits-limit=39 \
+-device virtio-vga-gl
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Modify Window Switching Hotkey" duration="0">
+        <p>By default, Alt+Tab is used to switch between windows on the QSTI, but this does not work well with Windows 11 since that hotkey is already in use by the operating system.</p>
+<ol type="1">
+<li>Run QEMU as you did in the previous step.</li>
+<li>In the terminal, log in as root (default password is root).</li>
+<li>Choose a preferred hotkey combination. I am choosing Alt+q, but you can see all the valid hotkeys and modifier keys by executing <code>use fullscreen-winmgr</code>.</li>
+<li>Execute the following command to make the change: <pre><code>sed -i &#39;2i export WINMGR_HOTKEY=q\
+export WINMGR_KEYMOD=Alt&#39; /system/etc/startup/full_startup.sh &amp;&amp; sync
+</code></pre>
+</li>
+<li>Close the QEMU graphical interface window.</li>
+<li>Launch QEMU again and observe your specified hotkey now shows on the splash screen.</li>
+</ol>
+<p class="image-container"><img alt="hotkey" src="img/e3ff7561f717844d.png"></p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

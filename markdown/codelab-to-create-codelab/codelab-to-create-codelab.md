@@ -103,7 +103,7 @@ Duration: 2:00
     ```bash
     git clone git@github.com:qnx/codelabs.git
     ```
-4. Work on a **new branch** when creating or editing codelabs
+4. It is mandatory to work on a **new branch** , therefore create your branch where you will commit , push your changes before creating a pull request to codelabs main repo:
     ```bash
     git checkout -b <name-of-your-codelab>
     ```
@@ -119,7 +119,9 @@ You will only work in the `markdown` folder under your created codelab repo.
 Ensure you do **not** make any changes to other folders or files to successfully contribute to our codelabs.  
 Inconsistencies or changes to other files will unfortunately result in a rejected Pull Request.
 
-1. Create a New Folder for your codelab:
+1. cd to Codelabs
+
+2. Create a New Folder for your codelab at ~./markdown/<name-of-your-codelab>:
 
     ```bash
     mkdir -p ./codelabs/markdown/<name-of-your-codelab>
@@ -150,7 +152,7 @@ Inconsistencies or changes to other files will unfortunately result in a rejecte
     ```bash
     //cd out from ~./markdown/<name-of-your-codelab> folder to ~./codelabs
     
-    claat export -f html -o docs ./markdown/<name-of-your-codelab> folder/<name-of-your-codelab>.md
+    claat export -f html -o docs ./markdown/<name-of-your-codelab>/<name-of-your-codelab>.md
     
     ```
 5. You will see a similar output as below in terminal and a folder created same as `<name-of-your-codelab>` file under ~./codelabs/docs

@@ -114,7 +114,7 @@ claat --help
 <li>If using SSH:<pre><code language="language-bash" class="language-bash">git clone git@github.com:qnx/codelabs.git
 </code></pre>
 </li>
-<li>Work on a <strong>new branch</strong> when creating or editing codelabs<pre><code language="language-bash" class="language-bash">git checkout -b &lt;name-of-your-codelab&gt;
+<li>It is mandatory to work on a <strong>new branch</strong> , therefore create your branch where you will commit , push your changes before creating a pull request to codelabs main repo:<pre><code language="language-bash" class="language-bash">git checkout -b &lt;name-of-your-codelab&gt;
 </code></pre>
 </li>
 </ol>
@@ -126,7 +126,8 @@ claat --help
         <p>This section explains how to create a new codelab.</p>
 <p>You will only work in the <code>markdown</code> folder under your created codelab repo.<br> Ensure you do <strong>not</strong> make any changes to other folders or files to successfully contribute to our codelabs.<br> Inconsistencies or changes to other files will unfortunately result in a rejected Pull Request.</p>
 <ol type="1">
-<li>Create a New Folder for your codelab:<pre><code language="language-bash" class="language-bash">mkdir -p ./codelabs/markdown/&lt;name-of-your-codelab&gt;
+<li>cd to Codelabs</li>
+<li>Create a New Folder for your codelab at ~./markdown/:<pre><code language="language-bash" class="language-bash">mkdir -p ./codelabs/markdown/&lt;name-of-your-codelab&gt;
 </code></pre>
 </li>
 <li>Copy <code>markdown-template.md</code> into your newly created folder to  ensure the required tags are included.The id tag must exactly match the .md filename for claat to work correctly.<pre><code language="language-bash" class="language-bash">id: name-of-your-codelab
@@ -144,7 +145,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 <li>Rename the markdown file as your <code><name-of-your-codelab>.md</code></li>
 <li>(Optional) Run claat to view your <code><name-of-your-codelab>.md</code> file locally as html. Otherwise, skip to step 7<pre><code language="language-bash" class="language-bash">//cd out from ~./markdown/&lt;name-of-your-codelab&gt; folder to ~./codelabs
 
-claat export -f html -o docs ./markdown/&lt;name-of-your-codelab&gt; folder/&lt;name-of-your-codelab&gt;.md
+claat export -f html -o docs ./markdown/&lt;name-of-your-codelab&gt;/&lt;name-of-your-codelab&gt;.md
 
 </code></pre>
 </li>

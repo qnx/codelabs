@@ -61,6 +61,20 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Learn How to Get a Free Non-Commercial QNX 8.0 License",
+    "href": "get-non-commercial-qnx-license/index.html",
+    "id": "get-non-commercial-qnx-license",
+    "authors": "Anna Likozar",
+    "updated": "2026-04-13T17:42:34-04:00",
+    "category": [
+      "qnx",
+      "setup"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  },
+  {
     "title": "How to run Pong with Godot on QNX",
     "href": "godot-codelab/index.html",
     "id": "godot-codelab",

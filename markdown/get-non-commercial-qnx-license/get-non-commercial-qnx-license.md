@@ -36,7 +36,7 @@ You are now able to access the QNX Software Center and QNX SDP 8.0.  To do this 
 
 You can manage your QNX license(s) from within the [myQNX License Manager](https://www.qnx.com/account/dashboard/).
 This is where you can deploy and revoke your QNX Licenses.
-If you are having 2 different type of licenses such as commercial and non-commercial under same qnx account it is important to only work with one active license at a time. In this case you are required to either have separate accounts for each license type or keep only one active license. 
+If you are having 2 different type of licenses such as commercial and non-commercial under same qnx account it is important to only work with one active license at a time to avoid legal and library availability issues. In this case you are required to either have separate accounts for each license type or keep only one active license. 
 
 ### Activate/Deactivate a QNX License
 

@@ -44,11 +44,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "Learn How to Get a Free Non-Commercial QNX 8.0 License",
+    "title": "Get a Free Non-Commercial QNX 8.0 License",
     "href": "get-non-commercial-qnx-license/index.html",
     "id": "get-non-commercial-qnx-license",
     "authors": "Anna Likozar",
-    "updated": "2026-04-13T17:42:34-04:00",
+    "updated": "2026-04-16T17:15:18-04:00",
     "category": [
       "qnx",
       "setup"

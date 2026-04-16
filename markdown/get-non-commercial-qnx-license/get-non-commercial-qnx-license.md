@@ -10,7 +10,7 @@ authors: Anna Likozar
 feedback_link: https://github.com/qnx/codelabs/issues
 
 
-# Learn How to Get a Free Non-Commercial QNX 8.0 License
+# Get a Free Non-Commercial QNX 8.0 License
 
 ## Welcome
 

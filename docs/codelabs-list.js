@@ -1,10 +1,10 @@
 window.CODELABS = [
   {
-    "title": "Build Maelstrom on QNX",
+    "title": "Building Maelstrom on QNX",
     "href": "build-maelstrom-on-qnx/index.html",
     "id": "build-maelstrom-on-qnx",
     "authors": "Roberto Speranza",
-    "updated": "2026-03-20T18:37:28-04:00",
+    "updated": "2026-04-16T16:56:22-04:00",
     "category": [
       "self-hosting",
       "sdlgames"

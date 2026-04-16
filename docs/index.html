@@ -177,12 +177,12 @@
       margin-top: 4px;
     }
 
-    .count {
+    /*.count {
       text-align: center;
       margin-top: 2rem;
       font-size: 0.875rem;
       color: #6b7280;
-    }
+    }*/
   </style>
 </head>
 <body>
@@ -239,11 +239,9 @@
 
         card.innerHTML = `
           <div class="card-body">
-
-            <!-- <div class="card-meta">
+            <div class="card-meta">
               <span class="badge">${index + 1}</span>
-            </div> -->
-
+            </div>
             <h3>${lab.title}</h3>
             <p>${lab.category.join(', ')}</p>
             <div>${tagsHTML}</div>

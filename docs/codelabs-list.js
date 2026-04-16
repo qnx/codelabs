@@ -14,11 +14,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "How to Create Your Own Codelab and Contribute to QNX",
+    "title": "Create Your Own Codelab and Contribute to QNX",
     "href": "codelab-to-create-codelab/index.html",
     "id": "codelab-to-create-codelab",
     "authors": "Shweta Mazumder",
-    "updated": "2026-04-13T18:19:14-04:00",
+    "updated": "2026-04-16T17:08:12-04:00",
     "category": [
       "codelabs",
       "setup"
@@ -28,11 +28,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "Standalone Epiphany Browser on QNX 8.0",
+    "title": "Building Standalone Epiphany Browser on QNX 8.0",
     "href": "epiphany-standalone-qnx/index.html",
     "id": "epiphany-standalone-qnx",
     "authors": "Elliott Mazzuca",
-    "updated": "2026-03-20T18:40:40-04:00",
+    "updated": "2026-04-16T17:08:34-04:00",
     "category": [
       "qnx",
       "epiphany",
@@ -58,11 +58,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "How to run Pong with Godot on QNX",
+    "title": "Running Pong with Godot on QNX",
     "href": "godot-codelab/index.html",
     "id": "godot-codelab",
     "authors": "Yun Lee",
-    "updated": "2026-03-20T16:47:53-04:00",
+    "updated": "2026-04-16T17:10:35-04:00",
     "category": [
       "qnx",
       "godot"
@@ -72,11 +72,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "How to Run the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
+    "title": "Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
     "href": "qsti-qemu-on-wsl/index.html",
     "id": "qsti-qemu-on-wsl",
     "authors": "Anthony Sabbagh",
-    "updated": "2026-04-06T10:45:27-04:00",
+    "updated": "2026-04-16T17:11:18-04:00",
     "category": [
       "qnx",
       "windows"
@@ -105,11 +105,11 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "Learn How to Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
+    "title": "Running the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
     "href": "setup-qsti-qemu-on-ubuntu/index.html",
     "id": "setup-qsti-qemu-on-ubuntu",
     "authors": "Anna Likozar",
-    "updated": "2026-04-10T17:00:25-04:00",
+    "updated": "2026-04-16T17:12:00-04:00",
     "category": [
       "qnx",
       "qemu"

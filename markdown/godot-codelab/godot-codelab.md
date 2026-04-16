@@ -10,7 +10,7 @@ authors: Yun Lee
 feedback_link: https://github.com/qnx/codelabs/issues
 
 
-# How to run Pong with Godot on QNX
+# Running Pong with Godot on QNX
 using QNX
 
 ## Introduction

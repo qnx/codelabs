@@ -10,7 +10,7 @@ authors: Anthony Sabbagh
 feedback_link: https://github.com/qnx/codelabs/issues
 
 
-# How to Run the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)
+# Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)
 
 ## Introduction
 Duration: 1:00

@@ -10,7 +10,7 @@ authors: Anna Likozar
 feedback_link: https://github.com/qnx/codelabs/issues
 
 
-# Learn How to Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu
+# Running the Quick Start Target Image (QSTI) on QEMU using Ubuntu
 
 ## Introduction
 Duration: 1:00

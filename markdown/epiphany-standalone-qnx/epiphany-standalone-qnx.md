@@ -8,7 +8,7 @@ status: published
 authors: Elliott Mazzuca
 feedback_link: https://github.com/qnx/codelabs/issues
 
-# Standalone Epiphany Browser on QNX 8.0
+# Building Standalone Epiphany Browser on QNX 8.0
 
 ## Introduction
 

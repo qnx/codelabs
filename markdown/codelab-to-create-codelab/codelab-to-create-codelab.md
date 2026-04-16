@@ -9,7 +9,7 @@ authors: Shweta Mazumder
 feedback_link: https://github.com/qnx/codelabs/issues
 
 
-# How to Create Your Own Codelab and Contribute to QNX
+# Create Your Own Codelab and Contribute to QNX
 
 ## Welcome
 Duration: 2:00

@@ -2,7 +2,7 @@
 id: claude-code
 title: Use Claude Code on QNX Developer Desktop
 summary: Learn how to leverage Claude Code for target-aware AI development on QNX 8.
-categories: ai
+categories: AI
 tags: beginner
 difficulty: 1
 status: published
@@ -29,14 +29,14 @@ Let's get started!
 
 ---
 
-## Pre-requisites
+## Prerequisites
 Duration: 2:00
 
 You need a couple of things before you proceed:
 
-1. A QNX 8.0 target with the QNX Developer Desktop (or at least the APK package manager and self-build tools -- the desktop environment itself is not required). This can be a Raspberry Pi or a QEMU-based virtual machine, for example.
+1. A QNX 8.0 target with the QNX Developer Desktop (or at least the APK package manager and self-build tools — the desktop environment itself is not required). This can be a Raspberry Pi or a QEMU-based virtual machine, for example.
 2. An Internet connection for your QNX target.
-2. A Claude Code subscription or API key, as it is a paid service.
+3. A Claude Code subscription or API key, as it is a paid service.
 
 **Please be aware of your networking environment. If you're in a workplace or school, please confirm that there are no rules or procedures in place governing the use of AI tools and services on the network.**
 
@@ -44,7 +44,7 @@ _When you're ready, please continue._
 
 ---
 
-## Install Nodejs
+## Install Node.js
 Duration: 2:00
 
 Tools like Claude Code are based on Node.js and can be installed with NPM. So first, we have to install Node.js and NPM on our target.
@@ -55,7 +55,7 @@ Tools like Claude Code are based on Node.js and can be installed with NPM. So fi
     sudo apk add npm
     ```
 
-    (The default password for `sudo` is `qnxuser.) You should see a successful installation of several packages, including `node`.
+    (The default password for `sudo` is `qnxuser`.) You should see a successful installation of several packages, including `node`.
 
 2. Test your Node.js installation:
     ```bash
@@ -82,7 +82,7 @@ We can install Claude Code directly from Anthropic using NPM.
     claude
     ```
 
-The Claude Code interface should launch and guide you through the set up process. You may be asked to trust the current working directory and to log in to your Claude account.
+The Claude Code interface should launch and guide you through the setup process. You may be asked to trust the current working directory and to log in to your Claude account.
 
 If you are not prompted to log in, you can use the Claude command `/login`, where you can authenticate using a browser or by providing an API key.
 
@@ -93,11 +93,11 @@ _Next up: give Claude some QNX tips._
 ## Add to the System Prompt
 Duration: 2:00
 
-By default, Claude has a pretty good understanding of QNX systems, but out of the box it won't be aware that it is running **on** a QNX system. You can save some initial back-and-forth with the tool by providing these details upfront.
+By default, Claude has a pretty good understanding of QNX systems, but out of the box it won't be aware that it is running **on** a QNX system. You can save some initial back-and-forth with the tool by providing these details up front.
 
 Create a file to add details to the system prompt: `~/.claude/CLAUDE.md`.
 
-In the file, place this suggested text. Feel free to modify it or add to it -- this is just a suggestion based on our work with the tool.
+In the file, place this suggested text. Feel free to modify it or add to it — this is just a suggestion based on our work with the tool.
 
 ```CLAUDE.md
 You are running on the operating system QNX OS 8.0. This system may be a QEMU-based virtual machine or a Raspberry Pi board. If you think it is relevant, you can use `uname -a` to determine which type of system it is.
@@ -108,7 +108,7 @@ The XFCE desktop environment available here uses Wayland, but don't assume it's 
 
 The system uses `apk` for package management. It works like `apk` does on Alpine Linux. You can search for packages and add them as needed. Note that any QNX-specific packages are prefixed with `qnx-`.
 
-This system has access to clang (for building C), clang++ (for building C++), and the python interpreter.
+This system has access to clang (for building C), clang++ (for building C++), and the Python interpreter.
 
 QNX shell note: when writing `sh` scripts with `set -u`, avoid expanding `"$@"` unless `$# > 0`; on this system's shell, an empty `"$@"` can trigger `@: parameter not set`.
 
@@ -131,5 +131,5 @@ We'd love to hear about what you're creating on QNX or if you've found interesti
 * on [Discord](https://discord.gg/Jj4EkkrFTT)
 * on [Reddit](https://www.reddit.com/r/qnx)
 
-_See you there--_
+_See you there—_
 

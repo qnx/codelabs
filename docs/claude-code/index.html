@@ -1,0 +1,150 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Use Claude Code on QNX Developer Desktop</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="claude-code"
+                  title="Use Claude Code on QNX Developer Desktop"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="1">
+        <p>This codelab walks you through the simple process of installing Claude Code on the QNX Developer Desktop.</p>
+<h2 is-upgraded>AI Coding on the Target</h2>
+<p>Agentic coding tools are even more effective for embedded project development when they run directly on the target system. With Claude Code running on your target, you can use it to build, deploy, test, debug, and monitor processes.</p>
+<p>This codelab leaves you with a working Claude Code installation, and a sample additional system prompt you can use to make the tool more aware of the QNX system. Out of the box, these tools have a strong knowledge of QNX systems already, so you don&#39;t have to do additional work to teach them about using QNX shell commands or QNX APIs.</p>
+<p>You&#39;ll be empowered to write new programs, utilities, libraries, or drivers for QNX, or to port existing repositories from other platforms to QNX.</p>
+<p>Let&#39;s get started!</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Pre-requisites" duration="2">
+        <p>You need a couple of things before you proceed:</p>
+<ol type="1">
+<li>A QNX 8.0 target with the QNX Developer Desktop (or at least the APK package manager and self-build tools – the desktop environment itself is not required). This can be a Raspberry Pi or a QEMU-based virtual machine, for example.</li>
+<li>An Internet connection for your QNX target.</li>
+<li>A Claude Code subscription or API key, as it is a paid service.</li>
+</ol>
+<p><strong>Please be aware of your networking environment. If you&#39;re in a workplace or school, please confirm that there are no rules or procedures in place governing the use of AI tools and services on the network.</strong></p>
+<p><em>When you&#39;re ready, please continue.</em></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install Nodejs" duration="2">
+        <p>Tools like Claude Code are based on Node.js and can be installed with NPM. So first, we have to install Node.js and NPM on our target.</p>
+<ol type="1">
+<li>On your QNX target, open a terminal (can be on the Desktop or SSH, for example) and run:<pre><code language="language-bash" class="language-bash">sudo apk update
+sudo apk add npm
+</code></pre>
+(The default password for <code>sudo</code> is <code>qnxuser.) You should see a successful installation of several packages, including</code> node`.</li>
+<li>Test your Node.js installation:<pre><code language="language-bash" class="language-bash">node -v
+</code></pre>
+</li>
+</ol>
+<p><em>Next up: install Claude Code.</em></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install Claude Code" duration="3">
+        <p>We can install Claude Code directly from Anthropic using NPM.</p>
+<ol type="1">
+<li>Install the <code>claude</code> CLI:<pre><code language="language-bash" class="language-bash">npm install -g @anthropic-ai/claude-code
+</code></pre>
+</li>
+<li>Navigate to a directory you trust (empty or with a project in it) and run Claude Code:<pre><code language="language-bash" class="language-bash">cd myProject/
+claude
+</code></pre>
+</li>
+</ol>
+<p>The Claude Code interface should launch and guide you through the set up process. You may be asked to trust the current working directory and to log in to your Claude account.</p>
+<p>If you are not prompted to log in, you can use the Claude command <code>/login</code>, where you can authenticate using a browser or by providing an API key.</p>
+<p><em>Next up: give Claude some QNX tips.</em></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add to the System Prompt" duration="2">
+        <p>By default, Claude has a pretty good understanding of QNX systems, but out of the box it won&#39;t be aware that it is running <strong>on</strong> a QNX system. You can save some initial back-and-forth with the tool by providing these details upfront.</p>
+<p>Create a file to add details to the system prompt: <code>~/.claude/CLAUDE.md</code>.</p>
+<p>In the file, place this suggested text. Feel free to modify it or add to it – this is just a suggestion based on our work with the tool.</p>
+<pre><code language="language-CLAUDE.md" class="language-CLAUDE.md">You are running on the operating system QNX OS 8.0. This system may be a QEMU-based virtual machine or a Raspberry Pi board. If you think it is relevant, you can use `uname -a` to determine which type of system it is.
+
+QNX is not Linux. QNX is almost fully POSIX compliant though, so you&#39;ll find that many Linux development techniques also work on QNX. Some techniques do not though, and require QNX-specific approaches. 
+
+The XFCE desktop environment available here uses Wayland, but don&#39;t assume it&#39;s available on this system or is open. If the desktop environment is relevant to your task, ask the user if it is available.
+
+The system uses `apk` for package management. It works like `apk` does on Alpine Linux. You can search for packages and add them as needed. Note that any QNX-specific packages are prefixed with `qnx-`.
+
+This system has access to clang (for building C), clang++ (for building C++), and the python interpreter.
+
+QNX shell note: when writing `sh` scripts with `set -u`, avoid expanding `&#34;$@&#34;` unless `$# &gt; 0`; on this system&#39;s shell, an empty `&#34;$@&#34;` can trigger `@: parameter not set`.
+
+By default, the sudo password is `qnxuser`.
+</code></pre>
+<p>Save the file and relaunch your Claude session with <code>claude</code>. It should now be aware of the context provided in this file, as will all future <code>claude</code> sessions on this system.</p>
+<p>As you learn more about how Claude interacts with your system, or if you find any patterns that you have to correct across multiple projects, you can put guidance in this file to guide Claude from the start.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Share Your Work" duration="2">
+        <p>Thanks for getting set up with Claude!</p>
+<p>We&#39;d love to hear about what you&#39;re creating on QNX or if you&#39;ve found interesting tweaks to make Claude even better at building projects on QNX. Please join us:</p>
+<ul>
+<li>on <a href="https://discord.gg/Jj4EkkrFTT" target="_blank">Discord</a></li>
+<li>on <a href="https://www.reddit.com/r/qnx" target="_blank">Reddit</a></li>
+</ul>
+<p><em>See you there–</em></p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

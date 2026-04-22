@@ -14,6 +14,19 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Use Claude Code on QNX Developer Desktop",
+    "href": "claude-code/index.html",
+    "id": "claude-code",
+    "authors": "QNX Developer Relations",
+    "updated": "2026-04-21T16:51:36-04:00",
+    "category": [
+      "ai"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  },
+  {
     "title": "Create Your Own Codelab and Contribute to QNX",
     "href": "codelab-to-create-codelab/index.html",
     "id": "codelab-to-create-codelab",

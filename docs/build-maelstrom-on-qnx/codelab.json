@@ -6,9 +6,9 @@
   "updated": "2026-04-16T16:56:22-04:00",
   "id": "build-maelstrom-on-qnx",
   "duration": 24,
-  "title": "Building Maelstrom on QNX",
+  "title": "Build Maelstrom on QNX",
   "authors": "Roberto Speranza",
-  "summary": "Learn how to modify and build the game Maelstrom on QNX",
+  "summary": "Learn how to modify and build the game Maelstrom on QNX.",
   "source": "./markdown/build-maelstrom-on-qnx/build-maelstrom-on-qnx.md",
   "theme": "",
   "status": [

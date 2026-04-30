@@ -6,7 +6,7 @@
   "updated": "2026-04-21T16:51:36-04:00",
   "id": "claude-code",
   "duration": 12,
-  "title": "Use Claude Code on QNX Developer Desktop",
+  "title": "Use Claude Code on QNX Developer Desktop.",
   "authors": "QNX Developer Relations",
   "summary": "Learn how to leverage Claude Code for target-aware AI development on QNX 8.",
   "source": "./markdown/claude-code/claude-code.md",

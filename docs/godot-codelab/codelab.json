@@ -6,9 +6,9 @@
   "updated": "2026-04-16T17:10:35-04:00",
   "id": "godot-codelab",
   "duration": 0,
-  "title": "Running Pong with Godot on QNX",
+  "title": "Build Pong With Godot on QNX",
   "authors": "Yun Lee",
-  "summary": "Running Pong with Godot on QNX",
+  "summary": "Build a Pong sample in Godot for QNX.",
   "source": "./markdown/godot-codelab/godot-codelab.md",
   "theme": "",
   "status": [

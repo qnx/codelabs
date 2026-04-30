@@ -1,1 +1,5 @@
-Disclaimer : This repo is underconstruction. We are trying to bring you something super awesome and it is not ready for prime time yet. 
+# QNX Codelabs
+
+Found within this repo is the source code for the QNX codelabs hosted at https://qnx.github.io/codelabs/.
+
+_Coming soon: contribution process and contributor guidelines._

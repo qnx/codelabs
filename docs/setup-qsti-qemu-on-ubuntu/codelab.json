@@ -6,9 +6,9 @@
   "updated": "2026-04-16T17:12:00-04:00",
   "id": "setup-qsti-qemu-on-ubuntu",
   "duration": 12,
-  "title": "Running the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
+  "title": "Run the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
   "authors": "Anna Likozar",
-  "summary": "Learn how to setup QSTI on QEMU and verify compiler setup",
+  "summary": "Learn how to set up the QSTI on QEMU and verify your compiler setup.",
   "source": "./markdown/setup-qsti-qemu-on-ubuntu/setup-qsti-qemu-on-ubuntu.md",
   "theme": "",
   "status": [

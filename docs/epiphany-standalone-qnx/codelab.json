@@ -6,9 +6,9 @@
   "updated": "2026-04-16T17:08:34-04:00",
   "id": "epiphany-standalone-qnx",
   "duration": 0,
-  "title": "Building Standalone Epiphany Browser on QNX 8.0",
+  "title": "Build The Standalone Epiphany Browser on QNX 8.0",
   "authors": "Elliott Mazzuca",
-  "summary": "Running the Epiphany web browser on a minimal QNX 8.0 image without the full desktop stack",
+  "summary": "Run the Epiphany web browser on a minimal QNX 8.0 image.",
   "source": "./markdown/epiphany-standalone-qnx/epiphany-standalone-qnx.md",
   "theme": "",
   "status": [

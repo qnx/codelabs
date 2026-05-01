@@ -25,11 +25,6 @@
     google-codelab #done {
       display: none !important;
     }
-
-     
-    google-codelab #arrow-back {
-      display: none !important;
-    }
   </style>
 
 </head>
@@ -191,6 +186,17 @@ export WINMGR_KEYMOD=Alt&#39; /system/etc/startup/full_startup.sh &amp;&amp; syn
   <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
   <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
 
 </body>
 </html>

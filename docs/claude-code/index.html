@@ -25,11 +25,6 @@
     google-codelab #done {
       display: none !important;
     }
-
-     
-    google-codelab #arrow-back {
-      display: none !important;
-    }
   </style>
 
 </head>
@@ -55,10 +50,10 @@
 
       </google-codelab-step>
     
-      <google-codelab-step label="Pre-requisites" duration="2">
+      <google-codelab-step label="Prerequisites" duration="2">
         <p>You need a couple of things before you proceed:</p>
 <ol type="1">
-<li>A QNX 8.0 target with the QNX Developer Desktop (or at least the APK package manager and self-build tools – the desktop environment itself is not required). This can be a Raspberry Pi or a QEMU-based virtual machine, for example.</li>
+<li>A QNX 8.0 target with the QNX Developer Desktop (or at least the APK package manager and self-build tools — the desktop environment itself is not required). This can be a Raspberry Pi or a QEMU-based virtual machine, for example.</li>
 <li>An Internet connection for your QNX target.</li>
 <li>A Claude Code subscription or API key, as it is a paid service.</li>
 </ol>
@@ -68,13 +63,13 @@
 
       </google-codelab-step>
     
-      <google-codelab-step label="Install Nodejs" duration="2">
+      <google-codelab-step label="Install Node.js" duration="2">
         <p>Tools like Claude Code are based on Node.js and can be installed with NPM. So first, we have to install Node.js and NPM on our target.</p>
 <ol type="1">
 <li>On your QNX target, open a terminal (can be on the Desktop or SSH, for example) and run:<pre><code language="language-bash" class="language-bash">sudo apk update
 sudo apk add npm
 </code></pre>
-(The default password for <code>sudo</code> is <code>qnxuser.) You should see a successful installation of several packages, including</code> node`.</li>
+(The default password for <code>sudo</code> is <code>qnxuser</code>.) You should see a successful installation of several packages, including <code>node</code>.</li>
 <li>Test your Node.js installation:<pre><code language="language-bash" class="language-bash">node -v
 </code></pre>
 </li>
@@ -95,7 +90,7 @@ claude
 </code></pre>
 </li>
 </ol>
-<p>The Claude Code interface should launch and guide you through the set up process. You may be asked to trust the current working directory and to log in to your Claude account.</p>
+<p>The Claude Code interface should launch and guide you through the setup process. You may be asked to trust the current working directory and to log in to your Claude account.</p>
 <p>If you are not prompted to log in, you can use the Claude command <code>/login</code>, where you can authenticate using a browser or by providing an API key.</p>
 <p><em>Next up: give Claude some QNX tips.</em></p>
 
@@ -103,9 +98,9 @@ claude
       </google-codelab-step>
     
       <google-codelab-step label="Add to the System Prompt" duration="2">
-        <p>By default, Claude has a pretty good understanding of QNX systems, but out of the box it won&#39;t be aware that it is running <strong>on</strong> a QNX system. You can save some initial back-and-forth with the tool by providing these details upfront.</p>
+        <p>By default, Claude has a pretty good understanding of QNX systems, but out of the box it won&#39;t be aware that it is running <strong>on</strong> a QNX system. You can save some initial back-and-forth with the tool by providing these details up front.</p>
 <p>Create a file to add details to the system prompt: <code>~/.claude/CLAUDE.md</code>.</p>
-<p>In the file, place this suggested text. Feel free to modify it or add to it – this is just a suggestion based on our work with the tool.</p>
+<p>In the file, place this suggested text. Feel free to modify it or add to it — this is just a suggestion based on our work with the tool.</p>
 <pre><code language="language-CLAUDE.md" class="language-CLAUDE.md">You are running on the operating system QNX OS 8.0. This system may be a QEMU-based virtual machine or a Raspberry Pi board. If you think it is relevant, you can use `uname -a` to determine which type of system it is.
 
 QNX is not Linux. QNX is almost fully POSIX compliant though, so you&#39;ll find that many Linux development techniques also work on QNX. Some techniques do not though, and require QNX-specific approaches. 
@@ -114,7 +109,7 @@ The XFCE desktop environment available here uses Wayland, but don&#39;t assume i
 
 The system uses `apk` for package management. It works like `apk` does on Alpine Linux. You can search for packages and add them as needed. Note that any QNX-specific packages are prefixed with `qnx-`.
 
-This system has access to clang (for building C), clang++ (for building C++), and the python interpreter.
+This system has access to clang (for building C), clang++ (for building C++), and the Python interpreter.
 
 QNX shell note: when writing `sh` scripts with `set -u`, avoid expanding `&#34;$@&#34;` unless `$# &gt; 0`; on this system&#39;s shell, an empty `&#34;$@&#34;` can trigger `@: parameter not set`.
 
@@ -133,7 +128,7 @@ By default, the sudo password is `qnxuser`.
 <li>on <a href="https://discord.gg/Jj4EkkrFTT" target="_blank">Discord</a></li>
 <li>on <a href="https://www.reddit.com/r/qnx" target="_blank">Reddit</a></li>
 </ul>
-<p><em>See you there–</em></p>
+<p><em>See you there—</em></p>
 
 
       </google-codelab-step>
@@ -145,6 +140,17 @@ By default, the sudo password is `qnxuser`.
   <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
   <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
 
 </body>
 </html>

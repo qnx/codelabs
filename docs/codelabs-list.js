@@ -34,7 +34,7 @@ window.CODELABS = [
     "id": "codelab-to-create-codelab",
     "authors": "Shweta Mazumder",
     "summary": "Learn how to contribute to QNX Codelabs",
-    "updated": "2026-04-30T14:58:04-04:00",
+    "updated": "2026-05-06T09:38:34-04:00",
     "category": [
       "codelabs",
       "setup"
@@ -81,7 +81,7 @@ window.CODELABS = [
     "id": "godot-codelab",
     "authors": "Yun Lee",
     "summary": "Running Pong with Godot on QNX",
-    "updated": "2026-04-22T09:41:27-04:00",
+    "updated": "2026-04-30T14:58:04-04:00",
     "category": [
       "qnx",
       "godot"

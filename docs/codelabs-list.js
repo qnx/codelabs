@@ -81,7 +81,7 @@ window.CODELABS = [
     "id": "godot-codelab",
     "authors": "Yun Lee",
     "summary": "Running Pong with Godot on QNX",
-    "updated": "2026-04-30T14:58:04-04:00",
+    "updated": "2026-04-22T09:41:27-04:00",
     "category": [
       "qnx",
       "godot"

@@ -91,6 +91,22 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Porting an Alpine Linux Package to QNX 8.0",
+    "href": "porting-alpine-package-qnx/index.html",
+    "id": "porting-alpine-package-qnx",
+    "authors": "Elliott Mazzuca",
+    "summary": "A step-by-step guide to porting an existing Alpine Linux package (APKBUILD) to the QNX aports repository, using gtk4 as the worked example",
+    "updated": "2026-05-28T10:44:09-04:00",
+    "category": [
+      "qnx",
+      "alpine",
+      "porting"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
     "href": "qsti-qemu-on-wsl/index.html",
     "id": "qsti-qemu-on-wsl",

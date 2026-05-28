@@ -1,0 +1,27 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-05-28T10:44:09-04:00",
+  "id": "porting-alpine-package-qnx",
+  "duration": 0,
+  "title": "Porting an Alpine Linux Package to QNX 8.0",
+  "authors": "Elliott Mazzuca",
+  "summary": "A step-by-step guide to porting an existing Alpine Linux package (APKBUILD) to the QNX aports repository, using gtk4 as the worked example",
+  "source": "markdown/porting-alpine-package-qnx/porting-alpine-package-qnx.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "alpine",
+    "porting"
+  ],
+  "tags": [
+    "intermediate"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "porting-alpine-package-qnx"
+}

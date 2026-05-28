@@ -1,0 +1,340 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Porting an Alpine Linux Package to QNX 8.0</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="porting-alpine-package-qnx"
+                  title="Porting an Alpine Linux Package to QNX 8.0"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p>The QNX aports repository is a fork of Alpine Linux&#39;s aports tree, adapted to build native QNX packages. Porting a package means taking an existing Alpine APKBUILD, adapting it for QNX, and submitting it as a pull request to the <code>qnx-ports/aports</code> repository.</p>
+<p>This codelab walks through the full process using <strong>gtk4</strong> as the worked example: a medium-sized project with real dependencies, patches, and build configuration choices that are representative of most porting work.</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>How to find the correct upstream Alpine APKBUILD for a project</li>
+<li>How to update an APKBUILD for the QNX aports conventions</li>
+<li>How to identify and resolve dependency differences between Alpine and QNX</li>
+<li>How to create a QNX-specific patch when source changes are needed</li>
+<li>How to build and verify a package with <code>abuild</code></li>
+<li>How to open a pull request to <code>qnx-ports/aports</code></li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A Linux host with the QNX 8.0 SDP installed and sourced</li>
+<li>A working <code>abuild</code> environment with your <code>~/.abuild/</code> keys configured</li>
+<li>A fork of <code>qnx-ports/aports</code> cloned locally and set up for SSH push</li>
+<li>Familiarity with basic APKBUILD structure (variables, <code>build()</code>, <code>package()</code> functions)</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="How it works — Overview" duration="0">
+        <p>Alpine Linux maintains thousands of packages in their public aports tree. Each package lives in a folder under a category (e.g. <code>extra/gtk4/</code>) and consists of:</p>
+<ul>
+<li>An <code>APKBUILD</code> file: the build recipe (version, source URL, dependencies, build steps)</li>
+<li>Zero or more <code>.patch</code> files: source-level fixes applied before building</li>
+<li>Occasionally other files: init scripts, config files, desktop entries</li>
+</ul>
+<p>The QNX porting workflow is:</p>
+<ol type="1">
+<li>Copy the Alpine APKBUILD (and patches) for the target package</li>
+<li>Adapt the APKBUILD for QNX conventions</li>
+<li>Resolve any dependency or build issues, adding patches if needed</li>
+<li>Build and test with <code>abuild</code></li>
+<li>Open a pull request</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 1 — Find the upstream Alpine APKBUILD" duration="0">
+        <p>Search for the package on Alpine&#39;s package index:</p>
+<pre><code>https://pkgs.alpinelinux.org/packages
+</code></pre>
+<p>Or search directly on the web:</p>
+<pre><code>alpine linux gtk4
+</code></pre>
+<p>Open the result that matches the package name. On the package page, find the <strong>Git repository</strong> link; this takes you to the APKBUILD source in the aports tree.</p>
+<p><strong>Choose the correct branch.</strong> Alpine maintains multiple stable branches (e.g. <code>3.21-stable</code>, <code>3.22-stable</code>). Use the <strong>latest stable branch</strong>, not <code>master</code> or <code>edge</code>. At time of writing, <code>3.23-stable</code> is current. Using a stable branch gives you a known-good build recipe rather than in-progress development changes.</p>
+<p>For gtk4 the path is:</p>
+<pre><code>https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/extra/gtk4
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 2 — Copy the APKBUILD and patch files" duration="0">
+        <p>In your local aports clone, create the directory for the new package under the appropriate category. The rule is:</p>
+<ul>
+<li>If the package lives under <code>main</code> in the upstream Alpine aports tree, port it to <code>core</code> in QNX aports</li>
+<li>If the package lives under <code>community</code> in upstream Alpine, port it to <code>extra</code> in QNX aports</li>
+</ul>
+<p>gtk4 is under <code>extra/</code> in Alpine (community), so:</p>
+<pre><code language="language-bash" class="language-bash">mkdir -p ~/aports/extra/gtk4
+cd ~/aports/extra/gtk4
+</code></pre>
+<p>Download the APKBUILD:</p>
+<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/APKBUILD
+</code></pre>
+<p>Check if there are any patch files in the same directory on GitLab. If there are, download each one:</p>
+<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/some-fix.patch
+</code></pre>
+<p>Do the same for any other supporting files (init scripts, <code>.desktop</code> entries, etc.).</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 3 — Update maintainer and contributor headers" duration="0">
+        <p>Open the APKBUILD. Near the top you will see something like:</p>
+<pre><code language="language-sh" class="language-sh"># Contributor: Rasmus Thomsen &lt;oss@cogitri.dev&gt;
+# Maintainer: team/gnome &lt;pabloyoyoista@postmarketos.org&gt;
+</code></pre>
+<p>The Alpine maintainer is not maintaining this package in the QNX repo. Rename those fields to make that clear, and add yourself as the QNX maintainer:</p>
+<pre><code language="language-sh" class="language-sh"># Alpine-Contributor: Rasmus Thomsen &lt;oss@cogitri.dev&gt;
+# Alpine-Maintainer: team/gnome &lt;pabloyoyoista@postmarketos.org&gt;
+# Maintainer: Your Name &lt;you@qnx.com&gt;
+</code></pre>
+<p>The <code>Alpine-</code> prefix preserves attribution while making it explicit who is responsible for the QNX port.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 4 — Reset pkgrel to 0" duration="0">
+        <p>Find the <code>pkgrel</code> variable near the top of the APKBUILD:</p>
+<pre><code language="language-sh" class="language-sh">pkgrel=3
+</code></pre>
+<p>Reset it to <code>0</code>:</p>
+<pre><code language="language-sh" class="language-sh">pkgrel=0
+</code></pre>
+<p><code>pkgrel</code> is a revision counter that Alpine increments when they rebuild a package without changing the upstream version. For a fresh QNX port, the revision starts at zero. If you later need to rebuild without a version bump (e.g. to fix a QNX-specific patch), you increment it yourself.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 5 — Audit and fix dependencies" duration="0">
+        <p>Open the <code>depends=</code>, <code>makedepends=</code>, and <code>checkdepends=</code> sections. For each dependency, check whether a QNX port exists in <code>qnx-ports/aports</code> and whether the package name differs.</p>
+<p><strong>The most common naming difference is Python packages.</strong> Alpine uses <code>py3-</code> as the prefix:</p>
+<pre><code language="language-sh" class="language-sh">makedepends=&#34;py3-cairo py3-gobject3&#34;
+</code></pre>
+<p>QNX aports uses <code>python3-</code> as the prefix:</p>
+<pre><code language="language-sh" class="language-sh">makedepends=&#34;python3-cairo python3-gobject3&#34;
+</code></pre>
+<p>Search <code>qnx-ports/aports</code> for each dependency you are unsure about:</p>
+<pre><code language="language-bash" class="language-bash">find ~/aports -name APKBUILD | xargs grep -l &#34;pkgname=&#34; | xargs grep &#34;pkgname=python3-cairo&#34;
+</code></pre>
+<p>If a dependency does not exist in QNX aports yet, you have two options:</p>
+<ul>
+<li>Port it first (recurse into this process for that package)</li>
+<li>Open your PR with a note that the dependency is a prerequisite</li>
+</ul>
+<p>Do not leave missing dependencies silently. <code>abuild -r</code> will fail with a confusing error if a <code>makedepend</code> cannot be resolved.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 6 — Make source changes (if needed) and create patches" duration="0">
+        <p>If the package builds cleanly on QNX with no source changes, skip this step. Most medium-sized packages will need at least one QNX-specific fix: a missing platform detection, an unsupported syscall, a Linux-only code path. When that happens, create a proper patch rather than embedding <code>sed</code> commands in the APKBUILD.</p>
+<h2 is-upgraded>Development phase — test your changes first</h2>
+<p>Never create a patch from untested changes.</p>
+<pre><code language="language-bash" class="language-bash">cd ~/aports/extra/gtk4
+abuild clean
+abuild unpack     # Extracts the tarball and applies existing patches
+cd src/gtk-&lt;version&gt;/
+</code></pre>
+<p>Make your change directly in the source tree. Test it using the native build system, not <code>abuild</code>:</p>
+<pre><code language="language-bash" class="language-bash"># For a Meson project like gtk4:
+meson setup build
+ninja -C build
+</code></pre>
+<p>Iterate until the change works. Only then move to patch creation.</p>
+<p><strong>Important:</strong> Never run <code>abuild -r</code> while iterating on source changes. It wipes the <code>src/</code> directory and discards your work.</p>
+<h2 is-upgraded>Patch creation phase</h2>
+<p>Once your change is tested and working:</p>
+<p><strong>1. Go back to the package directory and do a fresh unpack:</strong></p>
+<pre><code language="language-bash" class="language-bash">cd ~/aports/extra/gtk4
+abuild clean
+abuild unpack
+cd src/gtk-&lt;version&gt;/
+</code></pre>
+<p><strong>2. Back up the file you are modifying:</strong></p>
+<pre><code language="language-bash" class="language-bash">cp path/to/file.c path/to/file.c.orig
+</code></pre>
+<p><strong>3. Apply your change:</strong></p>
+<pre><code language="language-bash" class="language-bash">vi path/to/file.c
+</code></pre>
+<p><strong>4. Generate the diff:</strong></p>
+<pre><code language="language-bash" class="language-bash"># Run from inside src/gtk-&lt;version&gt;/
+diff -u path/to/file.c.orig path/to/file.c &gt; ../../001-fix-qnx-platform-detection.patch
+</code></pre>
+<p><strong>5. Fix the patch header format.</strong> The <code>diff</code> command produces paths like:</p>
+<pre><code language="language-diff" class="language-diff">--- ./path/to/file.c.orig
++++ ./path/to/file.c
+</code></pre>
+<p>Alpine (and QNX aports) requires:</p>
+<pre><code language="language-diff" class="language-diff">--- a/path/to/file.c
++++ b/path/to/file.c
+</code></pre>
+<p>Edit the patch file manually to:</p>
+<ul>
+<li>Replace <code>--- ./path/to/file.c.orig</code> with <code>--- a/path/to/file.c</code></li>
+<li>Replace <code>+++ ./path/to/file.c</code> with <code>+++ b/path/to/file.c</code></li>
+</ul>
+<p><strong>6. Add the patch to the </strong></p>
+<p><strong><code>source=</code></strong></p>
+<p><strong> list in the APKBUILD:</strong></p>
+<pre><code language="language-sh" class="language-sh">source=&#34;https://download.gnome.org/sources/gtk/$_major/gtk-$pkgver.tar.xz
+    001-fix-qnx-platform-detection.patch
+    &#34;
+</code></pre>
+<p><strong>7. Update checksums:</strong></p>
+<pre><code language="language-bash" class="language-bash">cd ~/aports/extra/gtk4
+abuild checksum
+</code></pre>
+<h2 is-upgraded>Patch naming convention</h2>
+<p>Patches follow the format <code>NNN-descriptive-kebab-case-name.patch</code>:</p>
+<ul>
+<li><code>NNN</code> is a zero-padded sequential number: <code>001</code>, <code>002</code>, <code>003</code></li>
+<li>The name describes what the patch does, not which file it touches</li>
+</ul>
+<p>Good examples:</p>
+<ul>
+<li><code>001-fix-qnx-processor-detection.patch</code></li>
+<li><code>002-disable-linux-only-meminfo.patch</code></li>
+<li><code>003-add-qnx-wayland-backend.patch</code></li>
+</ul>
+<p>Bad examples:</p>
+<ul>
+<li><code>fix.patch</code> (no number, not descriptive)</li>
+<li><code>001_QNX_Fix.patch</code> (underscores, wrong case)</li>
+<li><code>qnx-processor.patch</code> (no number)</li>
+</ul>
+<h2 is-upgraded>Multiple files, one logical change</h2>
+<p>If a single bug fix touches more than one file, put all the changes in one patch. If the changes are logically independent, use separate patches, one per concern.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 7 — Build and verify" duration="0">
+        <p>With the APKBUILD updated and any patches in place, do a full build:</p>
+<pre><code language="language-bash" class="language-bash">cd ~/aports/extra/gtk4
+abuild -r -c -K
+</code></pre>
+<p>Flag reference:</p>
+<ul>
+<li><code>-r</code>: recursive, installs missing dependencies automatically</li>
+<li><code>-c</code>: do not clean up on failure (lets you inspect the build directory)</li>
+<li><code>-K</code>: keep the <code>src/</code> directory after a successful build</li>
+</ul>
+<p>Watch the output for errors. Common failure categories and what to look for:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Failure</p>
+</td><td colspan="1" rowspan="1"><p>Likely cause</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>ERROR: unable to select packages</code></p>
+</td><td colspan="1" rowspan="1"><p>A dependency is missing from QNX aports</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>error: unknown type name '__s32'</code> or similar</p>
+</td><td colspan="1" rowspan="1"><p>Linux kernel header type; needs a QNX patch</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>meson.build: ERROR: Dependency X not found</code></p>
+</td><td colspan="1" rowspan="1"><p>Missing makedepend or wrong package name</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>FAILED: src/...</code> with no obvious error</p>
+</td><td colspan="1" rowspan="1"><p>Check a few lines above; Meson/CMake errors scroll past</p>
+</td></tr>
+</table>
+<p>If all tests pass and the build succeeds, install the resulting <code>.apk</code> to verify it loads correctly:</p>
+<pre><code language="language-bash" class="language-bash">sudo apk add --allow-untrusted ~/packages/extra/x86_64/gtk4-&lt;version&gt;-r0.x86_64.apk
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 8 — Open a pull request" duration="0">
+        <p>With a working build, push your branch and open a PR against <code>qnx-ports/aports</code>.</p>
+<pre><code language="language-bash" class="language-bash">cd ~/aports
+git checkout -b port/gtk4
+git add extra/gtk4/
+git commit -m &#34;extra/gtk4: new port from Alpine 3.23-stable&#34;
+git push origin port/gtk4
+</code></pre>
+<p>Then open a pull request on GitHub from your fork to <code>qnx-ports/aports</code>. In the PR description include:</p>
+<ul>
+<li>The upstream Alpine branch you based the port on (e.g. <code>3.23-stable</code>)</li>
+<li>A brief summary of any QNX-specific changes (patches, dependency renames, skipped subpackages)</li>
+<li>Confirmation that <code>abuild -r</code> completed successfully and tests passed</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You have ported an Alpine Linux package to QNX 8.0. The key points to carry forward:</p>
+<ul>
+<li>Always use the latest <strong>stable</strong> Alpine branch, not <code>master</code> or <code>edge</code></li>
+<li>Reset <code>pkgrel</code> to <code>0</code>; it is a QNX-relative counter from here on</li>
+<li>Rename Alpine maintainers to <code>Alpine-Maintainer</code> / <code>Alpine-Contributor</code> and add your own <code># Maintainer:</code> line</li>
+<li>Python packages use <code>python3-</code> in QNX aports, not <code>py3-</code></li>
+<li>Test source changes with native build tools before creating any patch; never use <code>abuild -r</code> during development</li>
+<li>Patch headers must use <code>a/</code> and <code>b/</code> prefixes, not <code>./</code> and <code>.orig</code></li>
+<li>One patch per logical change; name them <code>NNN-descriptive-kebab-case.patch</code></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

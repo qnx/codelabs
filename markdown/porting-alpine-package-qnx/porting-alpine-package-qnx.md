@@ -36,7 +36,7 @@ This codelab walks through the full process using **gtk4** as the worked example
 
 ## How it works — Overview
 
-Alpine Linux maintains thousands of packages in their public aports tree. Each package lives in a folder under a category (e.g. `extra/gtk4/`) and consists of:
+Alpine Linux maintains thousands of packages in their public aports tree. Each package lives in a folder under a category (e.g. `community/gtk4.0/`) and consists of:
 
 * An `APKBUILD` file: the build recipe (version, source URL, dependencies, build steps)
 * Zero or more `.patch` files: source-level fixes applied before building
@@ -319,7 +319,7 @@ Watch the output for errors. Common failure categories and what to look for:
 If all tests pass and the build succeeds, install the resulting `.apk` to verify it loads correctly:
 
 ```bash
-sudo apk add --allow-untrusted ~/packages/extra/x86_64/gtk4-<version>-r0.x86_64.apk
+sudo apk add --allow-untrusted ~/packages/extra/x86_64/gtk4-<version>-r0.apk
 ```
 
 ---

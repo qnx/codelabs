@@ -73,7 +73,7 @@ Open the result that matches the package name. On the package page, find the **G
 For gtk4 the path is:
 
 ```
-https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/extra/gtk4
+https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/community/gtk4.0
 ```
 
 ---
@@ -85,7 +85,7 @@ In your local aports clone, create the directory for the new package under the a
 * If the package lives under `main` in the upstream Alpine aports tree, port it to `core` in QNX aports
 * If the package lives under `community` in upstream Alpine, port it to `extra` in QNX aports
 
-gtk4 is under `extra/` in Alpine (community), so:
+gtk4 is under `community` in Alpine, so:
 
 ```bash
 mkdir -p ~/aports/extra/gtk4
@@ -95,13 +95,13 @@ cd ~/aports/extra/gtk4
 Download the APKBUILD:
 
 ```bash
-curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/APKBUILD
+curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/community/gtk4.0/APKBUILD
 ```
 
 Check if there are any patch files in the same directory on GitLab. If there are, download each one:
 
 ```bash
-curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/some-fix.patch
+curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/community/gtk4.0/some-fix.patch
 ```
 
 Do the same for any other supporting files (init scripts, `.desktop` entries, etc.).

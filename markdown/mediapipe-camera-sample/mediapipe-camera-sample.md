@@ -565,8 +565,8 @@ In nv12 format, an image in composed of a Y plane, and a separate U/V plane.
 - `uv_stride` is the number of bytes between one line of data and the next in the U/V plane
 
 Note that we're not given a height or width for the U/V plane. This is because
-the height and width in pixels of the U/V is exactly half of the height and
-width in bytes of the Y plane! This will become important in a second.
+the height and width in pixels of the U/V plane is exactly half of the height
+and width in bytes of the Y plane! This will become important in a second.
 
 OpenCV provides [cv::cvtColorTwoPlane()](https://github.com/opencv/opencv/blob/4.9.0/modules/imgproc/include/opencv2/imgproc.hpp#L3749)
 to help with conversions from nv12. The final code to convert to an output

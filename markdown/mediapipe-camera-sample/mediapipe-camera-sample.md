@@ -49,7 +49,7 @@ git clone https://github.com/qnx-ports/mediapipe.git --branch qnx-v0.10.26
 cd mediapipe
 ```
 
-Then build MediaPipe's QNX examples for cpu,
+Then, build MediaPipe's QNX examples for cpu,
 ```bash
 ./build_qnx_examples.sh
 ```
@@ -343,6 +343,7 @@ we want:
 - Read and write access to the camera's configuration,
 - Read access to the camera's imaging datapath, and
 - Access to the camera roll
+
 This `camera_open()` call does not yet start the camera. We will touch on that
 in a moment.
 
@@ -492,8 +493,8 @@ static void CameraStatusCallback(camera_handle_t handle, camera_devstatus_t stat
 }
 ```
 
-Then, we'll write the viewfinder callback to accept data from the camera feed,
-and feed to a producer API. Starting with boilerplate,
+Then, we'll write the viewfinder callback to accept data from the camera roll,
+and feed it to a producer API. Starting with boilerplate,
 ```c++
 void CameraProduceData(
   mp_camera_info_t &ci,
@@ -545,7 +546,7 @@ void CameraProduceData(
 }
 ```
 
-The framedesc for nv12 is a `camera_frame_nv12_t` type.
+The framedesc for nv12 is a [`camera_frame_nv12_t` type](https://qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__frame__nv12__t.html).
 ```c
 typedef struct {
     uint32_t height;
@@ -559,7 +560,7 @@ In nv12 format, an image in composed of a Y plane, and a separate U/V plane.
 ![NV12 Format](nv12-format.png)
 - `height` is the height of the Y plane in 1-byte pixels
 - `width` is the width of the Y plane in 1-byte pixels
-- `stride` is the number of bytes between one line of data and the next in the Y plane (spanning the at least the width in bytes, but it could include some unused memory)
+- `stride` is the number of bytes between one line of data and the next in the Y plane (spanning at least the width in bytes, but it could include some unused memory)
 - `uv_offset` is the offset between the start of the Y plane and the start of the U/V plane
 - `uv_stride` is the number of bytes between one line of data and the next in the U/V plane
 
@@ -569,7 +570,7 @@ width in bytes of the Y plane! This will become important in a second.
 
 OpenCV provides [cv::cvtColorTwoPlane()](https://github.com/opencv/opencv/blob/4.9.0/modules/imgproc/include/opencv2/imgproc.hpp#L3749)
 to help with conversions from nv12. The final code to convert to an output
-RGB888 format looks like,
+RGB888 format and store it in `frame` looks like,
 ```c++
 void CameraProduceData(
   mp_camera_info_t &ci,
@@ -606,7 +607,7 @@ earlier, we need to divide the height and width in half when passing the U/V
 plane to its own matrix. The stride (step) in OpenCV is already in bytes, so
 nothing to do there.
 
-Now lets take a look at the producer code,
+Now, lets take a look at the producer code,
 ```c++
 typedef struct mp_camera_info {
   camera_unit_t unit;
@@ -645,7 +646,7 @@ Some important considerations here are:
   might be superfluous depending on whether OpenCV allocated new memory for the
   data while handling the previous operations.
 
-Then the consumer code to be executed by the main thread looks as follows,
+Then, the consumer code to be executed by the main thread looks as follows,
 ```c++
 cv::Mat CameraConsumeData(mp_camera_info_t &ci) {
   cv::Mat ret;
@@ -721,7 +722,7 @@ cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
 camera_frame.copyTo(input_frame_mat);
 ```
 
-Now we can discuss the presentation of the output data at the tail end of the MP
+Now, we can discuss the presentation of the output data at the tail end of the MP
 pipeline.
 
 ## screen Window Creation
@@ -814,8 +815,8 @@ Screen is designed to integrate with several Khronos rendering APIs, so we need
 to set `SCREEN_PROPERTY_USAGE` to `SCREEN_USAGE_OPENGL_ES2 | SCREEN_USAGE_OPENGL_ES3`
 to say that we're going to be using GLES2/GLES3.
 
-Finally, we explicitly set the output format to what we're expecting after our
-MP pipeline to a common format, `SCREEN_FORMAT_RGBA8888`.
+Finally, we explicitly set the output format we're expecting after our MP
+pipeline to a common format, `SCREEN_FORMAT_RGBA8888`.
 
 Now, we also need to be able to close the window. We'll be closing the window
 on any keyboard input. To set this up, we need to track a third
@@ -901,7 +902,7 @@ bool ScreenPollKeyDown(const mp_screen_info_t &si, const uint64_t timeout) {
 }
 ```
 The first `screen_get_event()` retrieves any event that occurs before a timeout,
-`si.event` is updated. Then we determine if the event is targetting the keyboard
+`si.event` is updated. Then, we determine if the event is targetting the keyboard
 with the call to `screen_get_event_property_iv()` with `SCREEN_PROPERTY_TYPE`,
 and finally, if it is a keyboard event, we check whether it's a key press or
 release.
@@ -943,7 +944,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 }
 ```
 
-Then we need to get an EGL framebuffer configuration matching our use case.
+Then, we need to get an EGL framebuffer configuration matching our use case.
 ```c++
 static const std::vector<EGLint> config_attrib_list = {
   EGL_SURFACE_TYPE,             EGL_WINDOW_BIT,
@@ -965,7 +966,7 @@ it.
 We're choosing GLES3 because it provides `glBlitFramebuffer()` which simplifies
 copying a texture to the draw framebuffer, making our job cut out for us.
 
-Then to find any configuration that meets our needs,
+Then, to find any configuration that meets our needs,
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -1026,6 +1027,11 @@ typedef struct mp_gl_info {
   // ...
 } mp_gl_info_t;
 
+static const std::vector<EGLint> context_attrib_list = {
+  EGL_CONTEXT_CLIENT_VERSION,   3,
+  EGL_NONE,
+};
+
 absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
   std::vector<EGLConfig> configs;
   absl::Status ret = absl::OkStatus();
@@ -1045,8 +1051,10 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
   // ...
 }
 ```
+The context attributes we pass to `eglCreateContext()` are primarily to set the
+version of the GLES API.
 
-Now we need to create a rendering target for the `screen_window_t` handle, so
+Now, we need to create a rendering target for the `screen_window_t` handle, so
 that our GL application will draw to our window.
 ```c++
 typedef struct mp_gl_info {
@@ -1056,6 +1064,11 @@ typedef struct mp_gl_info {
   EGLSurface surface;
   // ...
 } mp_gl_info_t;
+
+static const std::vector<EGLint> surface_attrib_list = {
+  EGL_RENDER_BUFFER,            EGL_BACK_BUFFER,
+  EGL_NONE,
+};
 
 absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
   std::vector<EGLConfig> configs;
@@ -1078,6 +1091,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
   // ...
 }
 ```
+Our surface attributes in this case [set GL up for rendering to a backing buffer](https://docs.mesa3d.org/egl.html#egl-render-buffer).
 
 And with that we call `eglMakeCurrent()`, so that the handles we just created
 are all being used by the application,
@@ -1096,7 +1110,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 }
 ```
 
-Now we need to create our GLES3 pipeline. We'll create the following boilerplate
+Now, we need to create our GLES3 pipeline. We'll create the following boilerplate
 to isolate it from the EGL code.
 ```c++
 absl::Status InitGLPipeline(mp_gl_info &gli) {
@@ -1116,8 +1130,6 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
     ABSL_LOG(ERROR) << "Failed to initialize GL pipeline.";
     goto failure;
   }
-
-  gli.initialized = true;
 
   return ret;
 
@@ -1204,13 +1216,13 @@ absl::Status InitGLPipeline(mp_gl_info &gli) {
 }
 ```
 
-First we allocate memory for the texture and framebuffer in memory, then we bind
-them to a target. These bind commands say that future operations referencing the
+First we allocate memory for the texture and framebuffer, then we bind them to a
+target. These bind commands say that future operations referencing the
 `GL_TEXTURE_2D` and `GL_READ_FRAMEBUFFER` targets will use our new texture and
 framebuffer. We also bind `GL_DRAW_FRAMEBUFFER` to 0 to say to use the default
-framebuffer, which is backing our window.
+framebuffer associated with our window.
 
-Now we just need to attach our texture to `GL_COLOR_ATTACHMENT0` of the
+Now, we just need to attach our texture to `GL_COLOR_ATTACHMENT0` of the
 `GL_READ_FRAMEBUFFER`.
 ```c++
 absl::Status InitGLPipeline(mp_gl_info &gli) {
@@ -1289,7 +1301,7 @@ I believe the only way to do this with the gpu in GLES3 is to invert the axis in
 shader code. We won't touch on that for this codelab, but if you want an example
 you can check out the [AI Camera App](https://gitlab.com/qnx/projects/ai-camera-app).
 
-Now we bind the textures and framebuffers we're going to be using in the
+Now, we bind the textures and framebuffers we're going to be using in the
 proceeding operations.
 ```c++
 absl::Status GLShowMat(
@@ -1327,7 +1339,7 @@ absl::Status GLShowMat(
 }
 ```
 
-Now we clear the color buffer so we're not seeing garbage in what's drawn to the
+Now, we clear the color buffer so we're not seeing garbage in what's drawn to the
 window.
 ```c++
 absl::Status GLShowMat(
@@ -1355,7 +1367,7 @@ absl::Status GLShowMat(
 }
 ```
 
-Next we create a texture for our output frame.
+Next, we create a texture for our output frame.
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1407,9 +1419,9 @@ libcamapi, our data can have a stride (step), which might be more than the width
 (cols). To account for this, we pass the stride converted to pixels to
 `GL_UNPACK_ROW_LENGTH`.
 
-Finally we can define our texture with a call to `glTexImage2D()`.
+Finally, we can define our texture with a call to `glTexImage2D()`.
 
-Now we just need to call the blit operation to copy our read framebuffer
+Now, we just need to call the blit operation to copy our read framebuffer
 directly to the window surface's draw framebuffer, and subsequently write that
 draw framebuffer to the window.
 ```c++
@@ -1447,14 +1459,14 @@ absl::Status GLShowMat(
   return absl::OkStatus();
 }
 ```
-We pass in the dimensions of our entire matrix, starting from (0,0), and the
+We pass in the dimensions of our entire matrix, starting from (0,0). And the
 dimensions of our window, starting from (0,0). We pass `GL_LINEAR` to say that
 this should be [scaled to match the new resolution linearly](https://learnopengl.com/Getting-started/Textures).
 
-`eglSwapBuffers()` posts our draw framebuffer to the window surface. Now you
+`eglSwapBuffers()` posts our draw framebuffer to the window surface. Now, you
 should be able to see the resulting image.
 
-Finally we get to add to `RunMPPGraph()` the code to get a frame from the camera
+Finally, we get to add to `RunMPPGraph()` the code to get a frame from the camera
 which is fed into an MP pipeline, get the output frame from the MP pipeline,
 and present it to the screen!
 ```c++
@@ -1478,6 +1490,8 @@ while (grab_frames) {
 }
 ```
 
-## Behold the Fruits of our Labour
+In the next section we will behold the fruits of our labour!
+
+## MediaPipe in Boston Robotics Summit 2026
 Taken from Boston Robotics Summit 2026,
 ![MediaPipe in Boston Robotics Summit 2026](MP-Boston-Robotics-2026.png)

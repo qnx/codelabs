@@ -27,10 +27,12 @@ This codelab walks through the full process using **gtk4** as the worked example
 
 **Prerequisites:**
 
-* A Linux host with the QNX 8.0 SDP installed and sourced
+* A QNX 8.0 target with the QNX Developer Desktop (QEMU or physical hardware such as Raspberry Pi 5)
 * A working `abuild` environment with your `~/.abuild/` keys configured
-* A fork of `qnx-ports/aports` cloned locally and set up for SSH push
+* A fork of `qnx-ports/aports` cloned on the target and set up for SSH push
 * Familiarity with basic APKBUILD structure (variables, `build()`, `package()` functions)
+
+> **Note:** All commands in this codelab are run directly on your QNX target. No Linux host or SDP installation is required.
 
 ---
 
@@ -80,7 +82,7 @@ https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/extra/gtk4
 
 ## Step 2 — Copy the APKBUILD and patch files
 
-In your local aports clone, create the directory for the new package under the appropriate category. The rule is:
+In your aports clone on the QNX target, create the directory for the new package under the appropriate category. The rule is:
 
 * If the package lives under `main` in the upstream Alpine aports tree, port it to `core` in QNX aports
 * If the package lives under `community` in upstream Alpine, port it to `extra` in QNX aports
@@ -336,7 +338,7 @@ git commit -m "extra/gtk4: new port from Alpine 3.23-stable"
 git push origin port/gtk4
 ```
 
-Then open a pull request on GitHub from your fork to `qnx-ports/aports`. In the PR description include:
+Then open a pull request on GitHub from your fork to `qnx-ports/aports` (this can be done from any browser). In the PR description include:
 
 * The upstream Alpine branch you based the port on (e.g. `3.23-stable`)
 * A brief summary of any QNX-specific changes (patches, dependency renames, skipped subpackages)
@@ -355,4 +357,5 @@ You have ported an Alpine Linux package to QNX 8.0. The key points to carry forw
 * Test source changes with native build tools before creating any patch; never use `abuild -r` during development
 * Patch headers must use `a/` and `b/` prefixes, not `./` and `.orig`
 * One patch per logical change; name them `NNN-descriptive-kebab-case.patch`
+
 

@@ -208,6 +208,8 @@ scp -P 2227 \
   qnx@localhost:/var/home/qnx/
 ```
 
+> **Alternative:** If your QNX target can reach the internet directly, you can run the same `curl` command from Step 5 on the target itself and skip the `scp` step. The `scp` approach is useful when the target has no internet access, or when you already have the model downloaded on your host.
+
 Verify the copy on the target:
 
 ```bash

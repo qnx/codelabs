@@ -1,8 +1,8 @@
 
 id: mediapipe-camera-sample
 title: MediaPipe Camera Sample
-summary: Learn how to write a camera application with MediaPipe and native QNX APIs
-categories: qnx, mediapipe, qnx-sensor-framework
+summary: Write a camera application with MediaPipe and native QNX APIs
+categories: qnx, mediapipe, qnx-sensor-framework, AI, camera
 tags: advanced
 difficulty: 5
 status: published
@@ -15,23 +15,25 @@ feedback_link: https://github.com/qnx/codelabs/issues
 ## Welcome
 Duration: 1:00
 
-MediaPipe is a unified set of AI solutions, which designed so that you can
-easily deploy it for edge use-cases. You can find the most information about it
-from [Google's own product documentation](https://developers.google.com/edge/mediapipe/solutions/guide)
+MediaPipe is a unified set of AI solutions, which is designed so that you can
+easily deploy it for edge use cases. You can find the most information about it
+from [Google's own product documentation](https://developers.google.com/edge/mediapipe/solutions/guide).
 
-The purpose of this guide will be to explain how you can get a MediaPipe
-application up and going on QNX through the lens of its samples, not to explain
+The purpose of this guide is to explain how you can get a MediaPipe
+application running on QNX through the lens of its samples, not to explain
 MediaPipe itself. You should refer to the official documentation to learn all
 the specifics of the mediapipe APIs.
 
 ---
 
-## Setup Environment
+## Set Up Environment
 Duration: 1:00
 
 > aside positive
 >
 > To follow these exact instructions for sensor framework, you will need a [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) with a [Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/).
+
+Get started on the [QNX 8.0 Self-hosted Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html).
 
 Install the required dependencies:
 ```bash
@@ -49,13 +51,13 @@ git clone https://github.com/qnx-ports/mediapipe.git --branch qnx-v0.10.26
 cd mediapipe
 ```
 
-Then, build MediaPipe's QNX examples for cpu,
+Then, build MediaPipe's QNX examples for cpu:
 ```bash
 ./build_qnx_examples.sh
 ```
 
 To build an individual example for gpu you can run the following command after
-the above script,
+the above script:
 ```bash
 # bazeltarget=...
 bazel build -c opt \
@@ -77,7 +79,7 @@ bazel build -c opt \
    ${bazeltarget}
 ```
 
-Finally, run the example,
+Finally, run the example:
 ```bash
 ./bazel-bin/mediapipe/examples/qnx/face_detection/face_detection_cpu \
     --calculator_graph_config_file=./mediapipe/graphs/face_detection/face_detection_desktop_live.pbtxt
@@ -92,7 +94,7 @@ Duration: 2:00
 
 The QNX examples reside under `mediapipe/examples/qnx`. All of them rely on the
 common `demo_run_graph_main.cc` and `demo_run_graph_main_gpu.cc`, which
-themselves came from the examples for linux. Most of the QNX specific code lives
+themselves came from the examples for Linux. Most of the QNX-specific code lives
 in the files `qnx_defs.cc` and `qnx_defs.h`. The QNX code contains the following
 components that we will discuss individually: the camera sink, the window, and
 the renderer.
@@ -115,7 +117,7 @@ viewfinder running in a separate thread following [the producer/consumer pattern
 This is similar to the [camera_example1_callback](https://gitlab.com/qnx/projects/camera-projects/applications/camera_example1_callback)
 and the [AI Camera App](https://gitlab.com/qnx/projects/ai-camera-app).
 
-We start with the basic boilerplate for a function to initialize a camera sink,
+We start with the basic boilerplate for a function to initialize a camera sink:
 ```c++
 typedef struct mp_camera_info {
   // ...
@@ -130,7 +132,7 @@ absl::Status InitCameraSink(
 ```
 Which we will fill out as we go.
 
-The very first thing that you need to work with libcamapi is a camera unit.
+The very first thing that you need to work with libcamapi is a camera unit:
 
 ```c++
 typedef struct mp_camera_info {
@@ -139,7 +141,7 @@ typedef struct mp_camera_info {
 } mp_camera_info_t;
 ```
 
-But what is a camera unit? Running the following command,
+But what is a camera unit? Running the following command:
 
 ```bash
 $ sudo pidin ar | grep "sensor"
@@ -148,7 +150,7 @@ $ sudo pidin ar | grep "sensor"
 ```
 You will see that when the `sensor` service was started, it was provided a
 path to a configuration file with its `-c` flag. Opening up this configuration
-file we see the contents,
+file we see the contents:
 ```
 begin SENSOR_GLOBAL
     external_platform_library_path = libsensor_platform_broadcom_rpi5.so
@@ -175,7 +177,7 @@ This default configuration exists to give you an output of coloured bars if you
 have no physical camera. But we have a Camera Module 3, so we need to point
 sensor service at a different configuration. You will find that the
 `/system/etc/config/sensor` directory contains configurations for various
-cameras. We care about `/system/etc/config/sensor/camera_module3.conf`,
+cameras. We care about `/system/etc/config/sensor/camera_module3.conf`:
 ```
 begin SENSOR_GLOBAL
     external_platform_library_path = libsensor_platform_broadcom_rpi5.so
@@ -208,7 +210,7 @@ Note down that the camera unit here still has the literal value 1, and the video
 format is nv12.
 
 To point sensor service at the new config, we need restart the sensor service
-using the PID that we got from the above `pidin` command.
+using the PID that we got from the above `pidin` command:
 ```bash
 sudo slay 860196
 sudo sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/sensor/camera_module3.conf
@@ -216,7 +218,7 @@ sudo sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/s
 
 Now, we need some way for the user to choose which camera unit to use as input
 to the program. [Abseil Flags](https://abseil.io/docs/cpp/guides/flags) provides
-convenient helpers for this,
+convenient helpers for this:
 ```c++
 ABSL_FLAG(long, camera_unit, (long)CAMERA_UNIT_INVALID,
           "The camera unit to open."
@@ -226,7 +228,7 @@ We create a `--camera_unit` flag which accepts a `long` value, defaulting to
 `CAMERA_UNIT_INVALID`.
 
 Later on, we populate the local variable, `camera_unit_long`, with the value
-stored in this flag inside the `RunMPPGraph()` method,
+stored in this flag inside the `RunMPPGraph()` method:
 ```c++
 const long camera_unit_long = absl::GetFlag(FLAGS_camera_unit);
 
@@ -304,7 +306,7 @@ absl::Status InitCameraSink(
 ```
 
 Now, we need to open this camera unit, receiving a handle to that we can use in
-subsequent calls to operate on it,
+subsequent calls to operate on it:
 ```c++
 typedef struct mp_camera_info {
   camera_unit_t unit;
@@ -350,7 +352,7 @@ in a moment.
 We saw earlier that we need to support nv12 in our code to be able to actually
 interpret the data coming from the camera roll, but first we should sanitize the
 input to make sure that the video format we're getting is actually one of those
-types we do support.
+types we do support:
 ```c++
 absl::Status InitCameraSink(
   mp_camera_info_t &ci,
@@ -395,7 +397,7 @@ the viewfinder later on already contains this information, alongside other
 important details like the height and width.
 
 The last thing we need to do is set the behaviour we expect from the camera
-roll.
+roll:
 ```c++
 typedef struct mp_camera_info {
   camera_unit_t unit;
@@ -466,7 +468,7 @@ configuration takes a video file as input (more on that in a future codelab),
 so fewer properties can actually be set.
 
 We're almost ready to start our camera feed, but first we need to create some
-callbacks for the viewfinder thread. The first one simply reports the status,
+callbacks for the viewfinder thread. The first one simply reports the status:
 ```c++
 static void CameraStatusCallback(camera_handle_t handle, camera_devstatus_t status, uint16_t extra, void *arg)
 {
@@ -494,7 +496,7 @@ static void CameraStatusCallback(camera_handle_t handle, camera_devstatus_t stat
 ```
 
 Then, we'll write the viewfinder callback to accept data from the camera roll,
-and feed it to a producer API. Starting with boilerplate,
+and feed it to a producer API. Starting with boilerplate:
 ```c++
 void CameraProduceData(
   mp_camera_info_t &ci,
@@ -511,7 +513,7 @@ static void CameraViewfinderCallback(
 }
 ```
 
-When the viewfinder callback is called, it's given a [`camera_buffer_t` struct](https://www.qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__buffer__t.html),
+When the viewfinder callback is called, it's given a [`camera_buffer_t` struct](https://www.qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__buffer__t.html):
 ```c
 typedef struct {
     camera_frametype_t frametype;
@@ -527,7 +529,7 @@ typedef struct {
 Here `framebuf` is the pointer to the raw data, `frametype` is the video format,
 and `framedesc` is a union of info describing all of the possible video formats.
 We can retrieve the information we need from this packet with the following
-logic,
+logic:
 ```c++
 void CameraProduceData(
   mp_camera_info_t &ci,
@@ -546,7 +548,7 @@ void CameraProduceData(
 }
 ```
 
-The framedesc for nv12 is a [`camera_frame_nv12_t` type](https://qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__frame__nv12__t.html).
+The framedesc for nv12 is a [`camera_frame_nv12_t` type](https://qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__frame__nv12__t.html):
 ```c
 typedef struct {
     uint32_t height;
@@ -556,7 +558,7 @@ typedef struct {
     int64_t uv_stride;
 } camera_frame_nv12_t;
 ```
-In nv12 format, an image in composed of a Y plane, and a separate U/V plane.
+In nv12 format, an image in composed of a Y plane, and a separate U/V plane:
 ![NV12 Format](nv12-format.png)
 - `height` is the height of the Y plane in 1-byte pixels
 - `width` is the width of the Y plane in 1-byte pixels
@@ -566,11 +568,11 @@ In nv12 format, an image in composed of a Y plane, and a separate U/V plane.
 
 Note that we're not given a height or width for the U/V plane. This is because
 the height and width in pixels of the U/V plane is exactly half of the height
-and width in bytes of the Y plane! This will become important in a second.
+and width in pixels of the Y plane! This will become important in a second.
 
 OpenCV provides [cv::cvtColorTwoPlane()](https://github.com/opencv/opencv/blob/4.9.0/modules/imgproc/include/opencv2/imgproc.hpp#L3749)
 to help with conversions from nv12. The final code to convert to an output
-RGB888 format and store it in `frame` looks like,
+RGB888 format and store it in `frame` looks like:
 ```c++
 void CameraProduceData(
   mp_camera_info_t &ci,
@@ -607,7 +609,7 @@ earlier, we need to divide the height and width in half when passing the U/V
 plane to its own matrix. The stride (step) in OpenCV is already in bytes, so
 nothing to do there.
 
-Now, lets take a look at the producer code,
+Now, lets take a look at the producer code:
 ```c++
 typedef struct mp_camera_info {
   camera_unit_t unit;
@@ -646,7 +648,7 @@ Some important considerations here are:
   might be superfluous depending on whether OpenCV allocated new memory for the
   data while handling the previous operations.
 
-Then, the consumer code to be executed by the main thread looks as follows,
+Then, the consumer code to be executed by the main thread looks as follows:
 ```c++
 cv::Mat CameraConsumeData(mp_camera_info_t &ci) {
   cv::Mat ret;
@@ -662,7 +664,7 @@ cv::Mat CameraConsumeData(mp_camera_info_t &ci) {
 }
 ```
 
-And we can finally start the viewfinder,
+And we can finally start the viewfinder:
 ```c++
 absl::Status InitCameraSink(
   mp_camera_info_t &ci,
@@ -703,7 +705,7 @@ Our `mp_camera_info_t` struct is being passed as a `void *` to
 `CameraViewfinderCallback()` call.
 
 Back in `RunMPPGraph()` we can get the data from `CameraConsumeData()` and
-forward it to MP in RGB888 format.
+forward it to MP in RGB888 format:
 ```c++
 // Capture sensor framework camera or video frame.
 // The frame is already in the expected format.
@@ -728,7 +730,7 @@ pipeline.
 ## screen Window Creation
 Duration: 10:00
 
-We have the boilerplate,
+We have the boilerplate:
 ```c++
 typedef struct mp_screen_info {
   // ...
@@ -741,7 +743,7 @@ absl::Status InitScreenWindow(mp_screen_info_t &si) {
 
 We start by creating the window. For this we need a `screen_context_t` handle to
 manage the context of the screen application and a `screen_window_t` handle to
-refer to the window.
+refer to the window:
 ```c++
 typedef struct mp_screen_info {
   screen_context_t context;
@@ -820,7 +822,7 @@ pipeline to a common format, `SCREEN_FORMAT_RGBA8888`.
 
 Now, we also need to be able to close the window. We'll be closing the window
 on any keyboard input. To set this up, we need to track a third
-`screen_event_t` handle.
+`screen_event_t` handle:
 ```c++
 typedef struct mp_screen_info {
   screen_context_t context;
@@ -872,7 +874,7 @@ failure:
 ```
 
 This event handle is used for retrieving events, such as window focus, mouse
-movement, key press, etc. To check if any key is pressed,
+movement, key press, etc. To check if any key is pressed:
 ```c++
 bool ScreenPollKeyDown(const mp_screen_info_t &si, const uint64_t timeout) {
   int type;
@@ -911,7 +913,7 @@ release.
 Duration: 15:00
 
 The objective of this component is to provide a simple `imshow` functionality
-of drawing a raw buffer to a window. Starting from the boilerplate,
+of drawing a raw buffer to a window. Starting from the boilerplate:
 ```c++
 typedef struct mp_gl_info {
   // ...
@@ -923,8 +925,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 ```
 
 We need to setup the rendering component. The first step is always to
-initialize the default display.
-
+initialize the default display:
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -944,7 +945,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 }
 ```
 
-Then, we need to get an EGL framebuffer configuration matching our use case.
+Then, we need to get an EGL framebuffer configuration matching our use case:
 ```c++
 static const std::vector<EGLint> config_attrib_list = {
   EGL_SURFACE_TYPE,             EGL_WINDOW_BIT,
@@ -966,7 +967,7 @@ it.
 We're choosing GLES3 because it provides `glBlitFramebuffer()` which simplifies
 copying a texture to the draw framebuffer, making our job cut out for us.
 
-Then, to find any configuration that meets our needs,
+Then, to find any configuration that meets our needs:
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -1018,7 +1019,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 ```
 
 The chosen config is then used to create an EGL context to manage the context of
-our GL application, similar to the context we made for screen.
+our GL application, similar to the context we made for screen:
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -1055,7 +1056,7 @@ The context attributes we pass to `eglCreateContext()` are primarily to set the
 version of the GLES API.
 
 Now, we need to create a rendering target for the `screen_window_t` handle, so
-that our GL application will draw to our window.
+that our GL application will draw to our window:
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -1094,7 +1095,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 Our surface attributes in this case [set GL up for rendering to a backing buffer](https://docs.mesa3d.org/egl.html#egl-render-buffer).
 
 And with that we call `eglMakeCurrent()`, so that the handles we just created
-are all being used by the application,
+are all being used by the application:
 ```c++
 absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
   std::vector<EGLConfig> configs;
@@ -1111,7 +1112,7 @@ absl::Status InitGLContext(mp_gl_info_t &gli, const mp_screen_info_t &si) {
 ```
 
 Now, we need to create our GLES3 pipeline. We'll create the following boilerplate
-to isolate it from the EGL code.
+to isolate it from the EGL code:
 ```c++
 absl::Status InitGLPipeline(mp_gl_info &gli) {
   // ...
@@ -1151,7 +1152,7 @@ failure:
 ```
 
 Our pipeline is very simple. All we need to do is create the texture we will use
-for the blit, and the framebuffer it will be attached to,
+for the blit, and the framebuffer it will be attached to:
 ```c++
 typedef struct mp_gl_info {
   EGLDisplay display;
@@ -1223,7 +1224,7 @@ framebuffer. We also bind `GL_DRAW_FRAMEBUFFER` to 0 to say to use the default
 framebuffer associated with our window.
 
 Now, we just need to attach our texture to `GL_COLOR_ATTACHMENT0` of the
-`GL_READ_FRAMEBUFFER`.
+`GL_READ_FRAMEBUFFER`:
 ```c++
 absl::Status InitGLPipeline(mp_gl_info &gli) {
   GLint glint = 0;
@@ -1261,7 +1262,7 @@ Since we're working with a static image, we leave the
 [mipmap level](https://en.wikipedia.org/wiki/Mipmap) as 0.
 
 Finally, we need a custom `imshow()` function to present the frame that we get
-at the tail end of our MP pipeline. Again, we have the boilerplate,
+at the tail end of our MP pipeline. Again, we have the boilerplate:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1279,7 +1280,7 @@ left of a window is (0,0) , but in OpenGL, the bottom left is... well,
 What affects us is that our data has its y-axis flipped from what OpenGL
 expects.
 
-To account for this, we are going to be flipping the matrix as a cpu operation.
+To account for this, we are going to be flipping the matrix as a cpu operation:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1302,7 +1303,7 @@ shader code. We won't touch on that for this codelab, but if you want an example
 you can check out the [AI Camera App](https://gitlab.com/qnx/projects/ai-camera-app).
 
 Now, we bind the textures and framebuffers we're going to be using in the
-proceeding operations.
+proceeding operations:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1340,7 +1341,7 @@ absl::Status GLShowMat(
 ```
 
 Now, we clear the color buffer so we're not seeing garbage in what's drawn to the
-window.
+window:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1367,7 +1368,7 @@ absl::Status GLShowMat(
 }
 ```
 
-Next, we create a texture for our output frame.
+Next, we create a texture for our output frame:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1415,15 +1416,15 @@ We set `GL_UNPACK_ALIGNMENT` to identify whether our data is aligned in terms of
 bytes or in terms of words.
 
 As you remember from the section on where we setup a camera sink using
-libcamapi, our data can have a stride (step), which might be more than the width
-(cols). To account for this, we pass the stride converted to pixels to
+libcamapi, our data can have a stride (step), which might be greater than the
+width (cols). To account for this, we pass the stride converted to pixels to
 `GL_UNPACK_ROW_LENGTH`.
 
 Finally, we can define our texture with a call to `glTexImage2D()`.
 
 Now, we just need to call the blit operation to copy our read framebuffer
 directly to the window surface's draw framebuffer, and subsequently write that
-draw framebuffer to the window.
+draw framebuffer to the window:
 ```c++
 absl::Status GLShowMat(
   mp_gl_info_t &gli,
@@ -1468,7 +1469,7 @@ should be able to see the resulting image.
 
 Finally, we get to add to `RunMPPGraph()` the code to get a frame from the camera
 which is fed into an MP pipeline, get the output frame from the MP pipeline,
-and present it to the screen!
+and present it to the screen:
 ```c++
 while (grab_frames) {
   // Capture sensor framework camera or video frame.

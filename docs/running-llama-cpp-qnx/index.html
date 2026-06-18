@@ -1,0 +1,418 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Running llama.cpp on QNX 8.0 with Vulkan GPU Acceleration</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="running-llama-cpp-qnx"
+                  title="Running llama.cpp on QNX 8.0 with Vulkan GPU Acceleration"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p><code>llama.cpp</code> is a C/C++ implementation of LLM inference. It runs language models efficiently on CPUs and, where a GPU backend is available, can offload model layers to the GPU for faster token generation.</p>
+<p>This codelab walks through getting <code>llama.cpp</code> running on <strong>QNX 8.0</strong>: installing the packages from the QNX repository, setting up a Vulkan-capable QEMU target, putting a model on the device, and running inference both CPU-only and with Vulkan GPU offload. It finishes with a CPU-vs-Vulkan benchmark so you can see the difference for yourself.</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>How to install <code>llama.cpp</code> and the Vulkan backend from the QNX package repository</li>
+<li>How to confirm the Vulkan device is detected on a QNX target</li>
+<li>How to launch a Vulkan-capable QNX QEMU target (virtio-gpu Venus)</li>
+<li>How to put a GGUF model on the target</li>
+<li>How to run inference on CPU and with Vulkan GPU offload</li>
+<li>How to benchmark CPU vs Vulkan and read the results correctly</li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A QNX 8.0 target (this codelab uses an x86_64 QEMU target)</li>
+<li>The target&#39;s <code>apk</code> repositories configured to the QNX package repos</li>
+<li>For the GPU path: a Linux host able to run QEMU with a Venus-capable virtio-gpu</li>
+<li>Basic comfort with a shell and <code>ssh</code>/<code>scp</code></li>
+</ul>
+<p><strong>Note on hardware:</strong> The validated GPU path in this codelab is a QNX x86_64 QEMU target using virtio-gpu Venus. The CPU path works on any QNX 8.0 target. GPU acceleration on physical hardware depends on the QNX graphics stack available for that board and is outside the scope of this codelab.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="What you are installing — Overview" duration="0">
+        <p>The packages split into a few pieces so you only pull in what you need:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p><strong>Package</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>Purpose</strong></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama.cpp</code></p>
+</td><td colspan="1" rowspan="1"><p>Main command-line tools (<code>llama-cli</code>, <code>llama-completion</code>, <code>llama-bench</code>).</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama.cpp-libs</code></p>
+</td><td colspan="1" rowspan="1"><p>Private shared libraries and CPU backend used by the binaries.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama.cpp-vulkan</code></p>
+</td><td colspan="1" rowspan="1"><p>Vulkan GPU backend (<code>libggml-vulkan.so</code>). Install this for GPU offload.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama.cpp-extras</code></p>
+</td><td colspan="1" rowspan="1"><p>Additional utility binaries (tokenizer, quantize, gguf tools, and more).</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama-server</code></p>
+</td><td colspan="1" rowspan="1"><p>HTTP server for serving inference over a socket.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>llama.cpp-dev</code></p>
+</td><td colspan="1" rowspan="1"><p>CMake / pkg-config files. Only needed if you build against llama.cpp.</p>
+</td></tr>
+</table>
+<p>The Vulkan backend depends on a shader-compiler toolchain that is packaged separately. You install these alongside the Vulkan backend:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p><strong>Package</strong></p>
+</td><td colspan="1" rowspan="1"><p><strong>Role</strong></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>spirv-headers</code></p>
+</td><td colspan="1" rowspan="1"><p>Khronos SPIR-V registry headers.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>spirv-tools</code></p>
+</td><td colspan="1" rowspan="1"><p>SPIR-V tools and libraries.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>glslang</code></p>
+</td><td colspan="1" rowspan="1"><p>Khronos GLSL front end and SPIR-V generator.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>shaderc</code></p>
+</td><td colspan="1" rowspan="1"><p>Provides the shader tooling llama.cpp&#39;s Vulkan backend relies on.</p>
+</td></tr>
+</table>
+<p>You do not need to understand the internals to use the packages. The QNX port carries a small number of QNX-specific source patches and enables the Vulkan backend; everything below works against the installed packages.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 1 — Confirm your package repositories" duration="0">
+        <p>The QNX images point <code>apk</code> at the QNX package repositories. Check your configuration:</p>
+<pre><code language="language-bash" class="language-bash">cat /etc/apk/repositories
+</code></pre>
+<p>You should see the QNX repositories listed, for example:</p>
+<pre><code>https://repo.oss.qnx.com/8.0.3/core
+https://repo.oss.qnx.com/8.0.3/extra
+</code></pre>
+<p>The <code>llama.cpp</code> packages live in the <strong>extra</strong> repository. Update the package index:</p>
+<pre><code language="language-bash" class="language-bash">sudo apk update
+</code></pre>
+<p>Confirm the packages are visible before installing:</p>
+<pre><code language="language-bash" class="language-bash">apk search llama.cpp
+apk search shaderc spirv-headers spirv-tools glslang
+</code></pre>
+<p><strong>If the search returns nothing:</strong> the packages may not be published to your configured repository yet, or your repositories list does not include the <code>extra</code> repo. Confirm the <code>extra</code> repository line is present and that <code>apk update</code> succeeded.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 2 — Install llama.cpp and the Vulkan backend" duration="0">
+        <p>Install the shader toolchain, the core <code>llama.cpp</code> packages, and the Vulkan backend together:</p>
+<pre><code language="language-bash" class="language-bash">sudo apk add \
+  spirv-headers \
+  spirv-tools \
+  glslang \
+  shaderc \
+  llama.cpp \
+  llama.cpp-libs \
+  llama.cpp-vulkan \
+  llama.cpp-extras \
+  llama-server
+</code></pre>
+<p>If you only want CPU inference, you can omit <code>llama.cpp-vulkan</code> and the shader toolchain. The Vulkan packages are only needed for GPU offload.</p>
+<p>Confirm the tools are installed:</p>
+<pre><code language="language-bash" class="language-bash">llama-cli --help
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 3 — Confirm the Vulkan device is detected" duration="0">
+        <p>List the backends and devices <code>llama.cpp</code> can see:</p>
+<pre><code language="language-bash" class="language-bash">llama-cli --list-devices
+</code></pre>
+<p>On a working Vulkan target you should see a Vulkan device listed, for example:</p>
+<pre><code>Vulkan0: Virtio-GPU Venus
+</code></pre>
+<p>If you also have <code>vulkaninfo</code> available, you can confirm the Vulkan runtime independently:</p>
+<pre><code language="language-bash" class="language-bash">vulkaninfo --summary
+</code></pre>
+<p><strong>No Vulkan device listed?</strong> See the Troubleshooting step at the end. The most common causes are a missing <code>llama.cpp-vulkan</code> package, a missing <code>qnx-vulkan</code> runtime, or a QEMU target that was not launched with a Venus-capable GPU.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 4 — (GPU path) Launch a Vulkan-capable QEMU target" duration="0">
+        <p>Skip this step if you are running on a target that already has a working Vulkan device. This step covers bringing up a QNX x86_64 QEMU target with virtio-gpu Venus on a Linux host.</p>
+<p>The validated launch configuration is:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Setting</p>
+</td><td colspan="1" rowspan="1"><p>Value</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Memory</p>
+</td><td colspan="1" rowspan="1"><p>20G</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>vCPUs</p>
+</td><td colspan="1" rowspan="1"><p>8</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>GPU</p>
+</td><td colspan="1" rowspan="1"><p><code>virtio-gpu-gl,blob=on,hostmem=4G,venus=on</code></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Display</p>
+</td><td colspan="1" rowspan="1"><p><code>egl-headless</code></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>SSH port</p>
+</td><td colspan="1" rowspan="1"><p>2227</p>
+</td></tr>
+</table>
+<p>A representative QEMU invocation (adapt paths to your image and SDP):</p>
+<pre><code language="language-bash" class="language-bash">qemu-system-x86_64 \
+  -machine q35 \
+  -m 20G \
+  -smp 8 \
+  -display egl-headless \
+  -device virtio-gpu-gl,blob=on,hostmem=4G,venus=on \
+  -netdev user,id=net0,hostfwd=tcp::2227-:22 \
+  -device virtio-net-pci,netdev=net0 \
+  ... your QNX disk image and boot options ...
+</code></pre>
+<p><strong>Host render server note:</strong> Venus needs the host&#39;s <code>virgl_render_server</code> to be reachable. On some hosts the virglrenderer library expects the render server under <code>/usr/local/libexec</code>. If Venus fails to initialize, make sure the <code>virgl_render_server</code> binary on your host is on <code>PATH</code> or where your virglrenderer build expects it.</p>
+<p>Once the target is booted, connect over SSH and re-confirm the device:</p>
+<pre><code language="language-bash" class="language-bash">ssh -p 2227 qnx@localhost
+vulkaninfo --summary
+llama-cli --list-devices
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 5 — Put a model on the target" duration="0">
+        <p><code>llama.cpp</code> reads models in <strong>GGUF</strong> format. Models are not part of the packages; you download a GGUF file and copy it onto the target.</p>
+<p>Start with a small quantized model to prove the setup, then move to a larger one. This codelab uses Qwen2.5 0.5B and 1.5B in <code>Q4_K_M</code> quantization.</p>
+<p>GGUF models are hosted on sites like Hugging Face. The simplest way to get one is to download the <code>.gguf</code> file directly on your host, no special tooling required. You can download it from the model&#39;s page in a browser, or fetch the direct file URL with <code>curl</code>/<code>wget</code>:</p>
+<pre><code language="language-bash" class="language-bash">curl -L -o /tmp/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+</code></pre>
+<p><strong>Optional:</strong> If you already have the Hugging Face CLI (<code>pip install huggingface_hub</code>), you can instead run <code>huggingface-cli download bartowski/Qwen2.5-1.5B-Instruct-GGUF Qwen2.5-1.5B-Instruct-Q4_K_M.gguf --local-dir /tmp</code>. This is just a convenience; it is a host-side Python tool and is not part of the QNX packages.</p>
+<p>Copy the model to the target:</p>
+<pre><code language="language-bash" class="language-bash">scp -P 2227 \
+  /tmp/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  qnx@localhost:/var/home/qnx/
+</code></pre>
+<p><strong>Alternative:</strong> If your QNX target can reach the internet directly, you can run the same <code>curl</code> command from Step 5 on the target itself and skip the <code>scp</code> step. The <code>scp</code> approach is useful when the target has no internet access, or when you already have the model downloaded on your host.</p>
+<p>Verify the copy on the target:</p>
+<pre><code language="language-bash" class="language-bash">sha256sum /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+</code></pre>
+<p>The hash should match the file you downloaded from the source. (For the 1.5B model above, the validated SHA-256 was <code>1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370</code>.)</p>
+<p><strong>Model choice guidance:</strong> Use a small GGUF first to prove the package and runtime setup. <code>Q4_K_M</code> quantization is a good balance of quality and memory use. Larger models tend to show a clearer GPU generation benefit.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 6 — Run inference on CPU" duration="0">
+        <p>GPU offload is controlled at runtime with the <code>-ngl</code> flag (number of GPU layers):</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Mode</p>
+</td><td colspan="1" rowspan="1"><p>Option</p>
+</td><td colspan="1" rowspan="1"><p>Meaning</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>CPU-only</p>
+</td><td colspan="1" rowspan="1"><p><code>-ngl 0</code></p>
+</td><td colspan="1" rowspan="1"><p>Keep all model layers on the CPU.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Vulkan offload</p>
+</td><td colspan="1" rowspan="1"><p><code>-ngl 99</code></p>
+</td><td colspan="1" rowspan="1"><p>Offload as many model layers as possible to the GPU.</p>
+</td></tr>
+</table>
+<p>Run a CPU-only completion first:</p>
+<pre><code language="language-bash" class="language-bash">llama-completion \
+  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -p &#34;Hello from QNX. Say one short sentence.&#34; \
+  -n 32 \
+  -ngl 0
+</code></pre>
+<p>This works on any QNX 8.0 target, no GPU required. If it generates text, your model and runtime are good.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 7 — Run inference with Vulkan GPU offload" duration="0">
+        <p>Now run the same model with layers offloaded to the GPU:</p>
+<pre><code language="language-bash" class="language-bash">env MESA_LOG_FILE=/tmp/llama-mesa.log \
+llama-completion \
+  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -p &#34;Hello from QNX Vulkan. Say one short sentence.&#34; \
+  -n 32 \
+  -ngl 99
+</code></pre>
+<p>You should see the model report that it is using the Vulkan device and offloading layers, for example:</p>
+<pre><code>using device Vulkan0 (Virtio-GPU Venus)
+load_tensors: offloading output layer to GPU
+load_tensors: offloading 23 repeating layers to GPU
+load_tensors: offloaded 25/25 layers to GPU
+Vulkan0 model buffer size = 373.71 MiB
+Vulkan0 KV buffer size = 384.00 MiB
+</code></pre>
+<p>followed by generated text.</p>
+<p><strong>Harmless log noise:</strong> You may see <code>MESA-VIRTIO: debug: failed to dup sync fd</code>. In the validated setup this did not prevent device detection, offload, or inference. Setting <code>MESA_LOG_FILE</code> (as above) keeps this noise out of your terminal.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 8 — Run the HTTP server" duration="0">
+        <p><code>llama-server</code> exposes inference over HTTP. Start it bound to localhost:</p>
+<pre><code language="language-bash" class="language-bash">llama-server \
+  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -ngl 99 \
+  --host 127.0.0.1 \
+  --port 18081
+</code></pre>
+<p>From another shell on the target, send a completion request:</p>
+<pre><code language="language-bash" class="language-bash">curl http://127.0.0.1:18081/completion \
+  -X POST \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{&#34;prompt&#34;:&#34;Hello from the server!&#34;, &#34;n_predict&#34;:32}&#39;
+</code></pre>
+<p>You will get a JSON response whose <code>content</code> field holds the generated text, along with timing fields (<code>prompt_per_second</code>, <code>predicted_per_second</code>) you can use to gauge throughput.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 9 — Benchmark CPU vs Vulkan" duration="0">
+        <p>Use <code>llama-bench</code> to compare CPU and Vulkan on the same model. Run CPU-only:</p>
+<pre><code language="language-bash" class="language-bash">llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 0
+</code></pre>
+<p>Then Vulkan offload:</p>
+<pre><code language="language-bash" class="language-bash">llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 99
+</code></pre>
+<p><code>llama-bench</code> reports two phases separately, and they behave differently:</p>
+<ul>
+<li><strong><code>pp</code></strong><strong> (prompt processing / prefill)</strong> — reading the prompt into the model</li>
+<li><strong><code>tg</code></strong><strong> (token generation / decode)</strong> — producing new tokens</li>
+</ul>
+<p>In the validated QEMU/Venus setup, the GPU win was on <strong>token generation</strong>, while <strong>prompt processing</strong> was sometimes faster on CPU. That split is expected in this environment: prefill is sensitive to offload overhead and CPU-side scheduling, while generation benefits more from the GPU path once layers are resident on the device.</p>
+<p>Representative results from the validated setup:</p>
+<p><strong>Qwen2.5 0.5B, token generation (tg256):</strong></p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Mode</p>
+</td><td colspan="1" rowspan="1"><p>tg256</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>CPU <code>-ngl 0</code></p>
+</td><td colspan="1" rowspan="1"><p>12.41 tok/s</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Vulkan <code>-ngl 99</code></p>
+</td><td colspan="1" rowspan="1"><p>19.19 tok/s</p>
+</td></tr>
+</table>
+<p>About 1.55x faster generation with Vulkan.</p>
+<p><strong>Qwen2.5 1.5B (llama-bench, 128):</strong></p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Mode</p>
+</td><td colspan="1" rowspan="1"><p>pp128 (prefill)</p>
+</td><td colspan="1" rowspan="1"><p>tg128 (generation)</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>CPU <code>-ngl 0</code></p>
+</td><td colspan="1" rowspan="1"><p>27.77 tok/s</p>
+</td><td colspan="1" rowspan="1"><p>6.48 tok/s</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Vulkan <code>-ngl 99</code></p>
+</td><td colspan="1" rowspan="1"><p>16.42 tok/s</p>
+</td><td colspan="1" rowspan="1"><p>10.29 tok/s</p>
+</td></tr>
+</table>
+<p>Here CPU was faster for prompt processing (27.77 vs 16.42 tok/s), but Vulkan was about 1.59x faster for token generation (10.29 vs 6.48 tok/s). When you compare runs, make sure you are comparing the same phase.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Troubleshooting" duration="0">
+        <h2 is-upgraded>No Vulkan device</h2>
+<p>Run:</p>
+<pre><code language="language-bash" class="language-bash">vulkaninfo --summary
+llama-cli --list-devices
+</code></pre>
+<p>Then check:</p>
+<ul>
+<li><code>llama.cpp-vulkan</code> is installed (<code>apk info -e llama.cpp-vulkan</code>)</li>
+<li>the <code>qnx-vulkan</code> runtime is installed</li>
+<li>on QEMU, the target was launched with a Venus-capable GPU (<code>virtio-gpu-gl,...,venus=on</code>)</li>
+<li>the Vulkan/Screen runtime packages are present</li>
+</ul>
+<h2 is-upgraded>Inference hangs during model load</h2>
+<p>A bad GPU state can stall during model upload. Recover by:</p>
+<ol type="1">
+<li>Rebooting the target</li>
+<li>Relaunching with the known-good Venus configuration (Step 4)</li>
+<li>Re-running <code>vulkaninfo --summary</code> and <code>llama-cli --list-devices</code></li>
+</ol>
+<h2 is-upgraded>Mesa debug noise</h2>
+<p>Keep stderr readable by redirecting Mesa logs:</p>
+<pre><code language="language-bash" class="language-bash">env MESA_LOG_FILE=/tmp/llama-mesa.log llama-completion ...
+</code></pre>
+<h2 is-upgraded>Converting models is not included</h2>
+<p>The <code>convert_hf_to_gguf.py</code> converter is not packaged on QNX yet, because its Python ML dependency stack is not currently available. Use models that are already in <strong>GGUF</strong> format (for example, the <code>Q4_K_M</code> GGUF files used in this codelab). Treat HF-to-GGUF conversion as a host-side step you do before copying the model to the target.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You installed and ran <code>llama.cpp</code> on QNX 8.0, with both CPU and Vulkan GPU inference. Key points to carry forward:</p>
+<ul>
+<li>Install <code>llama.cpp</code>, <code>llama.cpp-libs</code>, and <code>llama.cpp-extras</code> for the tools; add <code>llama.cpp-vulkan</code> plus the shader toolchain (<code>spirv-headers</code>, <code>spirv-tools</code>, <code>glslang</code>, <code>shaderc</code>) for GPU offload</li>
+<li>Confirm the device with <code>llama-cli --list-devices</code> before expecting GPU acceleration</li>
+<li>GPU offload is controlled at runtime with <code>-ngl</code>: <code>-ngl 0</code> for CPU, <code>-ngl 99</code> for full Vulkan offload</li>
+<li>Models are GGUF files you copy onto the target; the converter is not packaged, so use pre-converted GGUF models</li>
+<li><code>llama-bench</code> reports prefill (<code>pp</code>) and generation (<code>tg</code>) separately; in the validated QEMU/Venus setup the Vulkan win was on token generation</li>
+<li>For the GPU path on QEMU, launch with a Venus-capable virtio-gpu and confirm with <code>vulkaninfo --summary</code></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

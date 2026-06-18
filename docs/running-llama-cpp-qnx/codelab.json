@@ -1,0 +1,28 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-06-18T15:59:38-04:00",
+  "id": "running-llama-cpp-qnx",
+  "duration": 0,
+  "title": "Running llama.cpp on QNX 8.0 with Vulkan GPU Acceleration",
+  "authors": "Elliott Mazzuca",
+  "summary": "Install the llama.cpp packages on QNX 8.0, set up a Vulkan-capable QEMU target, load a model, and run LLM inference on CPU and on the GPU",
+  "source": "./markdown/llama.cpp/llama.cpp.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "llama.cpp",
+    "vulkan",
+    "ai"
+  ],
+  "tags": [
+    "intermediate"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "running-llama-cpp-qnx"
+}

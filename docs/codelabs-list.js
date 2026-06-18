@@ -44,6 +44,23 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Configure multiple camera sources on Raspberry Pi 5",
+    "href": "configure-multiple-camera-sources-on-RPI5/index.html",
+    "id": "configure-multiple-camera-sources-on-RPI5",
+    "authors": "Terence Ang",
+    "summary": "Learn how to configure multiple camera sources on a Pi 5 target with QNX 8.0.",
+    "updated": "2026-06-18T15:59:38-04:00",
+    "category": [
+      "codelabs",
+      "setup",
+      "qnx-sensor-framework",
+      "camera"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  },
+  {
     "title": "Building Standalone Epiphany Browser on QNX 8.0",
     "href": "epiphany-standalone-qnx/index.html",
     "id": "epiphany-standalone-qnx",
@@ -91,12 +108,30 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "MediaPipe Camera Sample",
+    "href": "mediapipe-camera-sample/index.html",
+    "id": "mediapipe-camera-sample",
+    "authors": "Ethan Leir",
+    "summary": "Write a camera application with MediaPipe and native QNX APIs",
+    "updated": "2026-06-18T15:59:38-04:00",
+    "category": [
+      "qnx",
+      "mediapipe",
+      "qnx-sensor-framework",
+      "ai",
+      "camera"
+    ],
+    "tags": [
+      "advanced"
+    ]
+  },
+  {
     "title": "Porting an Alpine Linux Package to QNX 8.0",
     "href": "porting-alpine-package-qnx/index.html",
     "id": "porting-alpine-package-qnx",
     "authors": "Elliott Mazzuca",
     "summary": "A step-by-step guide to porting an existing Alpine Linux package (APKBUILD) to the QNX aports repository, using gtk4 as the worked example",
-    "updated": "2026-05-28T10:44:09-04:00",
+    "updated": "2026-06-18T15:59:38-04:00",
     "category": [
       "qnx",
       "alpine",
@@ -139,6 +174,23 @@ window.CODELABS = [
       "qnx",
       "rpi5",
       "ssd"
+    ]
+  },
+  {
+    "title": "Running llama.cpp on QNX 8.0 with Vulkan GPU Acceleration",
+    "href": "running-llama-cpp-qnx/index.html",
+    "id": "running-llama-cpp-qnx",
+    "authors": "Elliott Mazzuca",
+    "summary": "Install the llama.cpp packages on QNX 8.0, set up a Vulkan-capable QEMU target, load a model, and run LLM inference on CPU and on the GPU",
+    "updated": "2026-06-18T15:59:38-04:00",
+    "category": [
+      "qnx",
+      "llama.cpp",
+      "vulkan",
+      "ai"
+    ],
+    "tags": [
+      "intermediate"
     ]
   },
   {

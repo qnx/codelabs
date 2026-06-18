@@ -53,17 +53,18 @@
 </ul>
 <p><strong>Prerequisites:</strong></p>
 <ul>
-<li>A Linux host with the QNX 8.0 SDP installed and sourced</li>
+<li>A QNX 8.0 target with the QNX Developer Desktop (QEMU or physical hardware such as Raspberry Pi 5)</li>
 <li>A working <code>abuild</code> environment with your <code>~/.abuild/</code> keys configured</li>
-<li>A fork of <code>qnx-ports/aports</code> cloned locally and set up for SSH push</li>
+<li>A fork of <code>qnx-ports/aports</code> cloned on the target and set up for SSH push</li>
 <li>Familiarity with basic APKBUILD structure (variables, <code>build()</code>, <code>package()</code> functions)</li>
 </ul>
+<p><strong>Note:</strong> All commands in this codelab are run directly on your QNX target. No Linux host or SDP installation is required.</p>
 
 
       </google-codelab-step>
     
       <google-codelab-step label="How it works — Overview" duration="0">
-        <p>Alpine Linux maintains thousands of packages in their public aports tree. Each package lives in a folder under a category (e.g. <code>extra/gtk4/</code>) and consists of:</p>
+        <p>Alpine Linux maintains thousands of packages in their public aports tree. Each package lives in a folder under a category (e.g. <code>community/gtk4.0/</code>) and consists of:</p>
 <ul>
 <li>An <code>APKBUILD</code> file: the build recipe (version, source URL, dependencies, build steps)</li>
 <li>Zero or more <code>.patch</code> files: source-level fixes applied before building</li>
@@ -91,27 +92,27 @@
 <p>Open the result that matches the package name. On the package page, find the <strong>Git repository</strong> link; this takes you to the APKBUILD source in the aports tree.</p>
 <p><strong>Choose the correct branch.</strong> Alpine maintains multiple stable branches (e.g. <code>3.21-stable</code>, <code>3.22-stable</code>). Use the <strong>latest stable branch</strong>, not <code>master</code> or <code>edge</code>. At time of writing, <code>3.23-stable</code> is current. Using a stable branch gives you a known-good build recipe rather than in-progress development changes.</p>
 <p>For gtk4 the path is:</p>
-<pre><code>https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/extra/gtk4
+<pre><code>https://gitlab.alpinelinux.org/alpine/aports/-/tree/3.23-stable/community/gtk4.0
 </code></pre>
 
 
       </google-codelab-step>
     
       <google-codelab-step label="Step 2 — Copy the APKBUILD and patch files" duration="0">
-        <p>In your local aports clone, create the directory for the new package under the appropriate category. The rule is:</p>
+        <p>In your aports clone on the QNX target, create the directory for the new package under the appropriate category. The rule is:</p>
 <ul>
 <li>If the package lives under <code>main</code> in the upstream Alpine aports tree, port it to <code>core</code> in QNX aports</li>
 <li>If the package lives under <code>community</code> in upstream Alpine, port it to <code>extra</code> in QNX aports</li>
 </ul>
-<p>gtk4 is under <code>extra/</code> in Alpine (community), so:</p>
+<p>gtk4 is under <code>community</code> in Alpine, so:</p>
 <pre><code language="language-bash" class="language-bash">mkdir -p ~/aports/extra/gtk4
 cd ~/aports/extra/gtk4
 </code></pre>
 <p>Download the APKBUILD:</p>
-<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/APKBUILD
+<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/community/gtk4.0/APKBUILD
 </code></pre>
 <p>Check if there are any patch files in the same directory on GitLab. If there are, download each one:</p>
-<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/extra/gtk4/some-fix.patch
+<pre><code language="language-bash" class="language-bash">curl -O https://gitlab.alpinelinux.org/alpine/aports/-/raw/3.23-stable/community/gtk4.0/some-fix.patch
 </code></pre>
 <p>Do the same for any other supporting files (init scripts, <code>.desktop</code> entries, etc.).</p>
 
@@ -278,7 +279,7 @@ abuild -r -c -K
 </td></tr>
 </table>
 <p>If all tests pass and the build succeeds, install the resulting <code>.apk</code> to verify it loads correctly:</p>
-<pre><code language="language-bash" class="language-bash">sudo apk add --allow-untrusted ~/packages/extra/x86_64/gtk4-&lt;version&gt;-r0.x86_64.apk
+<pre><code language="language-bash" class="language-bash">sudo apk add --allow-untrusted ~/packages/extra/x86_64/gtk4-&lt;version&gt;-r0.apk
 </code></pre>
 
 
@@ -292,7 +293,7 @@ git add extra/gtk4/
 git commit -m &#34;extra/gtk4: new port from Alpine 3.23-stable&#34;
 git push origin port/gtk4
 </code></pre>
-<p>Then open a pull request on GitHub from your fork to <code>qnx-ports/aports</code>. In the PR description include:</p>
+<p>Then open a pull request on GitHub from your fork to <code>qnx-ports/aports</code> (this can be done from any browser). In the PR description include:</p>
 <ul>
 <li>The upstream Alpine branch you based the port on (e.g. <code>3.23-stable</code>)</li>
 <li>A brief summary of any QNX-specific changes (patches, dependency renames, skipped subpackages)</li>

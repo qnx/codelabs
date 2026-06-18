@@ -1,0 +1,1305 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>MediaPipe Camera Sample</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="mediapipe-camera-sample"
+                  title="MediaPipe Camera Sample"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="1">
+        <p>MediaPipe is a unified set of AI solutions, which is designed so that you can easily deploy it for edge use cases. You can find the most information about it from <a href="https://developers.google.com/edge/mediapipe/solutions/guide" target="_blank">Google&#39;s own product documentation</a>.</p>
+<p>The purpose of this guide is to explain how you can get a MediaPipe application running on QNX through the lens of its samples, not to explain MediaPipe itself. You should refer to the official documentation to learn all the specifics of the mediapipe APIs.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Set Up Environment" duration="1">
+        <aside class="special"><p>To follow these exact instructions for sensor framework, you will need a <a href="https://www.raspberrypi.com/products/raspberry-pi-5/" target="_blank">Raspberry Pi 5</a> with a <a href="https://www.raspberrypi.com/products/camera-module-3/" target="_blank">Camera Module 3</a>.</p>
+</aside>
+<p>Get started on the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html" target="_blank">QNX 8.0 Self-hosted Developer Desktop</a>.</p>
+<p>Install the required dependencies:</p>
+<pre><code language="language-bash" class="language-bash">sudo apk add bazel6 cmake ninja opencv-dev
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Get the Workspace Ready" duration="4">
+        <p>Start by cloning MediaPipe,</p>
+<pre><code language="language-bash" class="language-bash">git clone https://github.com/qnx-ports/mediapipe.git --branch qnx-v0.10.26
+cd mediapipe
+</code></pre>
+<p>Then, build MediaPipe&#39;s QNX examples for cpu:</p>
+<pre><code language="language-bash" class="language-bash">./build_qnx_examples.sh
+</code></pre>
+<p>To build an individual example for gpu you can run the following command after the above script:</p>
+<pre><code language="language-bash" class="language-bash"># bazeltarget=...
+bazel build -c opt \
+   --action_env=PYTHON_BIN_PATH=/usr/bin/python3 \
+   --repo_env=BAZEL_CXXOPTS=-std=c++17 \
+   --override_repository=python=./python \
+   --override_repository=python_qnx=./python_qnx \
+   --extra_toolchains=@python_qnx//:qnx_py_toolchain \
+   --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
+   --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
+   --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_x64 \
+   --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_arm64 \
+   --extra_toolchains=//buildbase_qnx:qnx_cmake_toolchain \
+   --extra_toolchains=//buildbase_qnx:qnx_ninja_toolchain \
+   --copt=-DTFLITE_GPU_EXTRA_GLES_DEPS \
+   --copt=-DMEDIAPIPE_OMIT_EGL_WINDOW_BIT \
+   --copt=-DMESA_EGL_NO_X11_HEADERS \
+   --copt=-DEGL_NO_X11 \
+   ${bazeltarget}
+</code></pre>
+<p>Finally, run the example:</p>
+<pre><code language="language-bash" class="language-bash">./bazel-bin/mediapipe/examples/qnx/face_detection/face_detection_cpu \
+    --calculator_graph_config_file=./mediapipe/graphs/face_detection/face_detection_desktop_live.pbtxt
+</code></pre>
+<p>You can find the expected command line arguments in <a href="https://github.com/qnx-ports/mediapipe/blob/qnx-v0.10.26/mediapipe/examples/qnx/face_detection/BUILD" target="_blank">their respective BUILD files</a>.</p>
+<p>And that&#39;s it!</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Overview" duration="2">
+        <p>The QNX examples reside under <code>mediapipe/examples/qnx</code>. All of them rely on the common <code>demo_run_graph_main.cc</code> and <code>demo_run_graph_main_gpu.cc</code>, which themselves came from the examples for Linux. Most of the QNX-specific code lives in the files <code>qnx_defs.cc</code> and <code>qnx_defs.h</code>. The QNX code contains the following components that we will discuss individually: the camera sink, the window, and the renderer.</p>
+<p>MediaPipe is designed to handle conversions to/from <code>cv::Mat</code>, so the QNX components will primarily need to accept <code>cv::Mat</code> as input and output. Thankfully, OpenCV provides a suite of helpers to make video format conversions trivial, which we will touch on in the following section.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="libcamapi Camera Sink" duration="30">
+        <aside class="special"><p>Note: Throughout this section I will provide links to the 7.1 libcamapi docs, however the most up-to-date and extensive source of information are the libcamapi headers under <code>/usr/include/camera</code> on the target.</p>
+</aside>
+<p>The purpose of this component is to provide a way to fetch data from the camera viewfinder running in a separate thread following <a href="https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem" target="_blank">the producer/consumer pattern</a>.</p>
+<p>This is similar to the <a href="https://gitlab.com/qnx/projects/camera-projects/applications/camera_example1_callback" target="_blank">camera_example1_callback</a> and the <a href="https://gitlab.com/qnx/projects/ai-camera-app" target="_blank">AI Camera App</a>.</p>
+<p>We start with the basic boilerplate for a function to initialize a camera sink:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_camera_info {
+  // ...
+} mp_camera_info_t;
+
+absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  // ...
+}
+</code></pre>
+<p>Which we will fill out as we go.</p>
+<p>The very first thing that you need to work with libcamapi is a camera unit:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_camera_info {
+  camera_unit_t unit;
+  // ...
+} mp_camera_info_t;
+</code></pre>
+<p>But what is a camera unit? Running the following command:</p>
+<pre><code language="language-bash" class="language-bash">$ sudo pidin ar | grep &#34;sensor&#34;
+  860196 sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/sensor/sensor_demo.conf
+ 1204266 grep --color=auto sensor
+</code></pre>
+<p>You will see that when the <code>sensor</code> service was started, it was provided a path to a configuration file with its <code>-c</code> flag. Opening up this configuration file we see the contents:</p>
+<pre><code>begin SENSOR_GLOBAL
+    external_platform_library_path = libsensor_platform_broadcom_rpi5.so
+    external_platform_library_variant = PLATFORM_VARIANT_BCM2712
+end SENSOR_GLOBAL
+
+begin SENSOR_UNIT_1
+    type = simulator_camera
+    name = front
+    position = 0, 0, 0
+    direction = 0, 0, 0
+    default_video_resolution = 1280, 720
+    default_video_format = ycbycr
+    num_user_buffers = 4
+end SENSOR_UNIT_1
+</code></pre>
+<p>The important thing here is the field starting with <code>begin SENSOR_UNIT_1</code>. This is your camera unit, which has the value 1 when interpreted as a literal. Another thing you will notice is that it explicitly states some properties, most notably a <code>default_video_format</code>, which is one of the formats we will need to handle in our code, but more on that later.</p>
+<p>This default configuration exists to give you an output of coloured bars if you have no physical camera. But we have a Camera Module 3, so we need to point sensor service at a different configuration. You will find that the <code>/system/etc/config/sensor</code> directory contains configurations for various cameras. We care about <code>/system/etc/config/sensor/camera_module3.conf</code>:</p>
+<pre><code>begin SENSOR_GLOBAL
+    external_platform_library_path = libsensor_platform_broadcom_rpi5.so
+    external_platform_library_variant = PLATFORM_VARIANT_BCM2712
+end SENSOR_GLOBAL
+
+begin SENSOR_UNIT_1
+    type = external_camera
+    name = imx708
+    address = /system/lib/libimx708_external_camera.so,1
+    use_hardware_capture = true
+    i2c_path = /dev/i2c6
+    default_video_format = nv12
+end SENSOR_UNIT_1
+
+begin INTERIM_DATA_UNIT_1
+    num_buffers = 5
+    buffer_size = 8096
+    queue_depth = 1
+    data_format = SENSOR_FORMAT_ISP_TUNING_REQUEST
+    name = tuning_requests
+end INTERIM_DATA_UNIT_1
+
+begin ISP_TUNING_1
+    request_interim_data_unit = INTERIM_DATA_UNIT_1
+    sensor_units = SENSOR_UNIT_1
+end ISP_TUNING_1
+</code></pre>
+<p>Note down that the camera unit here still has the literal value 1, and the video format is nv12.</p>
+<p>To point sensor service at the new config, we need restart the sensor service using the PID that we got from the above <code>pidin</code> command:</p>
+<pre><code language="language-bash" class="language-bash">sudo slay 860196
+sudo sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/sensor/camera_module3.conf
+</code></pre>
+<p>Now, we need some way for the user to choose which camera unit to use as input to the program. <a href="https://abseil.io/docs/cpp/guides/flags" target="_blank">Abseil Flags</a> provides convenient helpers for this:</p>
+<pre><code language="language-c++" class="language-c++">ABSL_FLAG(long, camera_unit, (long)CAMERA_UNIT_INVALID,
+          &#34;The camera unit to open.&#34;
+          &#34;Set in a .conf file passed to sensor&#39;s -c argument at boot.&#34;);
+</code></pre>
+<p>We create a <code>--camera_unit</code> flag which accepts a <code>long</code> value, defaulting to <code>CAMERA_UNIT_INVALID</code>.</p>
+<p>Later on, we populate the local variable, <code>camera_unit_long</code>, with the value stored in this flag inside the <code>RunMPPGraph()</code> method:</p>
+<pre><code language="language-c++" class="language-c++">const long camera_unit_long = absl::GetFlag(FLAGS_camera_unit);
+
+ABSL_LOG(INFO) &lt;&lt; &#34;Initialize the camera or load the video.&#34;;
+mp_camera_info_t ci = {};
+MP_RETURN_IF_ERROR(InitCameraSink(ci, (camera_unit_t)camera_unit_long, save_video));
+</code></pre>
+<p>You&#39;ll notice that the default camera unit is an invalid value. Typically, across our sensor samples, not choosing a camera unit is considered a fatal error. When writing this, I chose to be more permissive, and allow users to enter nothing to indicate the &#34;preferred&#34; camera unit. But, you&#39;ll notice that sensor framework doesn&#39;t have a concept of a &#34;preferred&#34; camera unit. Instead, we&#39;re going to add some code to assume what you want is the first available camera unit, and output a warning in case that isn&#39;t what you want. You&#39;ll find that in a lot of the configurations that come with the QNX Developer Desktop, there is only one camera unit, so this is a safe assumption to make.</p>
+<pre><code language="language-c++" class="language-c++">std::vector&lt;camera_unit_t&gt; QueryCameraUnits() {
+  std::vector&lt;camera_unit_t&gt; result;
+  unsigned int num_units;
+  int ret;
+
+  ret = camera_get_supported_cameras(0, &amp;num_units, nullptr);
+  if (ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to query camera units. &#34;
+      &lt;&lt; &#34;&#39;camera_get_supported_cameras&#39; returned: &#34; &lt;&lt; ret;
+    return std::vector&lt;camera_unit_t&gt;();
+  }
+
+  result.resize(num_units);
+  ret = camera_get_supported_cameras(num_units, &amp;num_units, result.data());
+  if (ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to query camera units. &#34;
+      &lt;&lt; &#34;&#39;camera_get_supported_cameras&#39; returned: &#34; &lt;&lt; ret;
+    return std::vector&lt;camera_unit_t&gt;();
+  }
+
+  return result;
+}
+
+absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  std::vector&lt;camera_unit_t&gt; units;
+  absl::Status ret = absl::OkStatus();
+
+  // Set default values.
+  ci.unit = CAMERA_UNIT_INVALID;
+
+  if (unit == CAMERA_UNIT_INVALID) {
+    ABSL_LOG(WARNING) &lt;&lt; &#34;No camera unit was specified. Falling back to first &#34;
+      &lt;&lt; &#34;available camera unit.&#34;;
+  } else if ((unit &lt;= CAMERA_UNIT_NONE) || (unit &gt;= CAMERA_UNIT_NUM_UNITS)) {
+    ABSL_LOG(WARNING) &lt;&lt; &#34;The specified camera unit is invalid. Falling back to &#34;
+      &lt;&lt; &#34;first available camera unit.&#34;;
+    ci.unit = CAMERA_UNIT_INVALID;
+  } else {
+    ci.unit = unit;
+  }
+
+  if (ci.unit == CAMERA_UNIT_INVALID) {
+    units = QueryCameraUnits();
+    if (units.empty()) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to find any camera units.&#34;;
+      ret = absl::UnknownError(&#34;Failed to find any camera units.&#34;);
+      goto failure;
+    }
+    ci.unit = units[0];
+  }
+
+  // ...
+}
+</code></pre>
+<p>Now, we need to open this camera unit, receiving a handle to that we can use in subsequent calls to operate on it:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_camera_info {
+  camera_unit_t unit;
+  camera_handle_t handle;
+  // ...
+} mp_camera_info_t;
+
+absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  std::vector&lt;camera_unit_t&gt; units;
+  int cam_ret;
+  absl::Status ret = absl::OkStatus();
+
+  // Set default values.
+  ci.handle = static_cast&lt;camera_handle_t&gt;(-1);
+  ci.unit = CAMERA_UNIT_INVALID;
+
+  // ...
+
+  cam_ret = camera_open(ci.unit, CAMERA_MODE_RO | CAMERA_MODE_ROLL | CAMERA_MODE_PWRITE, &amp;ci.handle);
+  if (cam_ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to open camera. &#39;camera_open&#39; returned error &#34;
+      &lt;&lt; cam_ret &lt;&lt; &#34; (&#34; &lt;&lt; strerror(cam_ret) &lt;&lt; &#34;).&#34;;
+    ret = absl::ErrnoToStatus(cam_ret, &#34;Failed to open camera.&#34;);
+    goto failure;
+  }
+
+  // ...
+}
+</code></pre>
+<p>In this call to <a href="https://www.qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/camera_open.html" target="_blank">camera_open()</a> we pass <code>CAMERA_MODE_RO | CAMERA_MODE_ROLL | CAMERA_MODE_PWRITE</code> to signify that we want:</p>
+<ul>
+<li>Read and write access to the camera&#39;s configuration,</li>
+<li>Read access to the camera&#39;s imaging datapath, and</li>
+<li>Access to the camera roll</li>
+</ul>
+<p>This <code>camera_open()</code> call does not yet start the camera. We will touch on that in a moment.</p>
+<p>We saw earlier that we need to support nv12 in our code to be able to actually interpret the data coming from the camera roll, but first we should sanitize the input to make sure that the video format we&#39;re getting is actually one of those types we do support:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  std::vector&lt;camera_unit_t&gt; units;
+  camera_frametype_t frametype = CAMERA_FRAMETYPE_UNSPECIFIED;
+  int cam_ret;
+  absl::Status ret = absl::OkStatus();
+
+  // Set default values.
+  ci.handle = static_cast&lt;camera_handle_t&gt;(-1);
+  ci.unit = CAMERA_UNIT_INVALID;
+
+  // ...
+
+  cam_ret = camera_get_vf_property(ci.handle, CAMERA_IMGPROP_FORMAT, &amp;frametype);
+  if (cam_ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to set CAMERA_IMGPROP_FORMAT property. &#34;
+      &lt;&lt; &#34;&#39;camera_set_vf_property&#39; returned error &#34; &lt;&lt; cam_ret &lt;&lt; &#34; (&#34;
+      &lt;&lt; strerror(cam_ret) &lt;&lt; &#34;).&#34;;
+    ret = absl::ErrnoToStatus(cam_ret, &#34;Failed to set camera property.&#34;);
+    goto failure;
+  }
+  switch(frametype) {
+  case CAMERA_FRAMETYPE_NV12:
+  // ...
+    break;
+  default:
+    ABSL_LOG(ERROR) &lt;&lt; &#34;The configured frametype is not supported.&#34;;
+    ret = absl::UnknownError(&#34;The configured frametype is not supported.&#34;);
+    goto failure;
+    break;
+  }
+
+  // ...
+}
+</code></pre>
+<p>You&#39;ll notice that we&#39;re not tracking <code>frametype</code> inside of the <code>mp_camera_info_t</code> struct. This is because the data packet that we will get from the viewfinder later on already contains this information, alongside other important details like the height and width.</p>
+<p>The last thing we need to do is set the behaviour we expect from the camera roll:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_camera_info {
+  camera_unit_t unit;
+  camera_handle_t handle;
+  double framerate;
+  // ...
+} mp_camera_info_t;
+
+absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  std::vector&lt;camera_unit_t&gt; units;
+  camera_frametype_t frametype = CAMERA_FRAMETYPE_UNSPECIFIED;
+  int cam_ret;
+  absl::Status ret = absl::OkStatus();
+
+  // Set default values.
+  ci.handle = static_cast&lt;camera_handle_t&gt;(-1);
+  ci.unit = CAMERA_UNIT_INVALID;
+
+  // ...
+
+  // Don&#39;t create a window automatically.
+  cam_ret = camera_set_vf_property(ci.handle, CAMERA_IMGPROP_CREATEWINDOW, false);
+  if (cam_ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to set CAMERA_IMGPROP_CREATEWINDOW property. &#34;
+      &lt;&lt; &#34;&#39;camera_set_vf_property&#39; returned error &#34; &lt;&lt; cam_ret &lt;&lt; &#34; (&#34;
+      &lt;&lt; strerror(cam_ret) &lt;&lt; &#34;).&#34;;
+    ret = absl::ErrnoToStatus(cam_ret, &#34;Failed to set camera property.&#34;);
+    goto failure;
+  }
+
+  if (!save_video) {
+    // A camera unit can just be a video, which does not allow setting framerate
+    // or changing frame dimensions. So we treat these as suggestions instead.
+    ci.framerate = 30.0;
+    cam_ret = camera_set_vf_property(ci.handle, CAMERA_IMGPROP_FRAMERATE, ci.framerate);
+    if (cam_ret != CAMERA_EOK) {
+      camera_get_vf_property(ci.handle, CAMERA_IMGPROP_FRAMERATE, &amp;ci.framerate);
+    }
+
+    camera_set_vf_property(ci.handle, CAMERA_IMGPROP_WIDTH, 640);
+
+    camera_set_vf_property(ci.handle, CAMERA_IMGPROP_HEIGHT, 480);
+  } else {
+    cam_ret = camera_get_vf_property(ci.handle, CAMERA_IMGPROP_FRAMERATE, &amp;ci.framerate);
+    if (cam_ret != CAMERA_EOK) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to get CAMERA_IMGPROP_FRAMERATE property. &#34;
+        &lt;&lt; &#34;&#39;camera_get_vf_property&#39; returned error &#34; &lt;&lt; cam_ret &lt;&lt; &#34; (&#34;
+        &lt;&lt; strerror(cam_ret) &lt;&lt; &#34;).&#34;;
+      ret = absl::ErrnoToStatus(cam_ret, &#34;Failed to get camera property.&#34;);
+      goto failure;
+    }
+  }
+
+  // ...
+}
+</code></pre>
+<p>We&#39;re going to manually manipulate the data we get from viewfinder before presenting, so we set the <code>CAMERA_IMGPROP_CREATEWINDOW</code> property to false to say we will handle our own presentation.</p>
+<p>The important thing to note here is that we&#39;re treating each of these operations as non-fatal. This is to account for the corner case where the sensor service configuration takes a video file as input (more on that in a future codelab), so fewer properties can actually be set.</p>
+<p>We&#39;re almost ready to start our camera feed, but first we need to create some callbacks for the viewfinder thread. The first one simply reports the status:</p>
+<pre><code language="language-c++" class="language-c++">static void CameraStatusCallback(camera_handle_t handle, camera_devstatus_t status, uint16_t extra, void *arg)
+{
+    switch (status) {
+    case CAMERA_STATUS_VIDEOVF:
+      ABSL_LOG(INFO) &lt;&lt; &#34;The camera viewfinder has started streaming.&#34;;
+      break;
+    case CAMERA_STATUS_VIEWFINDER_ACTIVE:
+      ABSL_LOG(INFO) &lt;&lt; &#34;The camera viewfinder is active.&#34;;
+      break;
+    case CAMERA_STATUS_VIDEO_RESUME:
+      ABSL_LOG(INFO) &lt;&lt; &#34;Camera video encoding has started.&#34;;
+      break;
+    case CAMERA_STATUS_MM_ERROR:
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Camera recording has stopped due to an encoding error.&#34;;
+      break;
+    case CAMERA_STATUS_NOSPACE_ERROR:
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Camera recording has run out of disk space and stopped.&#34;;
+      break;
+    default:
+      ABSL_LOG(INFO) &lt;&lt; &#34;Camera received status &#34; &lt;&lt; status &lt;&lt; &#34;.&#34;;
+      break;
+    }
+}
+</code></pre>
+<p>Then, we&#39;ll write the viewfinder callback to accept data from the camera roll, and feed it to a producer API. Starting with boilerplate:</p>
+<pre><code language="language-c++" class="language-c++">void CameraProduceData(
+  mp_camera_info_t &amp;ci,
+  camera_buffer_t* buffer_p) {
+  // ...
+}
+
+static void CameraViewfinderCallback(
+  camera_handle_t handle,
+  camera_buffer_t* buffer_p,
+  void* arg) {
+  mp_camera_info_t *ci_p = reinterpret_cast&lt;mp_camera_info_t*&gt;(arg);
+  CameraProduceData(*ci_p, buffer_p);
+}
+</code></pre>
+<p>When the viewfinder callback is called, it&#39;s given a <a href="https://www.qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__buffer__t.html" target="_blank"><code>camera_buffer_t</code> struct</a>:</p>
+<pre><code language="language-c" class="language-c">typedef struct {
+    camera_frametype_t frametype;
+    uint64_t framesize;
+    uint8_t* framebuf;
+    uint64_t framemetasize;
+    void* framemeta;
+    int64_t frametimestamp;
+    camera_framedesc_t framedesc;
+} camera_buffer_t;
+</code></pre>
+<p>Here <code>framebuf</code> is the pointer to the raw data, <code>frametype</code> is the video format, and <code>framedesc</code> is a union of info describing all of the possible video formats. We can retrieve the information we need from this packet with the following logic:</p>
+<pre><code language="language-c++" class="language-c++">void CameraProduceData(
+  mp_camera_info_t &amp;ci,
+  camera_buffer_t* buffer_p) {
+  switch(buffer_p-&gt;frametype) {
+  case CAMERA_FRAMETYPE_NV12:
+    // buffer_p-&gt;framedesc.nv12
+    break;
+  // ...
+  default:
+    ABSL_LOG(ERROR) &lt;&lt; &#34;The camera frametype is invalid.&#34;;
+    return;
+  }
+
+  // ...
+}
+</code></pre>
+<p>The framedesc for nv12 is a <a href="https://qnx.com/developers/docs/7.1/com.qnx.doc.camera/topic/structcamera__frame__nv12__t.html" target="_blank"><code>camera_frame_nv12_t</code> type</a>:</p>
+<pre><code language="language-c" class="language-c">typedef struct {
+    uint32_t height;
+    uint32_t width;
+    uint32_t stride;
+    int64_t uv_offset;
+    int64_t uv_stride;
+} camera_frame_nv12_t;
+</code></pre>
+<p>In nv12 format, an image in composed of a Y plane, and a separate U/V plane: <img alt="NV12 Format" src="img/4a021f0c135a6446.png"></p>
+<ul>
+<li><code>height</code> is the height of the Y plane in 1-byte pixels</li>
+<li><code>width</code> is the width of the Y plane in 1-byte pixels</li>
+<li><code>stride</code> is the number of bytes between one line of data and the next in the Y plane (spanning at least the width in bytes, but it could include some unused memory)</li>
+<li><code>uv_offset</code> is the offset between the start of the Y plane and the start of the U/V plane</li>
+<li><code>uv_stride</code> is the number of bytes between one line of data and the next in the U/V plane</li>
+</ul>
+<p>Note that we&#39;re not given a height or width for the U/V plane. This is because the height and width in pixels of the U/V plane is exactly half of the height and width in pixels of the Y plane! This will become important in a second.</p>
+<p>OpenCV provides <a href="https://github.com/opencv/opencv/blob/4.9.0/modules/imgproc/include/opencv2/imgproc.hpp#L3749" target="_blank">cv::cvtColorTwoPlane()</a> to help with conversions from nv12. The final code to convert to an output RGB888 format and store it in <code>frame</code> looks like:</p>
+<pre><code language="language-c++" class="language-c++">void CameraProduceData(
+  mp_camera_info_t &amp;ci,
+  camera_buffer_t* buffer_p) {
+  cv::Mat frame;
+
+  switch(buffer_p-&gt;frametype) {
+  case CAMERA_FRAMETYPE_NV12:
+    {
+      cv::Mat frame_raw_y(
+          buffer_p-&gt;framedesc.nv12.height,
+          buffer_p-&gt;framedesc.nv12.width, CV_8UC1,
+          buffer_p-&gt;framebuf,
+          buffer_p-&gt;framedesc.nv12.stride);
+      cv::Mat frame_raw_uv(
+          (buffer_p-&gt;framedesc.nv12.height / 2),
+          (buffer_p-&gt;framedesc.nv12.width / 2), CV_8UC2,
+          buffer_p-&gt;framebuf + buffer_p-&gt;framedesc.nv12.uv_offset,
+          buffer_p-&gt;framedesc.nv12.uv_stride);
+      cv::cvtColorTwoPlane(frame_raw_y, frame_raw_uv, frame, cv::COLOR_YUV2RGB_NV12);
+    }
+    break;
+  // ...
+  default:
+    ABSL_LOG(ERROR) &lt;&lt; &#34;The camera frametype is invalid.&#34;;
+    return;
+  }
+
+  // ...
+}
+</code></pre>
+<p>The height (rows) and width (cols) in OpenCV is in pixels, so per our discussion earlier, we need to divide the height and width in half when passing the U/V plane to its own matrix. The stride (step) in OpenCV is already in bytes, so nothing to do there.</p>
+<p>Now, lets take a look at the producer code:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_camera_info {
+  camera_unit_t unit;
+  camera_handle_t handle;
+  double framerate;
+  std::mutex data_m;
+  std::condition_variable data_cv;
+  bool data_ready;
+  cv::Mat data;
+} mp_camera_info_t;
+
+void CameraProduceData(
+  mp_camera_info_t &amp;ci,
+  camera_buffer_t* buffer_p) {
+  cv::Mat frame;
+
+  // ...
+
+  // We don&#39;t need data to be empty before writing the buffer.
+  {
+    std::lock_guard&lt;std::mutex&gt; data_guard(ci.data_m);
+
+    // Clone so that the data is still valid when we get a new frame.
+    ci.data = frame.clone();
+    ci.data_ready = true;
+  }
+  ci.data_cv.notify_one();
+}
+</code></pre>
+<p>Some important considerations here are:</p>
+<ul>
+<li>We aren&#39;t blocking until the consumer thread has consumed the previous frame, so that we don&#39;t end up stalling the viewfinder thread while it waits for data to be processed by MP.</li>
+<li>We are creating a deep copy of the data with <code>frame.clone()</code> so that MP isn&#39;t acting on a pointer to data that is being overwritten by viewfinder. This might be superfluous depending on whether OpenCV allocated new memory for the data while handling the previous operations.</li>
+</ul>
+<p>Then, the consumer code to be executed by the main thread looks as follows:</p>
+<pre><code language="language-c++" class="language-c++">cv::Mat CameraConsumeData(mp_camera_info_t &amp;ci) {
+  cv::Mat ret;
+  std::unique_lock data_lk(ci.data_m);
+  ci.data_cv.wait(data_lk, [&amp;]() { return ci.data_ready; });
+
+  ret = ci.data;
+  ci.data_ready = false;
+
+  data_lk.unlock();
+
+  return ret;
+}
+</code></pre>
+<p>And we can finally start the viewfinder:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status InitCameraSink(
+  mp_camera_info_t &amp;ci,
+  const camera_unit_t unit,
+  const bool save_video) {
+  std::vector&lt;camera_unit_t&gt; units;
+  camera_frametype_t frametype = CAMERA_FRAMETYPE_UNSPECIFIED;
+  int cam_ret;
+  absl::Status ret = absl::OkStatus();
+
+  // Set default values.
+  ci.handle = static_cast&lt;camera_handle_t&gt;(-1);
+  ci.unit = CAMERA_UNIT_INVALID;
+
+  // ...
+
+  cam_ret = camera_start_viewfinder(ci.handle, CameraViewfinderCallback, CameraStatusCallback, &amp;ci);
+  if (cam_ret != CAMERA_EOK) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to start viewfinder. &#39;camera_start_viewfinder&#39; &#34;
+      &lt;&lt; &#34;returned error &#34; &lt;&lt; cam_ret &lt;&lt; &#34; (&#34; &lt;&lt; strerror(cam_ret) &lt;&lt; &#34;).&#34;;
+    ret = absl::ErrnoToStatus(cam_ret, &#34;Failed to start viewfinder.&#34;);
+    goto failure;
+  }
+
+  return ret;
+
+  failure:
+  if (ci.handle != static_cast&lt;camera_handle_t&gt;(-1)) {
+    camera_close(ci.handle);
+    ci.handle = static_cast&lt;camera_handle_t&gt;(-1);
+  }
+  return ret;
+}
+</code></pre>
+<p>Our <code>mp_camera_info_t</code> struct is being passed as a <code>void *</code> to <code>camera_start_viewfinder()</code> so it can be retrieved later during the <code>CameraViewfinderCallback()</code> call.</p>
+<p>Back in <code>RunMPPGraph()</code> we can get the data from <code>CameraConsumeData()</code> and forward it to MP in RGB888 format:</p>
+<pre><code language="language-c++" class="language-c++">// Capture sensor framework camera or video frame.
+// The frame is already in the expected format.
+cv::Mat camera_frame = CameraConsumeData(ci);
+if (camera_frame.empty()) {
+  ABSL_LOG(INFO) &lt;&lt; &#34;Ignore empty frames from camera.&#34;;
+  continue;
+}
+cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
+
+// Wrap Mat into an ImageFrame.
+auto input_frame = absl::make_unique&lt;mediapipe::ImageFrame&gt;(
+    mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
+    mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
+camera_frame.copyTo(input_frame_mat);
+</code></pre>
+<p>Now, we can discuss the presentation of the output data at the tail end of the MP pipeline.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="screen Window Creation" duration="10">
+        <p>We have the boilerplate:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_screen_info {
+  // ...
+} mp_screen_info_t;
+
+absl::Status InitScreenWindow(mp_screen_info_t &amp;si) {
+  // ...
+}
+</code></pre>
+<p>We start by creating the window. For this we need a <code>screen_context_t</code> handle to manage the context of the screen application and a <code>screen_window_t</code> handle to refer to the window:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_screen_info {
+  screen_context_t context;
+  screen_window_t window;
+  int size[2];
+} mp_screen_info_t;
+
+absl::Status InitScreenWindow(mp_screen_info_t &amp;si) {
+  screen_display_t *screen_display_p = nullptr;
+  int usage;
+  int format;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;si, 0, sizeof(mp_screen_info_t));
+  // These are opaque pointer types. -1 should be the safest value.
+  si.context = (screen_context_t) -1;
+  si.window = (screen_window_t) -1;
+
+  // Allocate screen handles.
+  if (screen_create_context(&amp;si.context, 0) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to create screen context.&#34;);
+    goto failure;
+  }
+
+  // ...
+
+  if (screen_create_window(&amp;si.window, si.context) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to create screen window.&#34;);
+    goto failure;
+  }
+
+  if (screen_get_window_property_iv(si.window, SCREEN_PROPERTY_SIZE, si.size) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to get window size.&#34;);
+    goto failure;
+  }
+
+  usage = SCREEN_USAGE_OPENGL_ES2 | SCREEN_USAGE_OPENGL_ES3;
+  if (screen_set_window_property_iv(si.window, SCREEN_PROPERTY_USAGE, &amp;usage) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to set window usage.&#34;);
+    goto failure;
+  }
+
+  format = SCREEN_FORMAT_RGBA8888;
+  if (screen_set_window_property_iv(si.window, SCREEN_PROPERTY_FORMAT, &amp;format) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to set window format.&#34;);
+    goto failure;
+  }
+
+  return ret;
+
+failure:
+  if (si.window != (screen_window_t) -1) {
+    screen_destroy_window(si.window);
+    si.window = (screen_window_t) -1;
+  }
+  // ...
+  if (si.context != (screen_context_t) -1) {
+    screen_destroy_context(si.context);
+    si.context = (screen_context_t) -1;
+  }
+  return ret;
+}
+</code></pre>
+<p>We get the size of our window here, from the call to <code>screen_get_window_property_iv()</code> with <code>SCREEN_PROPERTY_SIZE</code>, so that later on when it comes time to render our output we know the size of the draw framebuffer.</p>
+<p>Screen is designed to integrate with several Khronos rendering APIs, so we need to set <code>SCREEN_PROPERTY_USAGE</code> to <code>SCREEN_USAGE_OPENGL_ES2 | SCREEN_USAGE_OPENGL_ES3</code> to say that we&#39;re going to be using GLES2/GLES3.</p>
+<p>Finally, we explicitly set the output format we&#39;re expecting after our MP pipeline to a common format, <code>SCREEN_FORMAT_RGBA8888</code>.</p>
+<p>Now, we also need to be able to close the window. We&#39;ll be closing the window on any keyboard input. To set this up, we need to track a third <code>screen_event_t</code> handle:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_screen_info {
+  screen_context_t context;
+  screen_event_t   event;
+  screen_window_t window;
+  int size[2];
+} mp_screen_info_t;
+
+absl::Status InitScreenWindow(mp_screen_info_t &amp;si) {
+  screen_display_t *screen_display_p = nullptr;
+  int usage;
+  int format;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;si, 0, sizeof(mp_screen_info_t));
+  // These are opaque pointer types. -1 should be the safest value.
+  si.context = (screen_context_t) -1;
+  si.event = (screen_event_t) -1;
+  si.window = (screen_window_t) -1;
+
+  // Allocate screen handles.
+
+  // ...
+
+  if (screen_create_event(&amp;si.event) &lt; 0) {
+    ret = absl::ErrnoToStatus(errno, &#34;Failed to create screen event.&#34;);
+    goto failure;
+  }
+
+  // ...
+
+  return ret;
+
+failure:
+  if (si.window != (screen_window_t) -1) {
+    screen_destroy_window(si.window);
+    si.window = (screen_window_t) -1;
+  }
+  if (si.event != (screen_event_t) -1) {
+    screen_destroy_event(si.event);
+    si.event = (screen_event_t) -1;
+  }
+  if (si.context != (screen_context_t) -1) {
+    screen_destroy_context(si.context);
+    si.context = (screen_context_t) -1;
+  }
+  return ret;
+}
+</code></pre>
+<p>This event handle is used for retrieving events, such as window focus, mouse movement, key press, etc. To check if any key is pressed:</p>
+<pre><code language="language-c++" class="language-c++">bool ScreenPollKeyDown(const mp_screen_info_t &amp;si, const uint64_t timeout) {
+  int type;
+  int val;
+  for (;;) {
+    if (screen_get_event(si.context, si.event, timeout) &lt; 0) {
+      return false;
+    }
+
+    if (screen_get_event_property_iv(si.event, SCREEN_PROPERTY_TYPE, &amp;type) &lt; 0) {
+      return false;
+    }
+
+    if (type == SCREEN_EVENT_NONE) {
+      return false;
+    }
+
+    // Find a key down event.
+    if ((type == SCREEN_EVENT_KEYBOARD)
+      &amp;&amp; (screen_get_event_property_iv(si.event, SCREEN_PROPERTY_FLAGS, &amp;val) == 0)
+      &amp;&amp; ((val &amp; SCREEN_FLAG_KEY_DOWN) == SCREEN_FLAG_KEY_DOWN)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+</code></pre>
+<p>The first <code>screen_get_event()</code> retrieves any event that occurs before a timeout, <code>si.event</code> is updated. Then, we determine if the event is targetting the keyboard with the call to <code>screen_get_event_property_iv()</code> with <code>SCREEN_PROPERTY_TYPE</code>, and finally, if it is a keyboard event, we check whether it&#39;s a key press or release.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="GLES Rendering" duration="15">
+        <p>The objective of this component is to provide a simple <code>imshow</code> functionality of drawing a raw buffer to a window. Starting from the boilerplate:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  // ...
+} mp_gl_info_t;
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  // ...
+}
+</code></pre>
+<p>We need to setup the rendering component. The first step is always to initialize the default display:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  EGLDisplay display;
+  // ...
+} mp_gl_info_t;
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  gli.display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  eglInitialize(gli.display, nullptr, nullptr);
+
+  // ...
+}
+</code></pre>
+<p>Then, we need to get an EGL framebuffer configuration matching our use case:</p>
+<pre><code language="language-c++" class="language-c++">static const std::vector&lt;EGLint&gt; config_attrib_list = {
+  EGL_SURFACE_TYPE,             EGL_WINDOW_BIT,
+  EGL_RENDERABLE_TYPE,          EGL_OPENGL_ES3_BIT_KHR,
+  // We want a pixel-format of RGBX8888 or RGBA8888.
+  EGL_RED_SIZE,                 8,
+  EGL_GREEN_SIZE,               8,
+  EGL_BLUE_SIZE,                8,
+  EGL_ALPHA_SIZE,               8,
+
+  EGL_NONE,
+};
+</code></pre>
+<p>We setup our window for RGBA8888, so we&#39;ll need 8 bits across red, green, blue, and alpha channels. The depth channel is not important, so we&#39;re not touching it.</p>
+<p>We&#39;re choosing GLES3 because it provides <code>glBlitFramebuffer()</code> which simplifies copying a texture to the draw framebuffer, making our job cut out for us.</p>
+<p>Then, to find any configuration that meets our needs:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  EGLDisplay display;
+  EGLConfig config;
+  // ...
+} mp_gl_info_t;
+
+std::vector&lt;EGLConfig&gt; QueryEGLConfigs(mp_gl_info_t &amp;gli) {
+  EGLBoolean ret;
+  std::vector&lt;EGLConfig&gt; result;
+  EGLint num_configs;
+
+  ret = eglChooseConfig(gli.display, config_attrib_list.data(), nullptr, 0, &amp;num_configs);
+  if (ret != EGL_TRUE) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to query egl configs. &#39;eglChooseConfig&#39; returned: &#34;
+      &lt;&lt; eglGetError();
+    return std::vector&lt;EGLConfig&gt;();
+  }
+  result.resize(num_configs);
+
+  ret = eglChooseConfig(gli.display, config_attrib_list.data(), result.data(), num_configs, &amp;num_configs);
+  if (ret != EGL_TRUE) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to query egl configs. &#39;eglChooseConfig&#39; returned: &#34;
+      &lt;&lt; eglGetError();
+    return std::vector&lt;EGLConfig&gt;();
+  }
+
+  return result;
+}
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  // ...
+
+  configs = QueryEGLConfigs(gli);
+  if (configs.empty()) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to find an appropriate EGL config.&#34;;
+    ret = absl::UnknownError(&#34;Failed to find an appropriate EGL config.&#34;);
+    goto failure;
+  }
+  gli.config = configs[0];
+
+  // ...
+}
+</code></pre>
+<p>The chosen config is then used to create an EGL context to manage the context of our GL application, similar to the context we made for screen:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  EGLDisplay display;
+  EGLConfig config;
+  EGLContext context;
+  // ...
+} mp_gl_info_t;
+
+static const std::vector&lt;EGLint&gt; context_attrib_list = {
+  EGL_CONTEXT_CLIENT_VERSION,   3,
+  EGL_NONE,
+};
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  // ...
+
+  gli.context = eglCreateContext(gli.display, gli.config, EGL_NO_CONTEXT, context_attrib_list.data());
+  if (gli.context == EGL_NO_CONTEXT) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to create EGL context. &#39;eglCreateContext&#39; returned: &#34;
+      &lt;&lt; eglGetError();
+    ret = absl::UnknownError(&#34;Failed to create EGL context.&#34;);
+    goto failure;
+  }
+
+  // ...
+}
+</code></pre>
+<p>The context attributes we pass to <code>eglCreateContext()</code> are primarily to set the version of the GLES API.</p>
+<p>Now, we need to create a rendering target for the <code>screen_window_t</code> handle, so that our GL application will draw to our window:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  EGLDisplay display;
+  EGLConfig config;
+  EGLContext context;
+  EGLSurface surface;
+  // ...
+} mp_gl_info_t;
+
+static const std::vector&lt;EGLint&gt; surface_attrib_list = {
+  EGL_RENDER_BUFFER,            EGL_BACK_BUFFER,
+  EGL_NONE,
+};
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  // ...
+
+  gli.surface = eglCreateWindowSurface(gli.display, gli.config, (EGLNativeWindowType)si.window, surface_attrib_list.data());
+  if (gli.surface == EGL_NO_SURFACE) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to create EGL surface. &#39;eglCreateWindowSurface&#39; returned: &#34;
+      &lt;&lt; eglGetError();
+    ret = absl::UnknownError(&#34;Failed to create EGL context.&#34;);
+    goto failure;
+  }
+
+  eglMakeCurrent(gli.display, gli.surface, gli.surface, gli.context);
+
+  // ...
+}
+</code></pre>
+<p>Our surface attributes in this case <a href="https://docs.mesa3d.org/egl.html#egl-render-buffer" target="_blank">set GL up for rendering to a backing buffer</a>.</p>
+<p>And with that we call <code>eglMakeCurrent()</code>, so that the handles we just created are all being used by the application:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  // ...
+
+  eglMakeCurrent(gli.display, gli.surface, gli.surface, gli.context);
+
+  // ...
+}
+</code></pre>
+<p>Now, we need to create our GLES3 pipeline. We&#39;ll create the following boilerplate to isolate it from the EGL code:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status InitGLPipeline(mp_gl_info &amp;gli) {
+  // ...
+}
+
+absl::Status InitGLContext(mp_gl_info_t &amp;gli, const mp_screen_info_t &amp;si) {
+  std::vector&lt;EGLConfig&gt; configs;
+  absl::Status ret = absl::OkStatus();
+
+  memset(&amp;gli, 0, sizeof(mp_gl_info_t));
+
+  // ...
+
+  ret = InitGLPipeline(gli);
+  if (!ret.ok()) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to initialize GL pipeline.&#34;;
+    goto failure;
+  }
+
+  return ret;
+
+failure:
+  if (gli.surface != EGL_NO_SURFACE) {
+    eglDestroySurface(gli.display, gli.surface);
+    gli.surface = EGL_NO_SURFACE;
+  }
+  if (gli.context != EGL_NO_CONTEXT) {
+    eglDestroyContext(gli.display, gli.context);
+    gli.context = EGL_NO_CONTEXT;
+  }
+  if (gli.display != EGL_NO_DISPLAY) {
+    eglTerminate(gli.display);
+    gli.display = EGL_NO_DISPLAY;
+  }
+  return ret;
+}
+</code></pre>
+<p>Our pipeline is very simple. All we need to do is create the texture we will use for the blit, and the framebuffer it will be attached to:</p>
+<pre><code language="language-c++" class="language-c++">typedef struct mp_gl_info {
+  EGLDisplay display;
+  EGLConfig config;
+  EGLContext context;
+  EGLSurface surface;
+  GLuint framebuffer;
+  GLuint texture;
+} mp_gl_info_t;
+
+absl::Status InitGLPipeline(mp_gl_info &amp;gli) {
+  GLint glint = 0;
+  GLint infoLen = 0;
+  absl::Status ret = absl::OkStatus();
+
+  glActiveTexture(GL_TEXTURE0);
+
+  // Initialize the texture.
+  glGenTextures(1, &amp;gli.texture);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to generate GL texture. &#39;glGenTextures&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to generate GL texture.&#34;);
+    goto failure;
+  }
+
+  glBindTexture(GL_TEXTURE_2D, gli.texture);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL texture. &#39;glBindTexture&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to bind GL texture.&#34;);
+    goto failure;
+  }
+
+  // Initialize framebuffers for blitting.
+  glGenFramebuffers(1, &amp;gli.framebuffer);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to create GL framebuffer. &#39;glGenFramebuffers&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to create GL framebuffer.&#34;);
+    goto failure;
+  }
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, gli.framebuffer);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL read framebuffer. &#34;
+      &lt;&lt; &#34;&#39;glBindFramebuffer&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to bind GL framebuffer.&#34;);
+    goto failure;
+  }
+
+  // ...
+
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL write framebuffer. &#34;
+      &lt;&lt; &#34;&#39;glBindFramebuffer&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to bind GL framebuffer.&#34;);
+    goto failure;
+  }
+
+  // ...
+}
+</code></pre>
+<p>First we allocate memory for the texture and framebuffer, then we bind them to a target. These bind commands say that future operations referencing the <code>GL_TEXTURE_2D</code> and <code>GL_READ_FRAMEBUFFER</code> targets will use our new texture and framebuffer. We also bind <code>GL_DRAW_FRAMEBUFFER</code> to 0 to say to use the default framebuffer associated with our window.</p>
+<p>Now, we just need to attach our texture to <code>GL_COLOR_ATTACHMENT0</code> of the <code>GL_READ_FRAMEBUFFER</code>:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status InitGLPipeline(mp_gl_info &amp;gli) {
+  GLint glint = 0;
+  GLint infoLen = 0;
+  absl::Status ret = absl::OkStatus();
+
+  // ...
+
+  glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gli.texture, 0);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to attach GL texture to framebuffer. &#34;
+      &lt;&lt; &#34;&#39;glFramebufferTexture2D&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    ret = absl::UnknownError(&#34;Failed to attach GL texture to framebuffer.&#34;);
+    goto failure;
+  }
+
+  // ...
+
+  return ret;
+
+failure:
+  if (gli.texture != 0) {
+    glDeleteTextures(1, &amp;gli.texture);
+    gli.texture = 0;
+  }
+  if (gli.framebuffer != 0) {
+    glDeleteFramebuffers(1, &amp;gli.framebuffer);
+    gli.framebuffer = 0;
+  }
+  return ret;
+}
+</code></pre>
+<p>Since we&#39;re working with a static image, we leave the <a href="https://en.wikipedia.org/wiki/Mipmap" target="_blank">mipmap level</a> as 0.</p>
+<p>Finally, we need a custom <code>imshow()</code> function to present the frame that we get at the tail end of our MP pipeline. Again, we have the boilerplate:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  // ...
+}
+</code></pre>
+<p>One important detail about OpenGL is that the vertical axis is actually inverted from what you typically see when working with logical windows. Typically the top left of a window is (0,0) , but in OpenGL, the bottom left is... well, (-1.0,-1.0). Check out <a href="https://learnopengl.com/Getting-started/Coordinate-Systems" target="_blank">the tutorial on the GL coordinate system</a>. What affects us is that our data has its y-axis flipped from what OpenGL expects.</p>
+<p>To account for this, we are going to be flipping the matrix as a cpu operation:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  GLint glint = 0;
+
+  // GL uses the opposite vertical coordinate system. We&#39;re flipping with cpu
+  // here, but it could also be implemented in gpu shader code.
+  cv::Mat tmp_frame;
+  cv::flip(output, tmp_frame, /*flipcode=VERTICAL*/ 0);
+
+  // ...
+}
+</code></pre>
+<p>I believe the only way to do this with the gpu in GLES3 is to invert the axis in shader code. We won&#39;t touch on that for this codelab, but if you want an example you can check out the <a href="https://gitlab.com/qnx/projects/ai-camera-app" target="_blank">AI Camera App</a>.</p>
+<p>Now, we bind the textures and framebuffers we&#39;re going to be using in the proceeding operations:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  GLint glint = 0;
+
+  // GL uses the opposite vertical coordinate system. We&#39;re flipping with cpu
+  // here, but it could also be implemented in gpu shader code.
+  cv::Mat tmp_frame;
+  cv::flip(output, tmp_frame, /*flipcode=VERTICAL*/ 0);
+
+  glBindTexture(GL_TEXTURE_2D, gli.texture);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL texture. &#39;glBindTexture&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    return absl::UnknownError(&#34;Failed to bind GL texture.&#34;);
+  }
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, gli.framebuffer);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL read framebuffer. &#34;
+      &lt;&lt; &#34;&#39;glBindFramebuffer&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    return absl::UnknownError(&#34;Failed to bind GL framebuffer.&#34;);
+  }
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to bind GL write framebuffer. &#34;
+      &lt;&lt; &#34;&#39;glBindFramebuffer&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    return absl::UnknownError(&#34;Failed to bind GL framebuffer.&#34;);
+  }
+
+  // ...
+}
+</code></pre>
+<p>Now, we clear the color buffer so we&#39;re not seeing garbage in what&#39;s drawn to the window:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  GLint glint = 0;
+
+  // GL uses the opposite vertical coordinate system. We&#39;re flipping with cpu
+  // here, but it could also be implemented in gpu shader code.
+  cv::Mat tmp_frame;
+  cv::flip(output, tmp_frame, /*flipcode=VERTICAL*/ 0);
+
+  // ...
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to clear colour and depth buffers. &#34;
+      &lt;&lt; &#34;&#39;glClear&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    return absl::UnknownError(&#34;Failed to clear colour and depth buffers.&#34;);
+  }
+
+  // ...
+}
+</code></pre>
+<p>Next, we create a texture for our output frame:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  GLint glint = 0;
+
+  // GL uses the opposite vertical coordinate system. We&#39;re flipping with cpu
+  // here, but it could also be implemented in gpu shader code.
+  cv::Mat tmp_frame;
+  cv::flip(output, tmp_frame, /*flipcode=VERTICAL*/ 0);
+
+  // ...
+
+  // Store the output to the display framebuffer.
+  if (tmp_frame.step == cv::Mat::AUTO_STEP) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp_frame.cols, tmp_frame.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, tmp_frame.data);
+    if ((glint = glGetError())) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to store output frame to GL texture. &#34;
+        &lt;&lt; &#34;&#39;glTexImage2D&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    }
+  } else {
+    glPixelStorei(GL_UNPACK_ALIGNMENT, (tmp_frame.step &amp; 3) ? 1 : 4);
+    if ((glint = glGetError())) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed set alignment for output frame. &#34;
+        &lt;&lt; &#34;&#39;glPixelStorei&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    }
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, tmp_frame.step / 3);
+    if ((glint = glGetError())) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed set columns for output frame. &#34;
+        &lt;&lt; &#34;&#39;glPixelStorei&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp_frame.cols, tmp_frame.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, tmp_frame.data);
+    if ((glint = glGetError())) {
+      ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to store output frame to GL texture. &#34;
+        &lt;&lt; &#34;&#39;glTexImage2D&#39; failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    }
+  }
+
+  // ...
+}
+</code></pre>
+<p>We set <code>GL_UNPACK_ALIGNMENT</code> to identify whether our data is aligned in terms of bytes or in terms of words.</p>
+<p>As you remember from the section on where we setup a camera sink using libcamapi, our data can have a stride (step), which might be greater than the width (cols). To account for this, we pass the stride converted to pixels to <code>GL_UNPACK_ROW_LENGTH</code>.</p>
+<p>Finally, we can define our texture with a call to <code>glTexImage2D()</code>.</p>
+<p>Now, we just need to call the blit operation to copy our read framebuffer directly to the window surface&#39;s draw framebuffer, and subsequently write that draw framebuffer to the window:</p>
+<pre><code language="language-c++" class="language-c++">absl::Status GLShowMat(
+  mp_gl_info_t &amp;gli,
+  const int window_width,
+  const int window_height,
+  const cv::Mat &amp;output) {
+  GLint glint = 0;
+
+  // GL uses the opposite vertical coordinate system. We&#39;re flipping with cpu
+  // here, but it could also be implemented in gpu shader code.
+  cv::Mat tmp_frame;
+  cv::flip(output, tmp_frame, /*flipcode=VERTICAL*/ 0);
+
+  // ...
+
+  glBlitFramebuffer(0, 0, tmp_frame.cols, tmp_frame.rows, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+  if ((glint = glGetError())) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to blit framebuffer. &#39;glBlitFramebuffer&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; glint &lt;&lt; &#34;.&#34;;
+    return absl::UnknownError(&#34;Failed to blit framebuffer.&#34;);
+  }
+
+  if (eglSwapBuffers(gli.display, gli.surface) != EGL_TRUE) {
+    ABSL_LOG(ERROR) &lt;&lt; &#34;Failed to swap EGL buffers. &#39;eglSwapBuffers&#39; &#34;
+      &lt;&lt; &#34;failed with error &#34; &lt;&lt; eglGetError();
+    return absl::UnknownError(&#34;Failed to swap EGL buffers.&#34;);
+  }
+
+  // Reset defaults.
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+  return absl::OkStatus();
+}
+</code></pre>
+<p>We pass in the dimensions of our entire matrix, starting from (0,0). And the dimensions of our window, starting from (0,0). We pass <code>GL_LINEAR</code> to say that this should be <a href="https://learnopengl.com/Getting-started/Textures" target="_blank">scaled to match the new resolution linearly</a>.</p>
+<p><code>eglSwapBuffers()</code> posts our draw framebuffer to the window surface. Now, you should be able to see the resulting image.</p>
+<p>Finally, we get to add to <code>RunMPPGraph()</code> the code to get a frame from the camera which is fed into an MP pipeline, get the output frame from the MP pipeline, and present it to the screen:</p>
+<pre><code language="language-c++" class="language-c++">while (grab_frames) {
+  // Capture sensor framework camera or video frame.
+  // The frame is already in the expected format.
+  cv::Mat camera_frame = CameraConsumeData(ci);
+  if (camera_frame.empty()) {
+    ABSL_LOG(INFO) &lt;&lt; &#34;Ignore empty frames from camera.&#34;;
+    continue;
+  }
+
+  // MP processing here!
+
+  MP_RETURN_IF_ERROR(GLShowMat(gli, si.size[0], si.size[1], output_frame_mat));
+
+  // Press any key to exit. Wait for 5 miliseconds for an event to occur.
+  if (ScreenPollKeyDown(si, 5000)) {
+    grab_frames = false;
+  }
+}
+</code></pre>
+<p>In the next section we will behold the fruits of our labour!</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="MediaPipe in Boston Robotics Summit 2026" duration="0">
+        <p>Taken from Boston Robotics Summit 2026, <img alt="MediaPipe in Boston Robotics Summit 2026" src="img/bc6ad45a8b8b07f4.png"></p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

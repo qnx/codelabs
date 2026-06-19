@@ -37,7 +37,7 @@ Get started on the [QNX 8.0 Self-hosted Developer Desktop](https://www.qnx.com/d
 
 Install the required dependencies:
 ```bash
-sudo apk add bazel6 cmake ninja opencv-dev
+sudo apk add bazel6 cmake ninja opencv-dev qnx-sensor-framework-dev
 ```
 
 ---

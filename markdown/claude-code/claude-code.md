@@ -15,7 +15,9 @@ feedback_link: https://github.com/qnx/codelabs/issues
 ## Welcome
 Duration: 1:00
 
-This codelab walks you through the simple process of installing Claude Code on the QNX Developer Desktop.
+This codelab walks you through the process of installing Claude Code on the QNX Developer Desktop.
+
+It is based on this repo: https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md
 
 ### AI Coding on the Target
 
@@ -57,7 +59,13 @@ Tools like Claude Code are based on Node.js and can be installed with NPM. So fi
 
     (The default password for `sudo` is `qnxuser`.) You should see a successful installation of several packages, including `node`.
 
-2. Test your Node.js installation:
+2. Configure npm to install global packages without root, do so now:
+
+    ```sh
+    npm config set prefix '~/.local'
+    ```
+
+3. Test your Node.js installation:
     ```bash
     node -v
     ```
@@ -69,17 +77,42 @@ _Next up: install Claude Code._
 ## Install Claude Code
 Duration: 3:00
 
-We can install Claude Code directly from Anthropic using NPM.
+1. Clone this repository directly on your QNX system and take ownership of the install directory:
 
-1. Install the `claude` CLI:
-    ```bash
-    npm install -g @anthropic-ai/claude-code
+    ```sh
+    sudo git clone https://github.com/qnx/claude-code-qnx.git /usr/lib/claude-code
+    sudo chown -R $(whoami) /usr/lib/claude-code
     ```
 
-2. Navigate to a directory you trust (empty or with a project in it) and run Claude Code:
-    ```bash
-    cd myProject/
-    claude
+2. Extract the JavaScript bundle: Claude Code's application code is distributed inside the official Linux Bun binary. You need to extract it once (and re-run this step whenever Anthropic releases a new version).
+
+    ```sh
+    cd /usr/lib/claude-code
+    node extract.js --latest
+    ```
+
+    This produces `claude-code.js` (~14 MB) in the install directory. It is not committed to this repo because it is a generated artifact that must be refreshed on each Claude Code release.
+
+3. Install npm dependencies
+
+    ```sh
+    cd /usr/lib/claude-code
+    npm install
+    ```
+
+4. Add `claude-qnx` to your PATH
+
+    ```sh
+    sudo chmod +x /usr/lib/claude-code/claude-qnx
+    sudo ln -s /usr/lib/claude-code/claude-qnx /usr/bin/claude-qnx
+    ```
+
+5. Navigate to a directory you trust (empty or with a project in it) and run Claude Code:
+
+    ```sh
+    cd myProjectHere/
+    claude-qnx --version
+    claude-qnx
     ```
 
 The Claude Code interface should launch and guide you through the setup process. You may be asked to trust the current working directory and to log in to your Claude account.
@@ -115,7 +148,7 @@ QNX shell note: when writing `sh` scripts with `set -u`, avoid expanding `"$@"` 
 By default, the sudo password is `qnxuser`.
 ```
 
-Save the file and relaunch your Claude session with `claude`. It should now be aware of the context provided in this file, as will all future `claude` sessions on this system.
+Save the file and relaunch your Claude session with `claude-qnx`. It should now be aware of the context provided in this file, as will all future `claude-qnx` sessions on this system.
 
 As you learn more about how Claude interacts with your system, or if you find any patterns that you have to correct across multiple projects, you can put guidance in this file to guide Claude from the start.
 

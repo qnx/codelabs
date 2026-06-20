@@ -205,15 +205,21 @@ Copy the model to the target:
 ```bash
 scp -P 2227 \
   /tmp/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
-  qnx@localhost:/var/home/qnx/
+  qnxuser@localhost:~
 ```
 
-> **Alternative:** If your QNX target can reach the internet directly, you can run the same `curl` command from Step 5 on the target itself and skip the `scp` step. The `scp` approach is useful when the target has no internet access, or when you already have the model downloaded on your host.
+> **Alternative:** If your QNX target can reach the internet directly, you can run `curl` on the target itself and skip the `scp` step. The `scp` approach is useful when the target has no internet access, or when you already have the model downloaded on your host. Example:
+
+```bash
+curl -L -o ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+```
+
 
 Verify the copy on the target:
 
 ```bash
-sha256sum /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+sha256sum ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
 ```
 
 The hash should match the file you downloaded from the source. (For the 1.5B model above, the validated SHA-256 was `1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370`.)
@@ -235,7 +241,7 @@ Run a CPU-only completion first:
 
 ```bash
 llama-completion \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -p "Hello from QNX. Say one short sentence." \
   -n 32 \
   -ngl 0
@@ -252,7 +258,7 @@ Now run the same model with layers offloaded to the GPU:
 ```bash
 env MESA_LOG_FILE=/tmp/llama-mesa.log \
 llama-completion \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -p "Hello from QNX Vulkan. Say one short sentence." \
   -n 32 \
   -ngl 99
@@ -281,7 +287,7 @@ followed by generated text.
 
 ```bash
 llama-server \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -ngl 99 \
   --host 127.0.0.1 \
   --port 18081
@@ -305,13 +311,13 @@ You will get a JSON response whose `content` field holds the generated text, alo
 Use `llama-bench` to compare CPU and Vulkan on the same model. Run CPU-only:
 
 ```bash
-llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 0
+llama-bench -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 0
 ```
 
 Then Vulkan offload:
 
 ```bash
-llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 99
+llama-bench -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 99
 ```
 
 `llama-bench` reports two phases separately, and they behave differently:

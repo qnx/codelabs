@@ -1,0 +1,14 @@
+{
+  "_comment": "Template for ~/.claude/settings.json (USER-level, not the repo). This grants the permission allow-rules that let the QNX porting workflow run without a prompt on every command. Merge these into your existing ~/.claude/settings.json rather than overwriting it. The key one is Bash(sshpass:*): because every on-target operation is a single sshpass ssh call with the real command as an opaque quoted argument, this one rule covers the entire on-target workflow (apk, abuild, sudo, edits via heredoc) with no per-command prompts. Adjust to your comfort level; broader allow rules mean fewer prompts but less oversight.",
+  "permissions": {
+    "allow": [
+      "Bash(sshpass:*)",
+      "Bash(ss:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}

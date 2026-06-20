@@ -40,7 +40,8 @@
                   feedback-link="https://github.com/qnx/codelabs/issues">
     
       <google-codelab-step label="Welcome" duration="1">
-        <p>This codelab walks you through the simple process of installing Claude Code on the QNX Developer Desktop.</p>
+        <p>This codelab walks you through the process of installing Claude Code on the QNX Developer Desktop.</p>
+<p>It is based on this repo: https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md</p>
 <h2 is-upgraded>AI Coding on the Target</h2>
 <p>Agentic coding tools are even more effective for embedded project development when they run directly on the target system. With Claude Code running on your target, you can use it to build, deploy, test, debug, and monitor processes.</p>
 <p>This codelab leaves you with a working Claude Code installation, and a sample additional system prompt you can use to make the tool more aware of the QNX system. Out of the box, these tools have a strong knowledge of QNX systems already, so you don&#39;t have to do additional work to teach them about using QNX shell commands or QNX APIs.</p>
@@ -70,6 +71,9 @@
 sudo apk add npm
 </code></pre>
 (The default password for <code>sudo</code> is <code>qnxuser</code>.) You should see a successful installation of several packages, including <code>node</code>.</li>
+<li>Configure npm to install global packages without root, do so now:<pre><code language="language-sh" class="language-sh">npm config set prefix &#39;~/.local&#39;
+</code></pre>
+</li>
 <li>Test your Node.js installation:<pre><code language="language-bash" class="language-bash">node -v
 </code></pre>
 </li>
@@ -80,13 +84,26 @@ sudo apk add npm
       </google-codelab-step>
     
       <google-codelab-step label="Install Claude Code" duration="3">
-        <p>We can install Claude Code directly from Anthropic using NPM.</p>
-<ol type="1">
-<li>Install the <code>claude</code> CLI:<pre><code language="language-bash" class="language-bash">npm install -g @anthropic-ai/claude-code
+        <ol type="1">
+<li>Clone this repository directly on your QNX system and take ownership of the install directory:<pre><code language="language-sh" class="language-sh">sudo git clone https://github.com/qnx/claude-code-qnx.git /usr/lib/claude-code
+sudo chown -R $(whoami) /usr/lib/claude-code
 </code></pre>
 </li>
-<li>Navigate to a directory you trust (empty or with a project in it) and run Claude Code:<pre><code language="language-bash" class="language-bash">cd myProject/
-claude
+<li>Extract the JavaScript bundle: Claude Code&#39;s application code is distributed inside the official Linux Bun binary. You need to extract it once (and re-run this step whenever Anthropic releases a new version).<pre><code language="language-sh" class="language-sh">cd /usr/lib/claude-code
+node extract.js --latest
+</code></pre>
+This produces <code>claude-code.js</code> (~14 MB) in the install directory. It is not committed to this repo because it is a generated artifact that must be refreshed on each Claude Code release.</li>
+<li>Install npm dependencies<pre><code language="language-sh" class="language-sh">cd /usr/lib/claude-code
+npm install
+</code></pre>
+</li>
+<li>Add <code>claude-qnx</code> to your PATH<pre><code language="language-sh" class="language-sh">sudo chmod +x /usr/lib/claude-code/claude-qnx
+sudo ln -s /usr/lib/claude-code/claude-qnx /usr/bin/claude-qnx
+</code></pre>
+</li>
+<li>Navigate to a directory you trust (empty or with a project in it) and run Claude Code:<pre><code language="language-sh" class="language-sh">cd myProjectHere/
+claude-qnx --version
+claude-qnx
 </code></pre>
 </li>
 </ol>
@@ -115,7 +132,7 @@ QNX shell note: when writing `sh` scripts with `set -u`, avoid expanding `&#34;$
 
 By default, the sudo password is `qnxuser`.
 </code></pre>
-<p>Save the file and relaunch your Claude session with <code>claude</code>. It should now be aware of the context provided in this file, as will all future <code>claude</code> sessions on this system.</p>
+<p>Save the file and relaunch your Claude session with <code>claude-qnx</code>. It should now be aware of the context provided in this file, as will all future <code>claude-qnx</code> sessions on this system.</p>
 <p>As you learn more about how Claude interacts with your system, or if you find any patterns that you have to correct across multiple projects, you can put guidance in this file to guide Claude from the start.</p>
 
 

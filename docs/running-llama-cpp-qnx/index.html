@@ -222,11 +222,14 @@ llama-cli --list-devices
 <p>Copy the model to the target:</p>
 <pre><code language="language-bash" class="language-bash">scp -P 2227 \
   /tmp/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
-  qnx@localhost:/var/home/qnx/
+  qnxuser@localhost:~
 </code></pre>
-<p><strong>Alternative:</strong> If your QNX target can reach the internet directly, you can run the same <code>curl</code> command from Step 5 on the target itself and skip the <code>scp</code> step. The <code>scp</code> approach is useful when the target has no internet access, or when you already have the model downloaded on your host.</p>
+<p><strong>Alternative:</strong> If your QNX target can reach the internet directly, you can run <code>curl</code> on the target itself and skip the <code>scp</code> step. The <code>scp</code> approach is useful when the target has no internet access, or when you already have the model downloaded on your host. Example:</p>
+<pre><code language="language-bash" class="language-bash">curl -L -o ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+</code></pre>
 <p>Verify the copy on the target:</p>
-<pre><code language="language-bash" class="language-bash">sha256sum /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+<pre><code language="language-bash" class="language-bash">sha256sum ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
 </code></pre>
 <p>The hash should match the file you downloaded from the source. (For the 1.5B model above, the validated SHA-256 was <code>1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370</code>.)</p>
 <p><strong>Model choice guidance:</strong> Use a small GGUF first to prove the package and runtime setup. <code>Q4_K_M</code> quantization is a good balance of quality and memory use. Larger models tend to show a clearer GPU generation benefit.</p>
@@ -252,7 +255,7 @@ llama-cli --list-devices
 </table>
 <p>Run a CPU-only completion first:</p>
 <pre><code language="language-bash" class="language-bash">llama-completion \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -p &#34;Hello from QNX. Say one short sentence.&#34; \
   -n 32 \
   -ngl 0
@@ -266,7 +269,7 @@ llama-cli --list-devices
         <p>Now run the same model with layers offloaded to the GPU:</p>
 <pre><code language="language-bash" class="language-bash">env MESA_LOG_FILE=/tmp/llama-mesa.log \
 llama-completion \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -p &#34;Hello from QNX Vulkan. Say one short sentence.&#34; \
   -n 32 \
   -ngl 99
@@ -288,7 +291,7 @@ Vulkan0 KV buffer size = 384.00 MiB
       <google-codelab-step label="Step 8 — Run the HTTP server" duration="0">
         <p><code>llama-server</code> exposes inference over HTTP. Start it bound to localhost:</p>
 <pre><code language="language-bash" class="language-bash">llama-server \
-  -m /var/home/qnx/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   -ngl 99 \
   --host 127.0.0.1 \
   --port 18081
@@ -306,10 +309,10 @@ Vulkan0 KV buffer size = 384.00 MiB
     
       <google-codelab-step label="Step 9 — Benchmark CPU vs Vulkan" duration="0">
         <p>Use <code>llama-bench</code> to compare CPU and Vulkan on the same model. Run CPU-only:</p>
-<pre><code language="language-bash" class="language-bash">llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 0
+<pre><code language="language-bash" class="language-bash">llama-bench -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 0
 </code></pre>
 <p>Then Vulkan offload:</p>
-<pre><code language="language-bash" class="language-bash">llama-bench -m /var/home/qnx/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 99
+<pre><code language="language-bash" class="language-bash">llama-bench -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf -ngl 99
 </code></pre>
 <p><code>llama-bench</code> reports two phases separately, and they behave differently:</p>
 <ul>

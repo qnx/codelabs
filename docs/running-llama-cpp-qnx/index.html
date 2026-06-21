@@ -260,6 +260,36 @@ llama-cli --list-devices
   -n 32 \
   -ngl 0
 </code></pre>
+<p>The above example is for running on QEMU of x86_64.</p>
+<p>If you would like to run llama.cpp on Raspberry Pi 5, you can use following instead</p>
+<pre><code language="language-bash" class="language-bash">llama-completion \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  -p &#34;Hello from QNX. Say one short sentence.&#34; \
+  -n 32 \
+  -ngl 0 \
+  --device BLAS
+</code></pre>
+<p>The expected output will be as follows:</p>
+<pre><code language="language-bash" class="language-bash">[qnxuser@qnxpi ~]$ llama-completion \
+  -m ~/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  -p &#34;Hello from QNX. Say one short sentence.&#34; \
+  -n 32 \
+  -ngl 0 \
+  --device BLAS
+load_backend: loaded BLAS backend from /usr/lib/llama.cpp/libggml-blas.so
+load_backend: loaded RPC backend from /usr/lib/llama.cpp/libggml-rpc.so
+load_backend: loaded CPU backend from /usr/lib/llama.cpp/libggml-cpu.so
+main: llama backend init
+main: load the model and apply lora adapter, if any
+...
+user
+Hello from QNX. Say one short sentence.
+assistant
+Hello, QNX!
+
+&gt;
+
+</code></pre>
 <p>This works on any QNX 8.0 target, no GPU required. If it generates text, your model and runtime are good.</p>
 
 

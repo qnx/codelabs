@@ -15,16 +15,16 @@ This is the workspace bootstrap. Read it at the start of every session before do
 2. Never create a patch from an untested change. Test in the unpacked tree with native build tools first; the patch is written only after the change is confirmed working.
 3. The human runs all git operations. Never run `git commit` or `git push`. Edit and build only.
 4. Native aports builds only: build on the QNX target with `abuild`. No SDP, no qcc/q++, no toolchain files, no cross-compile. If a doc assumes the cross-compile path, it is legacy reference and does not apply here.
-5. No em dashes in any output or file. Use hyphens, commas, parentheses, or colons.
-6. Record new confirmed facts back into the right skill the moment they are proven.
+5. Record new confirmed facts back into the right skill the moment they are proven.
+6. Capture friction as you go: anything that slows a session down, breaks, or could be faster is a skill or `TARGET.md` update made the moment it is proven, not deferred. If a future session would otherwise rediscover this the hard way, record it now.
 
 ## Target environment
 
 All connection details, authentication, the authoritative tree path, and the on-target build loop live in `TARGET.md`. Read it at session start. In short: all work happens on the QNX target over SSH (`ssh -p 2227 qnx@localhost`, user `qnx`); edit and build on the target, never cross-compile from the host.
 
 Standing facts that also matter here:
-- SSH push key for GitHub: `id_qnx_ed25519` (NOT `id_ed25519_2025`, which is not registered on GitHub).
-- GitHub remote for all aports work: `git@github.com:emazzucabb/aports.git` (one remote, all packages, branches per change).
+- SSH push key for GitHub: use the SSH key registered on your GitHub account (confirm with `ssh -T git@github.com`).
+- GitHub remote for all aports work: `git@github.com:<your-github-username>/aports.git` (one remote, all packages, branches per change).
 - Use `abuild -K` to keep the source tree during development. `abuild -r` wipes `src/`; use it only for final validation.
 
 ## Skill map
@@ -33,21 +33,12 @@ The `qnx-porting` router skill routes by task. The tree:
 
 ```
 qnx-porting (router, read first)
-├── qnx-platform-facts        platform truths (syscalls, libsocket/libregex, stack, macros)
-├── alpine-qnx-porting        APKBUILD content mechanics (deps, pkgrel, Vala)
+├── qnx-platform-facts        platform truths (syscalls, libc gaps, stack, macros)
+├── alpine-qnx-porting        APKBUILD adaptation (deps, build systems, conventions)
 ├── qnx-apk-packaging         end-to-end port-to-PR workflow + validation gate
-├── aports-patch-creation     patch workflow and format gate
-├── github-fork-workflow      git/PR conventions, commit subjects, codelab PRs
-└── qnx-driver-development     driver router
-      ├── qnx-driver-char-serial
-      ├── qnx-driver-i2c
-      ├── qnx-driver-spi
-      ├── qnx-driver-hid
-      ├── qnx-driver-usb
-      └── qnx-driver-sensor-camera
+├── qnx-port-reporting        after-action REPORT.md per port
+└── aports-patch-creation     patch workflow and format gate
 ```
-
-Project skills (epiphany-browser, webkit2gtk-port, gtk4-qnx-porting, and so on) sit alongside this tree and capture per-port history.
 
 ## Per-port notes
 

@@ -2,64 +2,56 @@
 
 A self-contained Claude Code setup for porting Alpine Linux packages to QNX 8.0
 natively (build on a QNX target with `abuild`, no cross-compile). Drop these
-files into a repo on your Linux box, point them at a QNX QEMU target, and give
+files into a repo on your Linux box, point them at a QNX target, and give
 Claude Code a package to port.
 
 ## What is in here
 
 - `CLAUDE.md` - session bootstrap, read first automatically by Claude Code.
-- `TARGET.md` - the target: connection, auth, the one authoritative tree path,
-  the on-target loop, and a living log of image-specific facts. EDIT THIS for
-  your target.
-- `.claude/skills/` - the 13-skill hierarchy (router + core + driver leaves).
-  Claude Code discovers and loads these on demand.
-- `projects/PROJECT-INDEX-template.md` - copy into each `projects/apks/<port>/`.
-- `projects/apks/json-c/` - a complete worked example port (the best thing to
-  read to see the system in action).
-- `run.sh` - QEMU launcher template. EDIT the CHANGE_ME image path and tweak the
-  RAM/cpu/port settings to taste.
-- `settings.template.json` - permission allow-rules for `~/.claude/settings.json`
-  (user-level) so the workflow runs without a prompt per command.
-- `HANDBACK-reference.md` - a snapshot narrative of how the system was verified
-  end to end on a live target. Reference only; the running system is the files
-  above, not this.
+- `TARGET.md` - your target: how to connect, the authoritative tree path, and
+  a running log of target-specific facts. Edit this for your target.
+- `.claude/skills/` - the skill hierarchy (6 skills: a router plus 5 focused
+  skills). Claude Code discovers and loads these on demand.
+- `projects/apks/` - where Claude Code keeps per-port notes and reports. Starts
+  empty; a folder is created per package ported.
+- `projects/PROJECT-INDEX-template.md` - the template copied into each port folder.
+- `run.sh` - QEMU launcher template. Edit the `CHANGE_ME` image path and tune
+  the settings to your host.
+- `settings.template.json` - optional permission allow-rules for
+  `~/.claude/settings.json` so the workflow prompts less.
 
 ## First-time setup
 
 1. Copy these files into your repo root (so `CLAUDE.md` and `.claude/` sit at
-   the top of the repo).
-2. Put your QNX image somewhere neutral (for example `~/qnx-qemu/`), copy the
-   stock OVMF vars next to `run.sh` (`cp /usr/share/OVMF/OVMF_VARS.fd .`), and
-   set the real image path in `run.sh`.
-3. Boot the target: `./run.sh` (from the dir holding `OVMF_VARS.fd`). Only run
-   one instance; check `ss -ltnp | grep 2227` first.
-4. Confirm you can reach it: `sshpass -p everywhere ssh -p 2227 qnx@localhost uname -a`
-   (install `sshpass` if needed).
-5. Merge `settings.template.json` into `~/.claude/settings.json` for unattended
-   runs.
-6. Edit `TARGET.md`: confirm the authoritative tree path and image arch on your
-   target (the file has a read-only discovery sweep to re-run on a fresh image).
-7. Start Claude Code in the repo and give it a port.
+   the top).
+2. If using QEMU: put your QNX image somewhere neutral (for example
+   `~/qnx-qemu/`), set the real image path in `run.sh`, and boot the target.
+   If using other hardware (RPi, etc.): skip `run.sh` and go to step 3.
+3. Confirm you can reach the target over SSH (install `sshpass` if needed for
+   password-based auth).
+4. Edit `TARGET.md` with your target's connection details, the authoritative
+   tree path, and any image-specific facts.
+5. Optionally merge `settings.template.json` into `~/.claude/settings.json`
+   for fewer permission prompts.
+6. Start Claude Code in the repo and give it a port.
 
 ## The skill tree
 
-`qnx-porting` is the router, read first; it holds the universal rules and points
-to the rest: platform facts, APKBUILD content mechanics, the packaging workflow,
-patch creation, git/PR conventions, and a driver-development sub-tree
-(char-serial, i2c, spi, hid, usb, sensor-camera).
+`qnx-porting` is the router, read first. It holds the universal rules and
+points to the rest:
 
-## The universal rules (enforced throughout)
+- `qnx-platform-facts` - QNX platform truths (libc gaps, stack, macros)
+- `alpine-qnx-porting` - APKBUILD adaptation (deps, build systems, conventions)
+- `qnx-apk-packaging` - end-to-end port-to-PR workflow and validation gate
+- `qnx-port-reporting` - after-action REPORT.md per port
+- `aports-patch-creation` - patch workflow and format gate
+
+## The universal rules
 
 1. Prove claims with command output before acting.
 2. Never create a patch from an untested change.
 3. The human runs all git operations; the agent never commits or pushes.
 4. Native aports builds only; no cross-compile.
-5. No em dashes in any output or file.
-6. Record new confirmed facts back into the right skill or TARGET.md immediately.
-7. Capture friction as you go: anything that slows a session becomes a permanent
-   skill/TARGET.md update the moment it is proven.
-
-## Sharing one skills copy with Codex (optional)
-
-If you also run Codex, point both agents at one skills directory rather than
-duplicating: `ln -s ~/.agents/skills ~/.claude/skills` once `~/.claude/` exists.
+5. Record new confirmed facts back into the right skill or TARGET.md immediately.
+6. Capture friction as you go: anything that slows a session becomes a permanent
+   skill or TARGET.md update the moment it is proven.

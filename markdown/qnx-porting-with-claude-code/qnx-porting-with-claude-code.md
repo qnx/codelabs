@@ -43,17 +43,18 @@ Get the model straight first, because it shapes everything else.
 
 Porting here is native. You take an Alpine package recipe (an APKBUILD), and it is built on a QNX target by the target's own compiler, headers, and libraries. There is no host toolchain in the build at all. This is simpler than cross-compiling: one tree, one toolchain, no sysroot.
 
-Claude Code runs on your Linux machine. It reaches the QNX target over SSH to do the actual building. The commands it runs happen on the target over that SSH connection, except for the one command that launches a QEMU target on your host. You do not run the porting commands yourself; Claude Code does, guided by its skills. Your job is to set the workspace up, point it at a target, and give it a package.
+Claude Code runs on your Linux machine. It reaches the QNX target over SSH to do the actual building. The commands it runs happen on the target over that SSH connection. You do not run the porting commands yourself; Claude Code does, guided by its skills. Your job is to set the workspace up, point it at a target, and give it a package.
 
 ---
 
 ## Step 2 - Lay down the workspace
 
-Create a directory on your host and unzip the setup bundle into it so that `CLAUDE.md` and the `.claude/` directory sit at the top level:
+The setup files live alongside this codelab in the repository, in the `qnx-claude-setup/` directory. You can browse them there to see exactly what the workspace contains. To use them, copy that directory's contents into a working directory on your host so that `CLAUDE.md` and the `.claude/` directory sit at the top level:
 
 ```bash
-mkdir -p ~/claude && cd ~/claude
-unzip /path/to/qnx-claude-setup.zip
+mkdir -p ~/claude
+cp -r path/to/qnx-claude-setup/. ~/claude/
+cd ~/claude
 ```
 
 The pieces:
@@ -64,7 +65,6 @@ The pieces:
 | **`TARGET.md`** | Your target: how to connect, the authoritative tree path, and a running log of target-specific facts. You edit this. |
 | **`.claude/skills/`** | The skill hierarchy. Claude Code loads these on demand to do the porting work. |
 | **`projects/apks/`** | Where Claude Code keeps its per-port notes and reports, one folder per package. |
-| **`run.sh`** | A QEMU launcher template, if you are using QEMU as your target. |
 | **`settings.template.json`** | Optional. Pre-approves the commands the workflow uses, so Claude Code prompts less. |
 
 Claude Code reads `CLAUDE.md` automatically when it opens in this directory, so the rules and skill map are loaded from the first message of every session.
@@ -73,27 +73,23 @@ Claude Code reads `CLAUDE.md` automatically when it opens in this directory, so 
 
 ## Step 3 - Provide a QNX target
 
-You need a reachable QNX 8.0 target. This can be a QEMU virtual machine, a Raspberry Pi running QNX, or any QNX target you can SSH into. Claude Code does not care which; it just needs an SSH connection and the build tools on the target.
+You need a reachable QNX 8.0 target that you can SSH into, with the self-build tooling on it. Claude Code does not care what the target is, a QEMU virtual machine or a Raspberry Pi, as long as it can connect over SSH and build there.
 
-If you already have a target (a Pi on your network, an existing VM), skip to Step 4 and record its connection details there.
-
-If you want a local QEMU target, the bundle includes `run.sh`. Edit the values marked `CHANGE_ME` (most importantly the disk image path), then tune these settings to your host:
-
-| Setting | What it controls | Guidance |
-| :--- | :--- | :--- |
-| the `.img` path | Your QNX 8.0 disk image | Required. Set the real path. |
-| **`-m`** | Guest RAM | 8G suits most ports; large C++ builds want 16G or more. |
-| **`-smp`** | vCPUs | Defaults to all host cores. Lower it to leave the host headroom. |
-| **`hostfwd ...2227-:22`** | Host port forwarded to the target's SSH | Change only if 2227 is taken; if you do, update `TARGET.md`. |
-| **`--enable-kvm`** | Hardware acceleration | Needs `/dev/kvm`. Drop the line if KVM is unavailable; slower but works. |
-
-UEFI firmware comes from OVMF (`sudo apt install ovmf`), and you copy its writable vars file next to `run.sh`. Launch from the directory holding that vars file:
+The simplest way to get one is the official Quick Start Target Image (QSTI). The [QSTI for QEMU guide](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html) walks through getting a free non-commercial license, installing the image through the QNX Software Center, and launching it. In short, once the image is unpacked and your SDP environment is sourced, you launch it with:
 
 ```bash
-cd ~/qnx-qemu && ./run.sh
+mkqnximage --run
 ```
 
-> **One instance only:** A QEMU image must be opened by one process at a time. If you are using QEMU, check that the SSH port is free before launching: `ss -ltnp | grep 2227`.
+and find its IP address from another terminal in the same runtime folder with:
+
+```bash
+mkqnximage --getip
+```
+
+QSTI is also available for [Raspberry Pi](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html) if you want to run on hardware. Either way, once the target is up and you have its IP, you have everything you need for the next step.
+
+> If you already have a QNX target running (an existing image, a Pi on your network), you can skip straight to Step 4 and just record its connection details.
 
 ---
 
@@ -101,11 +97,13 @@ cd ~/qnx-qemu && ./run.sh
 
 Tell the workspace how to reach your target by editing `TARGET.md`. It holds the SSH details, the authentication method, and the one authoritative aports tree path on the target. Claude Code reads it at the start of every session, so this is how it knows where and how to build.
 
-Confirm you can reach the target yourself first. For a target using a password, `sshpass` avoids the interactive prompt that would otherwise block an automated session:
+Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use `qnxuser`, other images may use a different account). For a target using a password, `sshpass` avoids the interactive prompt that would otherwise block an automated session:
 
 ```bash
-sshpass -p <password> ssh -p 2227 qnx@<host> 'uname -a'
+sshpass -p <password> ssh <user>@<target-ip> 'uname -a'
 ```
+
+If your setup reaches the target through a forwarded port rather than its own IP (a hand-rolled QEMU launcher, for example), add `-p <port>` to the ssh command. QSTI targets have their own IP, so no port is needed.
 
 > **About authentication:** A local development target often uses a simple shared password, which is fine for that case. For anything shared or networked, use key-based SSH and proper secrets handling instead. `TARGET.md` is where you record whichever method your target uses.
 

@@ -12,11 +12,14 @@ Claude Code a package to port.
   a running log of target-specific facts. Edit this for your target.
 - `.claude/skills/` - the skill hierarchy (6 skills: a router plus 5 focused
   skills). Claude Code discovers and loads these on demand.
-- `projects/apks/` - where Claude Code keeps per-port notes and reports. Starts
-  empty; a folder is created per package ported.
+- `projects/apks/` - where Claude Code keeps a folder per package it ports.
+  Starts empty. Each port produces a `PROJECT-INDEX.md` and a `REPORT.md` here
+  recording what changed, why, what problems came up, and what is still open, so
+  a port's history is preserved for review and for the next time you touch it.
 - `projects/PROJECT-INDEX-template.md` - the template copied into each port folder.
-- `run.sh` - QEMU launcher template. Edit the `CHANGE_ME` image path and tune
-  the settings to your host.
+- `run.sh` - optional QEMU launcher template, for the bring-your-own-image case
+  (an alternative to QSTI; see TARGET.md). Edit the `CHANGE_ME` image path and
+  tune the settings to your host.
 - `settings.template.json` - optional permission allow-rules for
   `~/.claude/settings.json` so the workflow prompts less.
 
@@ -24,9 +27,8 @@ Claude Code a package to port.
 
 1. Copy these files into your repo root (so `CLAUDE.md` and `.claude/` sit at
    the top).
-2. If using QEMU: put your QNX image somewhere neutral (for example
-   `~/qnx-qemu/`), set the real image path in `run.sh`, and boot the target.
-   If using other hardware (RPi, etc.): skip `run.sh` and go to step 3.
+2. Get a QNX target you can SSH into, and record how to reach it in `TARGET.md`
+   (it explains the options, including the official Quick Start Target Image).
 3. Confirm you can reach the target over SSH (install `sshpass` if needed for
    password-based auth).
 4. Edit `TARGET.md` with your target's connection details, the authoritative

@@ -20,7 +20,7 @@ This is the workspace bootstrap. Read it at the start of every session before do
 
 ## Target environment
 
-All connection details, authentication, the authoritative tree path, and the on-target build loop live in `TARGET.md`. Read it at session start. In short: all work happens on the QNX target over SSH (`ssh -p 2227 qnx@localhost`, user `qnx`); edit and build on the target, never cross-compile from the host.
+The connection details, authentication, the authoritative tree path, and the on-target build loop live in `TARGET.md` (read at session start, per the bootstrap above). The one principle that matters here: all work happens on the QNX target over SSH. Edit and build on the target; never cross-compile from the host.
 
 Standing facts that also matter here:
 - SSH push key for GitHub: use the SSH key registered on your GitHub account (confirm with `ssh -T git@github.com`).

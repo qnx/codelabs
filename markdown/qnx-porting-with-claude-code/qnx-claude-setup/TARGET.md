@@ -1,22 +1,26 @@
 # Target Connection (QNX 8.0)
 
-All porting work happens **on the QNX target itself**, over SSH. There is no host-side aports tree and no scp round-trip: connect to the target, edit the source/APKBUILD/patches there, and build there with `abuild`. The Linux host only launches QEMU (if applicable) and runs the SSH session.
+All porting work happens **on the QNX target itself**, over SSH. There is no host-side aports tree and no scp round-trip: connect to the target, edit the source/APKBUILD/patches there, and build there with `abuild`. The Linux host only launches the target (if it is a local VM) and runs the SSH session.
+
+The simplest way to get a target is the official Quick Start Target Image (QSTI). See the [QSTI for QEMU guide](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html) or the [QSTI for Raspberry Pi guide](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html). With QSTI you launch the target with `mkqnximage --run` and get its IP with `mkqnximage --getip`.
+
+If you already have your own QNX 8.0 disk image, the bundled `run.sh` is a QEMU launcher template you can edit and tune directly (set the image path, RAM, cores, and the SSH port forward). It is an alternative to QSTI for the bring-your-own-image case; the instructions are in the script's header comments.
 
 ## Connecting
 
 ```bash
-ssh -p <port> <user>@<host>
+ssh <user>@<host>
 ```
 
-- User: `<user>` (for example `qnx`)
-- Port: `<ssh-port>` (for example `2227` if using QEMU with host-forwarding)
-- Host: `<target-host>` (for example `localhost` for QEMU, or the device IP for a Pi)
+- User: `<user>` (depends on the image; QSTI images use `qnxuser`)
+- Host: `<target-host>` (the device or VM IP; use `mkqnximage --getip` for QSTI)
+- Port: standard SSH port `22` by default (the QSTI case, connect straight to the target IP). If your setup forwards SSH to a non-standard host port instead (for example a hand-rolled QEMU launcher forwarding host `2227` to guest `22`), add `-p <port>` to every ssh and sshpass command below.
 - Authentication: fill in your method below (password or key)
 
-For non-interactive use (required for Claude Code to work without prompting):
+For non-interactive use (required for Claude Code to work without prompting). Add `-p <port>` after `ssh` if your setup uses a forwarded port:
 
 ```bash
-sshpass -p <password> ssh -p <port> \
+sshpass -p <password> ssh \
   -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
   <user>@<host> '<command>'
 ```
@@ -24,12 +28,12 @@ sshpass -p <password> ssh -p <port> \
 Or, if using key-based auth:
 
 ```bash
-ssh -p <port> -i ~/.ssh/<your-key> <user>@<host> '<command>'
+ssh -i ~/.ssh/<your-key> <user>@<host> '<command>'
 ```
 
 ## About authentication
 
-A local development target often uses a simple shared dev password. That is fine for a throwaway local QEMU image. For anything shared or networked, use key-based SSH and proper secrets handling.
+A local development target often uses a simple shared dev password. That is fine for a throwaway local image. For anything shared or networked, use key-based SSH and proper secrets handling.
 
 For sudo on the target, pipe the password:
 

@@ -113,12 +113,6 @@ git clone https://github.com/qnx-packaging/build-qsc-apk.git
 ```
 
 ```sh
-# Make user signing key
-abuild-keygen -a
-cp "~/.abuild/${USER}*.pub" etc/apk/keys/
-```
-
-```sh
 build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <arch> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core
 build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <arch> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-extra
 ```

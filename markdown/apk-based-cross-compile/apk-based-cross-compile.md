@@ -113,8 +113,8 @@ git clone https://github.com/qnx-packaging/build-qsc-apk.git
 ```
 
 ```sh
-build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <arch> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core
-build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <arch> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-extra
+build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core
+build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-extra
 ```
 
 ---
@@ -129,7 +129,7 @@ cd ./qnx-apk-sysroot
 # setup usr merged symlinks
 mkdir -p usr/lib usr/bin
 ln -s usr/lib usr/bin .
-ln -s . <arch>
+ln -s . <x86_64|aarch64le>
 
 # init the apk database
 apk --root . add --initdb --usermode
@@ -139,7 +139,7 @@ mkdir -p etc/apk/keys
 curl -L -o etc/apk/keys/qnxosd.rsa.pub https://repo.oss.qnx.com/keys/qnxosd.rsa.pub
 
 # copy over user signing key
-cp "~/.abuild/${USER}*.pub" etc/apk/keys/
+cp ~/.abuild/*.pub etc/apk/keys/
 
 # configured repositories
 

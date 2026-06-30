@@ -33,17 +33,17 @@ Duration: 5:00
 
 #### Debian
 ```sh
-sudo apt install build-essential meson ninja-build pkg-config git libssl-dev zlib1g-dev libzstd-dev
+sudo apt install build-essential meson ninja-build pkg-config git libssl-dev zlib1g-dev libzstd-dev lua5.3
 ```
 
 #### Arch
 ```sh
-sudo pacman -S base-devel meson ninja git openssl zlib zstd
+sudo pacman -S base-devel meson ninja git openssl zlib zstd lua53
 ```
 
 #### Alpine
 ```sh
-doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev
+doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lua5.3
 ```
 
 ### Compiling a static apk-tools binrary
@@ -60,6 +60,7 @@ ninja -C build src/apk
 mkdir -p ~/.local/bin
 cp ./build/src/apk ~/.local/bin
 #TODO: add instructions on adding .local/bin to path
+export PATH=$PATH:~/.local/bin
 ```
 
 ---
@@ -70,37 +71,51 @@ cp ./build/src/apk ~/.local/bin
 
 #### Debian
 ```sh
-sudo apt install build-essential git make pkg-config libssl-dev scdoc fakeroot pax bsdextrautils
+sudo apt install build-essential git make pkg-config libssl-dev scdoc fakeroot pax bsdextrautils curl bc pax-utils
 ```
 
 #### Arch
 ```sh
-sudo pacman -S --noconfirm base-devel git openssl scdoc fakeroot patch
+sudo pacman -S --noconfirm base-devel git openssl scdoc fakeroot patch curl bc pax-utils
 ```
 
 #### Alpine
 ```sh
-doas apk add build-base git make openssl-dev scdoc fakeroot patch
+doas apk add build-base git make openssl-dev scdoc fakeroot patch curl bc pax-utils
 ```
 ---
 
 ```sh
-git clone https://github.com/qnx-ports/abuild --branch qnx-3.16.0_p1
+git clone https://github.com/qnx-ports/abuild --branch qnx-3.15.0
 ```
 
 ```sh
-make prefix="$HOME/.local/bin"
-make install
+make install prefix="$HOME/.local" sysconfdir="$HOME/.local/etc"
 ```
 
 ### Setting up signing key
 
+```sh
+# Make user signing key
+abuild-keygen -a
+```
+
 ## Building QNX wrapped apks
 Duration: 2:00
+
+```
+sudo apt install netcat-openbsd python3
+```
 
 ```sh
 git clone https://github.com/qnx-ports/qsc-apk --branch 804
 git clone https://github.com/qnx-packaging/build-qsc-apk.git
+```
+
+```sh
+# Make user signing key
+abuild-keygen -a
+cp "~/.abuild/${USER}*.pub" etc/apk/keys/
 ```
 
 ```sh
@@ -125,11 +140,12 @@ ln -s . <arch>
 # init the apk database
 apk --root . add --initdb --usermode
 
-# Make suer signing key
-
 # setup qnx signing key
 mkdir -p etc/apk/keys
 curl -L -o etc/apk/keys/qnxosd.rsa.pub https://repo.oss.qnx.com/keys/qnxosd.rsa.pub
+
+# copy over user signing key
+cp "~/.abuild/${USER}*.pub" etc/apk/keys/
 
 # configured repositories
 

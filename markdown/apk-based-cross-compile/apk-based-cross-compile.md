@@ -17,20 +17,17 @@ The self-hosted environment is a powerful tool but in cases where you have an ex
 
 **What you will learn:**
 
-* How to setup a apk based sysroot
-* How to setup qcc to use the apk sysroot
-* building a simple c program
-* building a gtk 4 application
-* how to cross compile exiting oss projects 
+* How to setup a apk-tools managed  sysroot
+* How to setup qcc to use the apk-tools managed sysroot
+* building a simple C program
+* building a GTK 4 application
+* how to cross compile existing oss projects 
 
 ---
 
 ## Setting up apk-tools
 Duration: 5:00
 
-```sh
-git clone https://github.com/alpine/apk-tools.git --branch v3.0.6
-```
 
 ### Build dependencies
 
@@ -49,7 +46,11 @@ sudo pacman -S base-devel meson ninja git openssl zlib zstd
 doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev
 ```
 
-### Compiling a static apk
+### Compiling a static apk-tools binrary
+
+```sh
+git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
+```
 
 ```sh
 meson setup -Dc_link_args="-static" -Dprefer_static=true -Ddefault_library=static build
@@ -58,15 +59,12 @@ ninja -C build src/apk
 
 mkdir -p ~/.local/bin
 cp ./build/src/apk ~/.local/bin
+#TODO: add instructions on adding .local/bin to path
 ```
 
 ---
 
 ## Setting up abuild
-
-```sh
-git clone https://github.com/qnx-ports/abuild --branch qnx-3.16.0_p1
-```
 
 ### Build dependencies
 
@@ -85,6 +83,10 @@ sudo pacman -S --noconfirm base-devel git openssl scdoc fakeroot patch
 doas apk add build-base git make openssl-dev scdoc fakeroot patch
 ```
 ---
+
+```sh
+git clone https://github.com/qnx-ports/abuild --branch qnx-3.16.0_p1
+```
 
 ```sh
 make prefix="$HOME/.local/bin"
@@ -122,6 +124,8 @@ ln -s . <arch>
 
 # init the apk database
 apk --root . add --initdb --usermode
+
+# Make suer signing key
 
 # setup qnx signing key
 mkdir -p etc/apk/keys

@@ -98,6 +98,7 @@ Duration: 2:00
 
 ```sh
 git clone https://github.com/qnx-ports/qsc-apk --branch 804
+git clone https://github.com/qnx-packaging/build-qsc-apk.git
 ```
 
 ```sh

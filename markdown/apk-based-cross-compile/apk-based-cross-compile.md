@@ -46,7 +46,7 @@ sudo pacman -S base-devel meson ninja git openssl zlib zstd lua53
 doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lua5.3
 ```
 
-### Compiling a static apk-tools binrary
+### Compiling a static apk-tools binary
 
 ```sh
 git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
@@ -83,11 +83,14 @@ sudo pacman -S --noconfirm base-devel git openssl scdoc fakeroot patch curl bc p
 ```sh
 doas apk add build-base git make openssl-dev scdoc fakeroot patch curl bc pax-utils
 ```
----
+
+### Cloning repos 
 
 ```sh
 git clone https://github.com/qnx-ports/abuild --branch qnx-3.15.0
 ```
+
+### Building abuild
 
 ```sh
 make install prefix="$HOME/.local" sysconfdir="$HOME/.local/etc"
@@ -103,14 +106,31 @@ abuild-keygen -a
 ## Building QNX wrapped apks
 Duration: 2:00
 
-```
+### Dependencies
+
+#### Debian
+
+```sh
 sudo apt install netcat-openbsd python3
 ```
+
+#### Arch
+```sh
+sudo pacman -S openbsd-netcat
+```
+
+#### Alpine
+
+Nothing needed busybox provides netcat
+
+### Cloning repo
 
 ```sh
 git clone https://github.com/qnx-ports/qsc-apk --branch 804
 git clone https://github.com/qnx-packaging/build-qsc-apk.git
 ```
+
+### Running build-qsc-apk
 
 ```sh
 build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core
@@ -119,7 +139,7 @@ build-qsc-apks -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-pat
 
 ---
 
-## sysroot
+## Setting up the apk-tools sysroot
 
 ```sh
 # Make sysroot directory
@@ -159,11 +179,16 @@ apk --root . update
 
 ## hello-world
 
+### Dependencies
+
 ```sh
 apk --root <path-to-qnx-apk-sysroot> add qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
 ```
 
+### The code
+
 ```c
+// main.c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -175,6 +200,7 @@ int main(int argc, char *argv[]) {
 ```
 
 ```make
+# Makefile
 CC = qcc
 SYSROOT ?= ../qnx-apk-sysroot
 
@@ -193,15 +219,33 @@ clean:
 	rm -f $(TARGET)
 ```
 
+### Building hello-world
+
+```
+make
+```
+
+#### checking the result
+
+```sh
+$ file hello
+hello: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx-64.so.2, BuildID[md5/uuid]=34294113c5f608180bcc564d5a80ac01, with debug_info, not stripped
+```
+
 ---
 
 ## build a gtk application
 
+### Dependencies
+
 ```sh
-apk --root ~/tmp/codelab-demo/qnx-apk-sysroot add qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc gtk4-dev qnx-crypto-openssl3 qnx-screen-virtio bash
+apk --root ~/tmp/codelab-demo/qnx-apk-sysroot add --no-scripts qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc gtk4-dev qnx-crypto-openssl3 qnx-screen-virtio bash 
 ```
 
+### The Code
+
 ```c
+// main.c
 #include <gtk/gtk.h>
 
 static void
@@ -247,7 +291,8 @@ main (int    argc,
 }
 ```
 
-```
+```make 
+# Makefile
 CC = qcc
 SYSROOT ?= ../qnx-apk-sysroot
 
@@ -268,6 +313,12 @@ $(TARGET): $(SRCS)
 
 clean:
   rm -f $(TARGET)
+```
+
+### Building
+
+```sh
+make
 ```
 
 ---

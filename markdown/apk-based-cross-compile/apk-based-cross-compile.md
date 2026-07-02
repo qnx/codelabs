@@ -196,7 +196,7 @@ curl -L -o etc/apk/keys/qnxosd.rsa.pub https://repo.oss.qnx.com/keys/qnxosd.rsa.
 cp ~/.abuild/*.pub etc/apk/keys/
 ```
 
-Now we need to tell apk what repositories we want to pull packages from for here we are doing a 8.0.4 system do we grab those repos plus the qsc-apk packages we made before
+Now we need to tell apk what repositories we want to pull packages from. Here we are doing an 8.0.4 system so we grab those repos plus the qsc-apk packages we made before
 
 ```sh
 cat << EOF > etc/apk/repositories

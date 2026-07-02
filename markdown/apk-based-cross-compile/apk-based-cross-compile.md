@@ -75,7 +75,7 @@ export PATH=$PATH:~/.local/bin
 ## Setting up abuild
 Duration: 3:00
 
-abuild is alpine's build system for building packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Swcenter Packages) which allows apk-tools to integrate qnx provided software
+abuild is alpine's build system for packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Software Center packages) which allows apk-tools to integrate QNX provided software.
 
 ### Build dependencies
 

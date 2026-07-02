@@ -471,7 +471,7 @@ This time we can't just ssh in we need to go into the desktop, open a terminal a
 
 #TODO insert screen shoot :tada:
 
-We have now cross compiled a application with a complex dependency chain. almost as simple as you would your own system
+We have now cross compiled an application with a complex dependency chain. Almost as simply as you would your own system
 
 <aside>
 As a exercise i suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk">cross compiler setup for just gtk4</a> we have come a long way to simplify the process and lower the barrier for end users

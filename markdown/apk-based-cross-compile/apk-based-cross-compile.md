@@ -305,7 +305,7 @@ $ file hello-qnx
 hello: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx-64.so.2, BuildID[md5/uuid]=34294113c5f608180bcc564d5a80ac01, with debug_info, not stripped
 ```
 
-you should get something like this. what we really care about is interpreter part we should see `/usr/lib/ldqnx-64.so.2` if so we are good to go. copy this onto your target and give it a run
+you should get something like this. What we really care about is the interpreter part. We should see `/usr/lib/ldqnx-64.so.2` ... if so we are good to go. Copy this onto your target and give it a run
 
 ```sh
 scp hello-qnx qnxuser@<ip/hostname>:~/

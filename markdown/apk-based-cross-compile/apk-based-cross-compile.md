@@ -341,7 +341,7 @@ Like hello world, we need some dependencies - but this time we are going to grab
 apk --root <path-to-qnx-apk-sysroot> add --no-scripts gtk4-dev qnx-crypto-openssl3 qnx-screen-virtio bash 
 ```
 
-you will notice quite a bit of packages being added about 140 packages are needed to properly build gtk applications this shows the power of using apk for compiling as previously you would have to go and build these dependencies yourself
+you will notice quite a few packages being added. About 140 packages are needed to properly build gtk applications!! This shows the power of using apk for compiling, as previously you would have to figure out how to build these dependencies yourself
 
 ### The Code
 

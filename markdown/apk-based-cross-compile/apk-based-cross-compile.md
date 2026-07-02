@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
 
 ```
 
-While i could just give you a single command line to run and get the same result having a make file its easier to understand whats going on
+While I could just give you a single command line to run and get the same result, having a makefile makes it easier to understand whats going on
 
 ```make
 # Makefile

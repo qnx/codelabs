@@ -327,7 +327,7 @@ Well that was a simple example. Let's get into something more complicated with l
 
 ## Hello world from GTK4
 
-GTK4 dependency wise is very compliated there are alot of moving parts to render to the screen in this case either a wayland session or qnx-screen
+GTK4 dependency-wise is very compliated. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen
 
 ### Dependencies
 

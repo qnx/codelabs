@@ -54,7 +54,7 @@ doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lu
 in order to make our life just a bit easier we are going to setup apk as a static binary. That way we don't need to set and LD Library paths
 
 ```sh
-# 3.0.6 Is the same version we use at the time of writing check if you are on a new version
+# 3.0.6 is the latest version we using at the time of writing. Check what version of apk-tools we are using for your system
 git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
 ```
 
@@ -75,7 +75,7 @@ export PATH=$PATH:~/.local/bin
 ## Setting up abuild
 Duration: 3:00
 
-abuild is alpine build system building packaging using APKBUILD files, we need to setup abuild on our host in order to be able to build apk wrapped apks which allows apk-tools to integrate packages from qnx software center
+abuild is alpine's build system for building packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Swcenter Packages) which allows apk-tools to integrate qnx provided software
 
 ### Build dependencies
 
@@ -98,7 +98,7 @@ doas apk add build-base git make openssl-dev scdoc fakeroot patch curl bc pax-ut
 ### Building abuild
 
 ```sh
-# 3.15.0 Is the same version we use at the time of writing. Check if you are on a newer version
+# 3.15.0 is the latest version we using at the time of writing. Check what version of abuild we are using for your system
 git clone https://github.com/qnx-ports/abuild --branch qnx-3.15.0
 ```
 
@@ -302,7 +302,7 @@ so now it should of worked :tada: ... but lets validate my claims first with han
 
 ```sh
 $ file hello-qnx
-hello: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx-64.so.2, BuildID[md5/uuid]=34294113c5f608180bcc564d5a80ac01, with debug_info, not stripped
+hello-qnx: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx-64.so.2, BuildID[md5/uuid]=34294113c5f608180bcc564d5a80ac01, with debug_info, not stripped
 ```
 
 you should get something like this. What we really care about is the interpreter part. We should see `/usr/lib/ldqnx-64.so.2` ... if so we are good to go. Copy this onto your target and give it a run
@@ -441,7 +441,7 @@ LDFLAGS = -L$(SYSROOT)/usr/lib $(shell pkg-config --libs gtk4)
 
 # the rest of this make file is nothing special its just a standard makefile.
 
-TARGET = hello-gtk4
+TARGET = hello-gtk4-qnx
 SRCS = main.c
 
 all: $(TARGET)
@@ -464,7 +464,7 @@ make
 Now like before ... let's get this on a qnx system. Since we are using gtk4, we will need a system with a desktop like the [Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
 
 ```sh
-scp hello-qnx qnxuser@<ip/hostname>:~/
+scp hello-gtk4-qnx qnxuser@<ip/hostname>:~/
 ```
 
 This time we can't just ssh in we need to go into the desktop, open a terminal and run our application

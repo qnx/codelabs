@@ -237,7 +237,7 @@ apk --root <path-to-qnx-apk-sysroot> add qnx-microkernel qnx-microkernel-dev qnx
 
 ### The code
 
-We are going to make a dirctory called `hello-world-apk` with a `main.c` and a `Makefile` the result will look like this
+We are going to make a directory called `hello-world-apk` with a `main.c` and a `Makefile` the result will look like this
 
 ```
 hello-world-apk/
@@ -327,7 +327,7 @@ Well that was a simple example. Let's get into something more complicated with l
 
 ## Hello world from GTK4
 
-GTK4 dependency-wise is very compliated. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen
+GTK4 dependency-wise is very complicated. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen
 
 ### Dependencies
 
@@ -345,7 +345,7 @@ you will notice quite a few packages being added. About 140 packages are needed 
 
 ### The Code
 
-Like hello world we are going to make a dirctory called `gtk4-hello-world-apk` with a `main.c` and a `Makefile` the result will look like this
+Like hello world we are going to make a directory called `gtk4-hello-world-apk` with a `main.c` and a `Makefile` the result will look like this
 
 ```
 gtk4-hello-world-apk/
@@ -474,7 +474,7 @@ This time we can't just ssh in we need to go into the desktop, open a terminal a
 We have now cross compiled an application with a complex dependency chain. Almost as simply as you would your own system
 
 <aside>
-As a exercise i suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk">cross compiler setup for just gtk4</a> we have come a long way to simplify the process and lower the barrier for end users
+As an exercise I suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk">cross compiler setup for just gtk4</a> we have come a long way to simplify the process and lower the barrier for end users
 </aside>
 
 ---

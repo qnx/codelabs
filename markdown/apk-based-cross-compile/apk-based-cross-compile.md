@@ -109,7 +109,7 @@ make install prefix="$HOME/.local" sysconfdir="$HOME/.local/etc"
 
 ### Setting up signing key
 
-Part of apk-tools and abuild is its packaging signing system that validates that a trusted authority has made theses packages. For this you are going create your own signing keys for these packages and setup yourself as a trusted authority
+Part of apk-tools and abuild is its packaging signing system that validates that a trusted authority has made these packages. For this you are going create your own signing keys for these packages and setup yourself as a trusted authority
 
 ```sh
 abuild-keygen -a

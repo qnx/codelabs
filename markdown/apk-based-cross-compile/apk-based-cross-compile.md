@@ -321,7 +321,7 @@ Hello, World from Linux on QNX!
 
 ```
 
-Well that was a simple example lets get into something more complicated with lots of dependencies. why not GTK4
+Well that was a simple example. Let's get into something more complicated with lots of dependencies. Why not GTK4 ?
 
 ---
 

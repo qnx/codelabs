@@ -334,7 +334,7 @@ GTK4 dependency-wise is very compliated. There are a lot of moving parts to rend
 Like hello world, we need some dependencies - but this time we are going to grab open source dependencies as well as a few qnx packages for crypto and graphics
 
 <aside>
-    <strong>NOTE:</strong> im assuming you did hello world if not add the dependencies from that step as well 
+    <strong>NOTE:</strong> I'm assuming you completed building "hello world". If not, add the dependencies from that step as well 
 </aside>
 
 ```sh

@@ -87,7 +87,7 @@ sudo apt install build-essential git make pkg-config libssl-dev scdoc fakeroot p
 ```
 
 #### Arch
-sudo pacman -S --noconfirm base-devel git openssl scdoc fakeroot patch curl bc pax-utils
+sudo pacman -S base-devel git openssl scdoc fakeroot patch curl bc pax-utils
 ```
 
 #### Alpine
@@ -503,14 +503,139 @@ Thanks for following along, and happy cross-compiling!
 
 ## Optional: Building Clang as your compiler
 
+While qcc and q++ is the default and recommended compile by qnx the self hosted system uses clang (llvm), which gives us access to a more moderns toolchain with newer c++ standards and allows us to work with and port newer languages like rust, zig and odin.
+
+### Build dependencies
+
+Before we can begin to compile clang we need to acquire system dependencies.
+
+#### Debian
 ```sh
-CMAKE_C_COMPILER_LAUNCHER=ccache \
-CMAKE_CXX_COMPILER_LAUNCHER=ccache \
-cmake -B out -S llvm -G Ninja \
+sudo apt install build-essential cmake ninja-build git python3 zlib1g-dev
+```
+
+#### Arch
+```sh
+sudo pacman -S base-devel cmake ninja git python
+```
+
+#### Alpine
+```sh
+doas apk add build-essential cmake ninja git python3 zlib-dev linux-headers
+```
+
+### The Code
+
+While we have llvm support it has not been upstreamed yet so we will need to get our fork
+
+```sh
+# Depth 1 here is to speed this up if you want do patch it make sure you get the whole history
+git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 --depth=1
+```
+
+### Building Clang
+
+#### Ram Usage
+
+![All Your ram belong to us](all_your_ram.webp)
+
+An important thing to note here clang and llvm like to use a lot of ram. to prevent other applications from crashing due to out of memory make sure to manually set `-j<number>`. to comfortably compile llvm i recommend using 3 gig of ram per cpu core
+
+
+#### Configuring Clang
+
+Now we need to setup llvm. We don't need the full suite of llvm libraries to install we just want clang so we will statically compile it
+
+<aside>
+    <strong>NOTE:</strong> This will take some time anywhere from 30 minutes to a few hours depending in your setup to this is a good time to get some coffee
+</aside>
+
+```sh
+# if you want the default target to be aarch64 use this triple aarch64-unknown-qnx
+# clang by default supports all targets from the same binary so can just clang --target=<triple>
+cmake -B build -S llvm -G Ninja \
+    -DCMAKE_INSTALL_PREFIX=~/.local \
     -DCMAKE_BUILD_TYPE=Release \
     -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
     -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-pc-qnx \
     -DLLVM_ENABLE_PROJECTS="clang"
 
-ninja -C out -j16
+ninja -C build -j<number>
+
+ninja -C build install
+```
+
+Now lets see the results
+
+```sh
+$ clang --version
+clang version 22.1.7 (https://github.com/qnx-ports/llvm-project af405f22587173152a9a47153428a2738348a504)
+Target: x86_64-pc-qnx
+Thread model: posix
+InstalledDir: ~/.local/bin
+```
+
+Now that we have clang lets take a look how this compared to our old setup
+
+
+### Hello World r2
+
+to start lets take out original example Hello world. in order to make this work we just need to update our Makefile
+
+```make
+# We are using our built clang
+CC = clang
+# We still hae our sysroot variable
+SYSROOT ?= ../qnx-apk-sysroot
+
+# We don't need to set -L and -I we can just pass our sysroot
+CFLAGS += --sysroot=$(SYSROOT)
+# Because we don't have lld we need to pass in the absolute path to the linker
+LDFLAGS +=  -fuse-ld=$(shell which ntox86_64-ld)
+
+# Nothing to note here same as before
+
+TARGET = hello
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+  $(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+  rm -f $(TARGET)
+```
+
+
+### GTK 4 r2
+
+just like hello world we just need to change out `-L` and `-I` for `--sysroot` and `-fuse-ld`
+
+```
+# Makefile
+# We are using clang
+CC = clang
+SYSROOT ?= ../qnx-apk-sysroot
+
+# We still tell pkgconf about our sysroot
+export PKG_CONFIG_PATH := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
+
+# Use sysroot and fuse-ld
+CFLAGS = --sysroot=$(SYSROOT) -O2 $(shell pkg-config --cflags gtk4)
+LDFLAGS = -fuse-ld=$(shell which ntox86_64-ld) $(shell pkg-config --libs gtk4)
+
+# Nothing to note here same as before
+
+TARGET = hello-gtk4-qnx
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+  $(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+  rm -f $(TARGET)
 ```

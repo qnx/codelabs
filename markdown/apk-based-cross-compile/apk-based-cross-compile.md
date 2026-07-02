@@ -467,7 +467,7 @@ Now like before ... let's get this on a qnx system. Since we are using gtk4, we 
 scp hello-qnx qnxuser@<ip/hostname>:~/
 ```
 
-This time we can't just ssh in we need to go into the desktop open a terminal and run our application
+This time we can't just ssh in we need to go into the desktop, open a terminal and run our application
 
 #TODO insert screen shoot :tada:
 

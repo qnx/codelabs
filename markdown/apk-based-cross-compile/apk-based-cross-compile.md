@@ -461,7 +461,7 @@ Okay now.. lets ... make it ... with make ... again
 make
 ```
 
-Now like before ... lets get this on a qnx system. since we are using gtk4 we will need a system with a desktop like the [Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
+Now like before ... let's get this on a qnx system. Since we are using gtk4, we will need a system with a desktop like the [Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
 
 ```sh
 scp hello-qnx qnxuser@<ip/hostname>:~/

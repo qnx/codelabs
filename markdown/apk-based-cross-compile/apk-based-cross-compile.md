@@ -209,7 +209,7 @@ $HOME/.cache/qsc-apk/8.0.4/qnx-extra
 EOF
 ```
 
-Lets tells apk to update its database with the new keys and repositories
+Lets tell apk to update its database with the new keys and repositories
 
 ```
 apk --root . update 

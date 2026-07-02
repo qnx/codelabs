@@ -488,7 +488,7 @@ Cross-compilation has always been the standard for QNX development, and this set
 It's not just for `make` and simple programs either. The same sysroot concepts you saw here translate directly to complex build systems like Meson, CMake, or Bazel. (We'll leave that as an exercise for the reader, but the core `PKG_CONFIG_PATH`, `QNX_TARGET`, and header/library flags apply to any system.)
 
 While this wraps up the main codelab, the next two sections are optional deep dives you can skip or tackle depending on your needs:
-- **Cross-compiling OpenJDK 25**: A "Director's Cut" walkthrough of how I used this exact setup to bootstrap the JVM for QNX  real-world scenario where cross-compiling from another OS was a hard requirement.
+- **Cross-compiling OpenJDK 25**: A "Director's Cut" walkthrough of how I used this exact setup to bootstrap the JVM for QNX a real-world scenario where cross-compiling from another OS was a hard requirement.
 - **Building Clang as your compiler**: Swap out `qcc` for a `clang` the same compiler we use on the self-hosted system.
 
 Thanks for following along, and happy cross-compiling!

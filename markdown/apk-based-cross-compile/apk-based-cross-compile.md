@@ -1,6 +1,6 @@
 id: apk-based-cross-compile 
-title: How to use apk packages for cross compilation
-summary: Learn how to setup a cross compile environment using the QNX Alpine Package Keeper (apk) ecosystem
+title: Cross-Compile for QNX Using Open Source Packages
+summary: Simplify QNX cross-compilation with prebuilt open source packages. Use `apk-tools` to manage deps, wire to `qcc`, and build C & GTK4
 categories: qnx, porting
 tags: intermediate
 difficulty: 2
@@ -8,7 +8,7 @@ status: published
 authors: Aaron Bassett
 feedback_link: https://github.com/qnx/codelabs/issues
 
-# How to use apk packages for cross compilation
+# Cross-Compile for QNX Using Open Source Packages
 
 ## Introduction
 Duration: 2:00
@@ -65,7 +65,8 @@ ninja -C build src/apk
 
 mkdir -p ~/.local/bin
 cp ./build/src/apk ~/.local/bin
-#TODO: add instructions on adding .local/bin to path
+
+# If you want to have apk available all the time add this to your ~/.bashrc or ~/.zshrc
 export PATH=$PATH:~/.local/bin
 ```
 
@@ -189,7 +190,6 @@ apk --root . add --initdb --usermode
 In order to install packages we need to tell apk what keys are trusted. We will setup our qnx signing key as well as the one we made back when we built abuild
 
 ```sh
-# TODO: check if i really need to make this dir
 mkdir -p etc/apk/keys
 curl -L -o etc/apk/keys/qnxosd.rsa.pub https://repo.oss.qnx.com/keys/qnxosd.rsa.pub
 

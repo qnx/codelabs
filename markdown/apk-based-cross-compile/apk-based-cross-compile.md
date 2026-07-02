@@ -138,7 +138,7 @@ sudo pacman -S openbsd-netcat
 
 #### Alpine
 
-Nothing needed busybox provides netcat
+There is nothing needed because busybox provides netcat.
 
 ### Running build-qsc-apk
 

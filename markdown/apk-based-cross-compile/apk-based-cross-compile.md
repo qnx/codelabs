@@ -97,7 +97,7 @@ doas apk add build-base git make openssl-dev scdoc fakeroot patch curl bc pax-ut
 ### Building abuild
 
 ```sh
-# 3.15.0 Is the same version we use at the time of writing check if you are on a new version
+# 3.15.0 Is the same version we use at the time of writing. Check if you are on a newer version
 git clone https://github.com/qnx-ports/abuild --branch qnx-3.15.0
 ```
 

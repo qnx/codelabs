@@ -51,7 +51,7 @@ doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lu
 
 ### Compiling a static apk-tools binary
 
-in order to make our life just a bit easier we are going to setup apk as a static binary that way we don't need to set and LD Library paths
+in order to make our life just a bit easier we are going to setup apk as a static binary. That way we don't need to set and LD Library paths
 
 ```sh
 # 3.0.6 Is the same version we use at the time of writing check if you are on a new version

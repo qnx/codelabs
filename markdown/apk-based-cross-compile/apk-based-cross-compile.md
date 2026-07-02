@@ -1,6 +1,6 @@
 id: apk-based-cross-compile 
 title: Cross-Compile for QNX Using Open Source Packages
-summary: Simplify QNX cross-compilation with prebuilt open source packages. Use `apk-tools` to manage deps, wire to `qcc`, and build C & GTK4
+summary: Simplify QNX cross-compilation with prebuilt open source packages. Use `apk-tools` to manage deps, wire to `qcc`, and build C & GTK4 applications
 categories: qnx, porting
 tags: intermediate
 difficulty: 2

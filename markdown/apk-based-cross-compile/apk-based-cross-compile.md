@@ -1,6 +1,6 @@
 id: apk-based-cross-compile 
 title: How to use apk packages for cross compilation
-summary: Learn how to setup a cross compile environment utilizing the ecosystem of apk packages
+summary: Learn how to setup a cross compile environment using the QNX Alpine Package Keeper (apk) ecosystem
 categories: qnx, porting
 tags: intermediate
 difficulty: 2

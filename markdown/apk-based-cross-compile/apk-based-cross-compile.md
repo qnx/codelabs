@@ -225,7 +225,7 @@ echo "${PWD/#$HOME/\~}"
 
 ## Hello world from C
 
-After all that setup let make sure we have everything working correctly whats better than a good old hello world.
+After all that setup let make sure we have everything working correctly. What's better than a good old hello world!!!?
 
 ### Dependencies
 

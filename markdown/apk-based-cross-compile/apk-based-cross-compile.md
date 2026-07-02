@@ -425,7 +425,7 @@ SYSROOT ?= ../qnx-apk-sysroot
 # 1. We tell pkgconf to look in our sysroot for pkgconf definitions
 export PKG_CONFIG_PATH := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_PATH)
 
-# 2. we also need to tell pkgconf that all definitions need to be relative to our sysroot
+# 2. We also need to tell pkgconf that all definitions need to be relative to our sysroot
 export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
 
 # 3. We are the qnx target now

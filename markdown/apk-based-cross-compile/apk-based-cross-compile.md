@@ -17,7 +17,7 @@ The self-hosted environment is a powerful tool, but in cases where you have an e
 
 **What you will learn:**
 
-* How to setup a apk-tools managed  sysroot
+* How to setup a apk-tools managed sysroot
 * How to setup qcc to use the apk-tools managed sysroot
 * Building a simple C program
 * Building a GTK 4 application

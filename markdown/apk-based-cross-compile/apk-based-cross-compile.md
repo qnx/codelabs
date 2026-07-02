@@ -495,13 +495,13 @@ Thanks for following along, and happy cross-compiling!
 
 ---
 
-## Example: Cross Compiling java
+## Example: Cross-compiling OpenJDK 25
 
 #TODO
 
 ---
 
-## Optional: Using clang as a cross compiler
+## Optional: Building Clang as your compiler
 
 ```sh
 CMAKE_C_COMPILER_LAUNCHER=ccache \

@@ -186,7 +186,7 @@ Now that we have a folder structure we can ask apk to initialize the root for pa
 apk --root . add --initdb --usermode
 ```
 
-In order to install packages we need to tell apk what keys are trusted we will setup our qnx signing key and the one we made back when we built abuild
+In order to install packages we need to tell apk what keys are trusted. We will setup our qnx signing key as well as the one we made back when we built abuild
 
 ```sh
 # TODO: check if i really need to make this dir

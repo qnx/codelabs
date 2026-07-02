@@ -13,7 +13,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 ## Introduction
 Duration: 2:00
 
-The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use qcc, how do you utilizes the catalog of open source ports ?
+The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use qcc, how do you utilizes the catalog of open source ports?
 
 **What you will learn:**
 

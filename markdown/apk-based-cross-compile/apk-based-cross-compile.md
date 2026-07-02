@@ -54,7 +54,7 @@ doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lu
 in order to make our life just a bit easier we are going to setup apk as a static binary. That way we don't need to set and LD Library paths
 
 ```sh
-# 3.0.6 is the latest version we using at the time of writing. Check what version of apk-tools we are using for your system
+# 3.0.6 is the latest version we are using at the time of writing. Check what version of apk-tools we are using for your system
 git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
 ```
 

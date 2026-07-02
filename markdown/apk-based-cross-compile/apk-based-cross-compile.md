@@ -13,11 +13,11 @@ feedback_link: https://github.com/qnx/codelabs/issues
 ## Introduction
 Duration: 2:00
 
-The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use qcc, how do you utilizes the catalog of open source ports ?
+The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use qcc, how do you utilizes the catalog of open source ports?
 
 **What you will learn:**
 
-* How to setup a apk-tools managed  sysroot
+* How to setup a apk-tools managed sysroot
 * How to setup qcc to use the apk-tools managed sysroot
 * Building a simple C program
 * Building a GTK 4 application
@@ -28,7 +28,7 @@ The self-hosted environment is a powerful tool, but in cases where you have an e
 ## Setting up apk-tools
 Duration: 5:00
 
-apk ... no not android apk!!! apk-tools from Alpine linux is a lightweight but powerful package manager designed for systems that are optimized at scale. We have ported apk-tools to QNX. In order to install the packages from the QNXe repository, we need to have apk-tools built and installed on our host system. For this exercise we are going to assume a linux system
+apk ... no not android apk!!! apk-tools from Alpine linux is a lightweight but powerful package manager designed for systems that are optimized at scale. We have ported apk-tools to QNX. In order to install the packages from the QNXe repository, we need to have apk-tools built and installed on our host system. For this exercise we are going to assume a linux system.
 
 ### Build dependencies
 
@@ -51,10 +51,10 @@ doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lu
 
 ### Compiling a static apk-tools binary
 
-in order to make our life just a bit easier we are going to setup apk as a static binary. That way we don't need to set and LD Library paths
+In order to make our life just a bit easier we are going to setup apk as a static binary. That way we don't need to set LD library paths.
 
 ```sh
-# 3.0.6 is the latest version we using at the time of writing. Check what version of apk-tools we are using for your system
+# 3.0.6 is the latest version we are using at the time of writing. Check what version of apk-tools we are using for your system
 git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
 ```
 
@@ -75,7 +75,7 @@ export PATH=$PATH:~/.local/bin
 ## Setting up abuild
 Duration: 3:00
 
-abuild is alpine's build system for building packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Swcenter Packages) which allows apk-tools to integrate qnx provided software
+abuild is alpine's build system for packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Software Center packages) which allows apk-tools to integrate QNX provided software.
 
 ### Build dependencies
 
@@ -110,7 +110,7 @@ make install prefix="$HOME/.local" sysconfdir="$HOME/.local/etc"
 
 ### Setting up signing key
 
-Part of apk-tools and abuild is its packaging signing system that validates that a trusted authority has made these packages. For this you are going create your own signing keys for these packages and setup yourself as a trusted authority
+Part of apk-tools and abuild is its packaging signing system that validates that a trusted authority has made these packages. For this you are going create your own signing keys for these packages and set yourself as a trusted authority.
 
 ```sh
 abuild-keygen -a
@@ -138,7 +138,7 @@ sudo pacman -S openbsd-netcat
 
 #### Alpine
 
-Nothing needed busybox provides netcat
+There is nothing needed because busybox provides netcat.
 
 ### Running build-qsc-apk
 

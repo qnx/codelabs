@@ -265,7 +265,7 @@ While I could just give you a single command line to run and get the same result
 # Makefile
 # We are using qcc
 CC = qcc
-# we need tha path to our sysroot. if you have been following along exactly this should work
+# we need the path to our sysroot. if you have been following along exactly this should work
 # if not just `make SYSROOT=<path-to-qnx-apk-sysroot>`
 SYSROOT ?= ../qnx-apk-sysroot
 

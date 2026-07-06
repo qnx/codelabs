@@ -279,7 +279,7 @@ export QNX_TARGET="$(SYSROOT)"
 
 # the rest of this make file is nothing special its just a standard makefile.
 TARGET = hello-qnx
-SRCS = hello.c
+SRCS = main.c
 
 all: $(TARGET)
 

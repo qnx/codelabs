@@ -757,8 +757,8 @@ SRCS = main.c
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-  $(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
 clean:
-  rm -f $(TARGET)
+	rm -f $(TARGET)
 ```

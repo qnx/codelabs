@@ -660,7 +660,7 @@ git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 -
 
 #### Ram Usage
 
-![All Your ram belong to us](all_your_ram.webp)
+![All Your ram are belong to us](all_your_ram.webp)
 
 An important thing to note here clang and llvm like to use a lot of ram. to prevent other applications from crashing due to out of memory make sure to manually set `-j<number>`. to comfortably compile llvm i recommend using 3 gig of ram per cpu core
 

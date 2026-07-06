@@ -497,7 +497,130 @@ Thanks for following along, and happy cross-compiling!
 
 ## Example: Cross-compiling OpenJDK 25
 
-#TODO
+So now that we've covered the basics, how does this work in the real world? Well ... thanks to the `apk` sysroot, I was able to port OpenJDK 25 to QNX. Java is a self-hosted language, which means you need a working JDK to build a new one. Normally, this requires bootstrapping version by version until you reach your target. But instead of spending years building `n+1` versions, we can use Linux as a donor system. 
+
+### The Setup
+
+It's not as simple as grabbing OpenJDK from a package manager and compiling. We first need a JDK that understands the QNX target, which brings us back to the bootstrapping problem. OpenJDK handles this with three distinct JDK roles:
+
+* **Host JDK:** A working JDK on your build machine (usually from your package manager or a prebuilt tarball).
+* **Build JDK:** A JDK compiled for your host machine that knows about the new target platform. It's used to compile the final target JDK.
+* **Target JDK:** The final OpenJDK build for your target system (QNX in this case).
+
+In my case, I started with the official OpenJDK 25 release tarball for Linux as the Host JDK.
+
+#### Building the build jdk
+
+The build JDK is essentially a "host" version of the same source code we want for the target. We need it because the final compiler needs to understand QNX-specific details to generate correct artifacts. This step is straightforward since it's just a native Linux build
+
+```sh
+./configure \
+    --prefix=/usr/local/lib/jvm/java-25-openjdk \
+	--with-boot-jdk=../boot-jdk \
+	--with-extra-cflags="-D_LARGEFILE64_SOURCE" \
+	--with-extra-cxxflags="-D_LARGEFILE64_SOURCE" \
+	--with-jobs=$(nproc) \
+	--with-test-jobs=$(nproc) \
+	--disable-warnings-as-errors \
+	--disable-precompiled-headers \
+	--enable-dtrace=no \
+	--with-debug-level=release \
+	--with-native-debug-symbols=none
+
+make
+```
+
+Once this is complete you'll have a JDK here `build/linux-<arch>-server-release/` that will be used to build out final target
+
+#### Cross-compiling to QNX
+
+Like before, we'll set up an apk sysroot and install the packages OpenJDK needs to link against. I won't repeat the setup steps, but here are the packages required.
+
+```sh
+# Dependencies pulled from: https://github.com/qnx-ports/aports/blob/803/extra/openjdk25/APKBUILD
+apk add --root <openjdk-25-sysroot> \
+    autoconf \
+    cups-dev \
+    fontconfig-dev \
+    freetype-dev \
+    gawk \
+    giflib-dev \
+    lcms2-dev \
+    libffi-dev \
+    libjpeg-turbo-dev \
+    libsysv-ipc-shim \
+    libsysv-ipc-shim-dev \
+    libx11-dev \
+    libxext \
+    libxext-dev \
+    libxrandr-dev \
+    libxrender-dev \
+    libxt-dev \
+    libxtst-dev \
+    qnx-alsa \
+    qnx-alsa-dev \
+    qnx-fd-notify-dev \
+    qnx-libc++-dev \
+    zlib-ng-dev \
+    zip \
+    qnx-crypto-openssl3 \
+    bash \
+    qnx-microkernel \
+    qnx-microkernel-dev \
+    qnx-gcc-libs \
+    qnx-io-sock-dev \
+```
+
+Now we configure OpenJDK to use the sysroot and cross-compile.
+
+```sh
+# build-cross-x86_64.sh
+#!/bin/bash
+
+_sysroot=$(realpath ../sysroot-openjdk-x86_64)
+
+PKG_CONFIG_PATH=$(realpath $_sysroot/lib/pkgconfig) \
+QNX_TARGET="$_sysroot" \
+CC="ntox86_64-gcc" \
+CXX="ntox86_64-c++" \
+CPP="ntox86_64-cpp" \
+PKG_CONFIG_SYSROOT_DIR=$_sysroot \
+./configure \
+    --prefix=/usr/local/lib/jvm/java-25-openjdk \
+	--openjdk-target=x86_64-pc-qnx \
+	--with-boot-jdk=../boot-jdk \
+    --with-build-jdk=./build/linux-aarch64-server-release/images/jdk \
+	--with-sysroot="$_sysroot" \
+	--with-extra-cflags="-D_QNX_SOURCE -I$_sysroot/usr/include -I$_sysroot/usr/include/shims -D_LARGEFILE64_SOURCE" \
+	--with-extra-cxxflags="-D_QNX_SOURCE -I$_sysroot/usr/include/c++/v1  -I$_sysroot/usr/include -D_LARGEFILE64_SOURCE" \
+	--with-extra-ldflags="-L$_sysroot/usr/lib -shared-libgcc -L$_sysroot/usr/lib -lsocket -lepoll -leventfd -lsysv-ipc -lasound" \
+	--with-zlib=system \
+	--with-libjpeg=system \
+	--with-giflib=system \
+	--with-libpng=system \
+	--with-lcms=system \
+	--with-jobs=$(nproc) \
+	--with-test-jobs=$(nproc) \
+	--disable-warnings-as-errors \
+	--disable-precompiled-headers \
+	--enable-dtrace=no \
+	--with-debug-level=release \
+	--with-native-debug-symbols=none
+```
+
+There's a lot happening here, but you'll notice the same fundamentals we covered in the main codelab:
+
+- `-I$_sysroot/usr/include` (and `-I$_sysroot/usr/include/c++/v1` for C++) to pull headers from our sysroot
+- `PKG_CONFIG_PATH` & `PKG_CONFIG_SYSROOT_DIR` so OpenJDK's build system can locate our packages
+- `-L$_sysroot/usr/lib` to link against our sysroot libraries
+
+Now we have a fully cross-compiled OpenJDK ready for deployment. I could just run java --version and call it a day, but let's test something real. How about a Minecraft server?
+
+<aside>
+   With the new Vulkan backend for Minecraft, I'll hopefully be able to show the client running on QNX as well :)
+</aside>
+
+![Minecraft client connected to a server running on qnx](minecraft_java.png)
 
 ---
 

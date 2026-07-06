@@ -423,7 +423,7 @@ SYSROOT ?= ../qnx-apk-sysroot
 
 # Now here is where things get interesting we need to configure 
 # 1. We tell pkgconf to look in our sysroot for pkgconf definitions
-export PKG_CONFIG_PATH := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+export PKG_CONFIG_LIBDIR := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_LIBDIR)
 
 # 2. We also need to tell pkgconf that all definitions need to be relative to our sysroot
 export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
@@ -485,7 +485,7 @@ Let's recap what you just did! You built a fully managed `apk-tools` sysroot, wi
 
 Cross-compilation has always been the standard for QNX development, and this setup slots right into that workflow. While QNXe introduces a self-hosted environment, many developers still rely on cross-compilation for existing projects or specific build pipelines. This `apk` sysroot gives you a clean way to tap into the growing ecosystem of open-source ports without reinventing the dependency wheel.
 
-It's not just for `make` and simple programs either. The same sysroot concepts you saw here translate directly to complex build systems like Meson, CMake, or Bazel. (We'll leave that as an exercise for the reader, but the core `PKG_CONFIG_PATH`, `QNX_TARGET`, and header/library flags apply to any system.)
+It's not just for `make` and simple programs either. The same sysroot concepts you saw here translate directly to complex build systems like Meson, CMake, or Bazel. (We'll leave that as an exercise for the reader, but the core `PKG_CONFIG_LIBDIR`, `QNX_TARGET`, and header/library flags apply to any system.)
 
 While this wraps up the main codelab, the next two sections are optional deep dives you can skip or tackle depending on your needs:
 - **Cross-compiling OpenJDK 25**: A "Director's Cut" walkthrough of how I used this exact setup to bootstrap the JVM for QNX a real-world scenario where cross-compiling from another OS was a hard requirement.
@@ -579,7 +579,7 @@ Now we configure OpenJDK to use the sysroot and cross-compile.
 
 _sysroot=$(realpath ../sysroot-openjdk-x86_64)
 
-PKG_CONFIG_PATH=$(realpath $_sysroot/lib/pkgconfig) \
+PKG_CONFIG_LIBDIR=$(realpath $_sysroot/lib/pkgconfig) \
 QNX_TARGET="$_sysroot" \
 CC="ntox86_64-gcc" \
 CXX="ntox86_64-c++" \
@@ -611,7 +611,7 @@ PKG_CONFIG_SYSROOT_DIR=$_sysroot \
 There's a lot happening here, but you'll notice the same fundamentals we covered in the main codelab:
 
 - `-I$_sysroot/usr/include` (and `-I$_sysroot/usr/include/c++/v1` for C++) to pull headers from our sysroot
-- `PKG_CONFIG_PATH` & `PKG_CONFIG_SYSROOT_DIR` so OpenJDK's build system can locate our packages
+- `PKG_CONFIG_LIBDIR` & `PKG_CONFIG_SYSROOT_DIR` so OpenJDK's build system can locate our packages
 - `-L$_sysroot/usr/lib` to link against our sysroot libraries
 
 Now we have a fully cross-compiled OpenJDK ready for deployment. I could just run java --version and call it a day, but let's test something real. How about a Minecraft server?
@@ -742,7 +742,7 @@ CC = clang
 SYSROOT ?= ../qnx-apk-sysroot
 
 # We still tell pkgconf about our sysroot
-export PKG_CONFIG_PATH := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+export PKG_CONFIG_LIBDIR := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_LIBDIR)
 export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
 
 # Use sysroot and fuse-ld

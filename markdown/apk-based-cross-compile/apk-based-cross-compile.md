@@ -23,6 +23,12 @@ The self-hosted environment is a powerful tool, but in cases where you have an e
 * Building a GTK 4 application
 * How to cross compile existing oss projects 
 
+
+**Prerequisite**
+
+* QNX Software Center installed and SDP 8.0.x version matching your target
+* Sourcing the SDP version
+
 ---
 
 ## Setting up apk-tools

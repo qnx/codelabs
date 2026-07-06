@@ -298,7 +298,7 @@ Okay now.. lets ... make it ... with make ... say that 5 times fast
 make
 ```
 
-so now it should of worked :tada: ... but lets validate my claims first with handy dandy `file`
+so now it should've worked :tada: ... but let's validate my claims first with handy dandy `file`
 
 ```sh
 $ file hello-qnx

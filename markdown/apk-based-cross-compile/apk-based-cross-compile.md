@@ -574,7 +574,7 @@ apk add --root <openjdk-25-sysroot> \
     qnx-microkernel \
     qnx-microkernel-dev \
     qnx-gcc-libs \
-    qnx-io-sock-dev \
+    qnx-io-sock-dev
 ```
 
 Now we configure OpenJDK to use the sysroot and cross-compile.

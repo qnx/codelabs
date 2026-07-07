@@ -158,7 +158,7 @@ git clone https://github.com/qnx-ports/qsc-apk --branch 804
 git clone https://github.com/qnx-packaging/build-qsc-apk.git
 ```
 
-we need to know which architecture we want to package for - so pick what you want to build for (or if you build both, they get their own folders)
+we need to know which architecture we want to package for - so pick what you want to build for (or if you build both, run the command again just with the other arch)
 
 ```sh
 build-qsc-apk -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core

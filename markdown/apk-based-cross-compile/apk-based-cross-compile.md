@@ -93,6 +93,7 @@ sudo apt install build-essential git make pkg-config libssl-dev scdoc fakeroot p
 ```
 
 #### Arch
+```
 sudo pacman -S base-devel git openssl scdoc fakeroot patch curl bc pax-utils
 ```
 
@@ -238,7 +239,7 @@ After all that setup lets make sure we have everything working correctly. What's
 Now we are going to use apk to get qnx dependencies that we need for C, this includes things like libc, gcc runtime libraries, and system headers
 
 ```sh
-apk --root <path-to-qnx-apk-sysroot> add qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
+apk --root <path-to-qnx-apk-sysroot> add --no-scripts qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
 ```
 
 ### The code
@@ -544,7 +545,7 @@ Like before, we'll set up an apk sysroot and install the packages OpenJDK needs 
 
 ```sh
 # Dependencies pulled from: https://github.com/qnx-ports/aports/blob/803/extra/openjdk25/APKBUILD
-apk add --root <openjdk-25-sysroot> \
+apk --root <openjdk-25-sysroot> add --no-scripts \
     autoconf \
     cups-dev \
     fontconfig-dev \

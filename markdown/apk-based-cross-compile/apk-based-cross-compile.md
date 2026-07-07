@@ -26,7 +26,7 @@ The self-hosted environment is a powerful tool, but in cases where you have an e
 
 **Prerequisite**
 
-* QNX Software Center installed and SDP 8.0.x version matching your target
+* QNX Software Center installed and SDP 8.0.4
 * Sourcing the SDP version
 
 ---

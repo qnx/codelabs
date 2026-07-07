@@ -231,7 +231,7 @@ echo "${PWD/#$HOME/\~}"
 
 ## Hello world from C
 
-After all that setup let make sure we have everything working correctly. What's better than a good old hello world!!!?
+After all that setup lets make sure we have everything working correctly. What's better than a good old hello world!!!?
 
 ### Dependencies
 
@@ -251,7 +251,7 @@ hello-world-apk/
 |-- Makefile
 ```
 
-Just a very simple hello-world should look familiar to everyone
+Just a very simple hello-world which should look familiar to everyone
 
 ```c
 // main.c
@@ -333,7 +333,7 @@ Well that was a simple example. Let's get into something more complicated with l
 
 ## Hello world from GTK4
 
-GTK4 dependency-wise is very complicated. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen
+GTK4 is very complicated dependency-wise. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen
 
 ### Dependencies
 
@@ -473,14 +473,14 @@ Now like before ... let's get this on a qnx system. Since we are using gtk4, we 
 scp hello-gtk4-qnx qnxuser@<ip/hostname>:~/
 ```
 
-This time we can't just ssh in we need to go into the desktop, open a terminal and run our application
+This time we can't just ssh in. We need to go into the desktop, open a terminal and run our application
 
 ![GTK4 Application Cross-Compiled to QNX](gtk4_cross_success.png)
 
 We have now cross compiled an application with a complex dependency chain. Almost as simply as you would your own system
 
 <aside>
-As an exercise I suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk">cross compiler setup for just gtk4</a> we have come a long way to simplify the process and lower the barrier for end users
+As an exercise I suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk">cross compiler setup for gtk4</a> we have come a long way to simplify the process and lower the barrier for end users
 </aside>
 
 ---
@@ -494,8 +494,8 @@ Cross-compilation has always been the standard for QNX development, and this set
 It's not just for `make` and simple programs either. The same sysroot concepts you saw here translate directly to complex build systems like Meson, CMake, or Bazel. (We'll leave that as an exercise for the reader, but the core `PKG_CONFIG_LIBDIR`, `QNX_TARGET`, and header/library flags apply to any system.)
 
 While this wraps up the main codelab, the next two sections are optional deep dives you can skip or tackle depending on your needs:
-- **Cross-compiling OpenJDK 25**: A "Director's Cut" walkthrough of how I used this exact setup to bootstrap the JVM for QNX a real-world scenario where cross-compiling from another OS was a hard requirement.
-- **Building Clang as your compiler**: Swap out `qcc` for a `clang` the same compiler we use on the self-hosted system.
+- **Cross-compiling OpenJDK 25**: A "Director's Cut" walkthrough of how I used this exact setup to bootstrap the JVM for QNX - a real-world scenario where cross-compiling from another OS was a hard requirement.
+- **Building Clang as your compiler**: Swap out `qcc` for `clang`, the same compiler we use on the self-hosted system.
 
 Thanks for following along, and happy cross-compiling!
 
@@ -668,7 +668,7 @@ git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 -
 
 ![All Your ram are belong to us](all_your_ram.webp)
 
-An important thing to note here clang and llvm like to use a lot of ram. to prevent other applications from crashing due to out of memory make sure to manually set `-j<number>`. to comfortably compile llvm i recommend using 3 gig of ram per cpu core
+An important thing to note here clang and llvm like to use a lot of ram. To prevent other applications from crashing due to running out of memory, make sure to manually set `-j<number>`. To comfortably compile llvm i recommend using 3 gigs of ram per cpu core
 
 
 #### Configuring Clang
@@ -709,7 +709,7 @@ Now that we have clang lets take a look how this compared to our old setup
 
 ### Hello World r2
 
-to start lets take out original example Hello world. in order to make this work we just need to update our Makefile
+To start lets take out original example Hello world. In order to make this work we just need to update our Makefile
 
 ```make
 # We are using our built clang

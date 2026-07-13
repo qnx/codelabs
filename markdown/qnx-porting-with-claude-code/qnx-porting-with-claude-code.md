@@ -14,7 +14,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 
 This codelab sets up a Claude Code workspace that ports Alpine Linux packages to QNX 8.0 for you. Once it is set up, you hand it a package name and it does the work: it pulls the Alpine recipe, builds it on a QNX target, works through the QNX-specific problems, and reports back what it produced.
 
-The work is native. Packages are built on a QNX target with Alpine's `abuild`, not cross-compiled. There is no SDP and no cross-toolchain. Claude Code runs on your machine and reaches the target over SSH.
+The work is native. Packages are built on a QNX target with Alpine's `abuild`, compiled by the target's own toolchain rather than cross-compiled from the host. Claude Code runs on your machine and reaches the target over SSH. (See the Scope note below for how this differs from the SDP cross-compile path.)
 
 What makes this work is the workspace itself. Claude Code reads a small set of skill files and two bootstrap documents, so it starts every session already knowing the porting rules, how to reach your target, and everything it has learned from past ports. This codelab is about setting that workspace up and running it. It does not teach you to port packages by hand; the system does that part.
 
@@ -33,7 +33,7 @@ What makes this work is the workspace itself. Claude Code reads a small set of s
 * A reachable QNX 8.0 target you can SSH into
 * A GitHub account with access to your aports fork
 
-> **Scope:** This is the self-hosted native porting path. The build runs on QNX. The cross-compile workflow (SDP, `qcc`, toolchain files) is a different path and is out of scope here.
+> **Scope:** This is the self-hosted native porting path: the build runs on the QNX target, not cross-compiled from the host with `qcc`/`q++` and toolchain files. (The QNX SDP is still used on the host to launch a QEMU target in Step 3; it just isn't used to build the package.) The host-side cross-compile workflow is a different path and is out of scope here.
 
 ---
 
@@ -65,6 +65,7 @@ The pieces:
 | **`TARGET.md`** | Your target: how to connect, the authoritative tree path, and a running log of target-specific facts. You edit this. |
 | **`.claude/skills/`** | The skill hierarchy. Claude Code loads these on demand to do the porting work. |
 | **`projects/apks/`** | Where Claude Code keeps its per-port notes and reports, one folder per package. |
+| **`run.sh`** | Optional QEMU launcher template, for the bring-your-own-image case (an alternative to QSTI). |
 | **`settings.template.json`** | Optional. Pre-approves the commands the workflow uses, so Claude Code prompts less. |
 
 Claude Code reads `CLAUDE.md` automatically when it opens in this directory, so the rules and skill map are loaded from the first message of every session.
@@ -88,6 +89,8 @@ mkqnximage --getip
 ```
 
 QSTI is also available for [Raspberry Pi](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html) if you want to run on hardware. Either way, once the target is up and you have its IP, you have everything you need for the next step.
+
+> If you already have your own QNX 8.0 disk image, the bundle includes a `run.sh` QEMU launcher template you can edit and tune instead; see its header comments and `TARGET.md`.
 
 > If you already have a QNX target running (an existing image, a Pi on your network), you can skip straight to Step 4 and just record its connection details.
 

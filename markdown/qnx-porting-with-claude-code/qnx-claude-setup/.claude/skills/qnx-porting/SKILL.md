@@ -17,7 +17,7 @@ These hold regardless of which sub-skill you are in:
 
 3. The human runs all git operations. The agent edits and builds; it never commits and never pushes.
 
-4. Build native aports packages on the QNX target with abuild. Do not cross-compile from a Linux host with the SDP. If a task or an old document assumes SDP/qcc/toolchain-files/build-files, that is the legacy cross-compile path and does not apply to native aports work.
+4. Build native aports packages on the QNX target with abuild. Do not cross-compile the package from a Linux host using qcc/q++ and toolchain files. If a task or an old document assumes a host-side cross-compile (qcc/q++, toolchain-files, build-files), that is the legacy cross-compile path and does not apply to native aports work. (The QNX SDP may still be used on the host to launch a QEMU target; that is fine and is separate from building the package.)
 
 5. Record new confirmed facts back into the right skill the moment they are proven, so the next session starts ahead of this one.
 

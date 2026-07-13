@@ -11,7 +11,7 @@ This skill provides guidance for porting Alpine Linux projects to QNX 8.0, with 
 
 ## Environment Context
 
-> This skill covers native aports porting: packages are built **on the QNX target itself** with `abuild`. The Ubuntu host only launches the QEMU target (or you use physical hardware like an RPi5); it does not cross-compile. There is no SDP, no qcc/q++, and no toolchain file involved in this workflow. For platform-level QNX facts shared across all ports, see the `qnx-platform-facts` skill; for the universal rules and task routing, see `qnx-porting`.
+> This skill covers native aports porting: packages are built **on the QNX target itself** with `abuild` (the host does not cross-compile them). For platform-level QNX facts shared across all ports, see the `qnx-platform-facts` skill; for the universal rules (including the native-build rule and where the SDP applies) and task routing, see `qnx-porting`.
 
 ### Development Setup
 - **Host System**: Ubuntu, used only to launch the QEMU target (not for compiling)

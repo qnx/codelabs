@@ -14,7 +14,7 @@ This is the workspace bootstrap. Read it at the start of every session before do
 1. Claims must be proven with command output before acting. Do not assert platform behavior, dependency state, or build results as fact without the command that shows it. When you lack the information, say so and get the evidence rather than filling the gap with plausible reasoning.
 2. Never create a patch from an untested change. Test in the unpacked tree with native build tools first; the patch is written only after the change is confirmed working.
 3. The human runs all git operations. Never run `git commit` or `git push`. Edit and build only.
-4. Native aports builds only: build on the QNX target with `abuild`. No SDP, no qcc/q++, no toolchain files, no cross-compile. If a doc assumes the cross-compile path, it is legacy reference and does not apply here.
+4. Native aports builds only: the package is built on the QNX target with `abuild`, never cross-compiled from the host. (Full rule, including where the SDP does and does not apply, in the `qnx-porting` router.)
 5. Record new confirmed facts back into the right skill the moment they are proven.
 6. Capture friction as you go: anything that slows a session down, breaks, or could be faster is a skill or `TARGET.md` update made the moment it is proven, not deferred. If a future session would otherwise rediscover this the hard way, record it now.
 

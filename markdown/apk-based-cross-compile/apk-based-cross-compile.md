@@ -1,14 +1,14 @@
 id: apk-based-cross-compile 
-title: Cross-Compile for QNX Using Open Source Packages
-summary: Simplify QNX cross-compilation with prebuilt open source packages. Use `apk-tools` to manage deps, wire to `qcc`, and build C & GTK4 applications
-categories: qnx, porting
+title: Cross-compile for QNX Using Open Source Packages
+summary: Simplify QNX cross-compilation with prebuilt open source packages. Use `apk-tools` to manage dependencies, wire to `qcc`, and build C & GTK4 applications.
+categories: qnx, porting, apk
 tags: intermediate
 difficulty: 2
 status: published
 authors: Aaron Bassett
 feedback_link: https://github.com/qnx/codelabs/issues
 
-# Cross-Compile for QNX Using Open Source Packages
+# Cross-compile for QNX Using Open Source Packages
 
 ## Introduction
 Duration: 2:00
@@ -24,7 +24,7 @@ The self-hosted environment is a powerful tool, but in cases where you have an e
 * How to cross compile existing oss projects 
 
 
-**Prerequisite**
+**Prerequisites:**
 
 * QNX Software Center installed and SDP 8.0.4
 * Sourcing the SDP version
@@ -126,7 +126,7 @@ abuild-keygen -a
 ## Building QNX wrapped apks
 Duration: 5:00
 
-Now that we have our tooling setup we can now build our qnx wrapped apks.
+Now that we have our tooling set up we can now build our QNX wrapped apks.
 
 ### Dependencies
 
@@ -149,7 +149,7 @@ There is nothing needed because busybox provides netcat.
 
 ### Running build-qsc-apk
 
-For this step we will need 2 repositories.
+For this step we will need 2 repositories:
 1. qnx-ports/qsc-apk: this is where all the APKBUILD definitions are stored and branched based on the sdp version
 2. qnx-packaging/build-qsc-apk: a helper script that will download the qpkgs from swcenter and build apks
 
@@ -281,7 +281,7 @@ SYSROOT ?= ../qnx-apk-sysroot
 CFLAGS += -I$(SYSROOT)/usr/include
 # 2. We add LDFLAGS in-order to tell the linker in where to find shared libraries
 LDFLAGS += -L$(SYSROOT)/usr/lib
-# 3. We are the qnx target now
+# 3. We are the QNX target now
 export QNX_TARGET="$(SYSROOT)"
 
 # the rest of this make file is nothing special its just a standard makefile.
@@ -665,7 +665,7 @@ git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 -
 
 ### Building Clang
 
-#### Ram Usage
+#### Ram usage
 
 ![All Your ram are belong to us](all_your_ram.webp)
 

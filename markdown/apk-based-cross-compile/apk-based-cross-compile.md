@@ -514,14 +514,21 @@ It's not as simple as grabbing OpenJDK from a package manager and compiling. We 
 * **Build JDK:** A JDK compiled for your host machine that knows about the new target platform. It's used to compile the final target JDK.
 * **Target JDK:** The final OpenJDK build for your target system (QNX in this case).
 
-In my case, I started with the official OpenJDK 25 release tarball for Linux as the Host JDK.
+In my case, I started with the official [OpenJDK 25.0.2+10 release tarball](https://wiki.openjdk.org/spaces/JDKUpdates/pages/42598676/Archived+Releases) for Linux as the Host JDK. If your distribution provides OpenJDK 25 you can also get from there.
+
+Let's grab QNX's fork of OpenJDK 25 we also need to grab a pre generate Makefile (QNX has limitations on argv size so the generation of this file has to be commented out to work on qnx [more details are here](https://github.com/qnx-ports/aports/blob/b74e80c3c4f1ae1d636f5a0b339888bf55c93aff/extra/openjdk25/APKBUILD#L151-L155))
+
+```sh
+git clone https://github.com/qnx-ports/jdk25u.git --branch qnx-jdk-25.0.2+10_p1
+curl -L -o jdk25u/main-targets.gmk https://raw.githubusercontent.com/qnx-ports/aports/refs/heads/803/extra/openjdk25/main-targets.gmk
+```
 
 #### Building the build JDK
 
 The build JDK is essentially a "host" version of the same source code we want for the target. We need it because the final compiler needs to understand QNX-specific details to generate correct artifacts. This step is straightforward since it's just a native Linux build
 
 ```sh
-./configure \
+bash configure \
     --prefix=/usr/local/lib/jvm/java-25-openjdk \
 	--with-boot-jdk=../boot-jdk \
 	--with-extra-cflags="-D_LARGEFILE64_SOURCE" \
@@ -534,7 +541,11 @@ The build JDK is essentially a "host" version of the same source code we want fo
 	--with-debug-level=release \
 	--with-native-debug-symbols=none
 
-make
+# Copy the pregenerate file
+mkdir -p ./build/linux-$(arch)-server-release/make-support
+cp main-targets.gmk ./build/linux-$(arch)-server-release/make-support/
+
+make jdk-image
 ```
 
 Once this is complete you'll have a JDK here `build/linux-<arch>-server-release/` that will be used to build out final target
@@ -592,11 +603,11 @@ CC="ntox86_64-gcc" \
 CXX="ntox86_64-c++" \
 CPP="ntox86_64-cpp" \
 PKG_CONFIG_SYSROOT_DIR=$_sysroot \
-./configure \
+bash ./configure \
     --prefix=/usr/local/lib/jvm/java-25-openjdk \
 	--openjdk-target=x86_64-pc-qnx \
 	--with-boot-jdk=../boot-jdk \
-    --with-build-jdk=./build/linux-aarch64-server-release/images/jdk \
+    --with-build-jdk=./build/linux-$(arch)-server-release/images/jdk \
 	--with-sysroot="$_sysroot" \
 	--with-extra-cflags="-D_QNX_SOURCE -I$_sysroot/usr/include -I$_sysroot/usr/include/shims -D_LARGEFILE64_SOURCE" \
 	--with-extra-cxxflags="-D_QNX_SOURCE -I$_sysroot/usr/include/c++/v1  -I$_sysroot/usr/include -D_LARGEFILE64_SOURCE" \
@@ -613,6 +624,12 @@ PKG_CONFIG_SYSROOT_DIR=$_sysroot \
 	--enable-dtrace=no \
 	--with-debug-level=release \
 	--with-native-debug-symbols=none
+
+mkdir -p ./build/qnx-x86_64-server-release/make-support
+cp main-targets.gmk ./build/qnx-x86_64-server-release/make-support/
+
+# Since we now have multiple configureations we need to explicitly pass the target
+QNX_TARGET="$_sysroot" make jdk-image CONF=qnx-x86_64-server-release
 ```
 
 There's a lot happening here, but you'll notice the same fundamentals we covered in the main codelab:
@@ -621,7 +638,36 @@ There's a lot happening here, but you'll notice the same fundamentals we covered
 - `PKG_CONFIG_LIBDIR` & `PKG_CONFIG_SYSROOT_DIR` so OpenJDK's build system can locate our packages
 - `-L$_sysroot/usr/lib` to link against our sysroot libraries
 
-Now we have a fully cross-compiled OpenJDK ready for deployment. I could just run java --version and call it a day, but let's test something real. How about a Minecraft server?
+Lets take a look at the result and prepare a archive we can send to a qnx target
+
+```sh
+cd build/qnx-x86_64-server-release/images/jdk
+
+# QNX does not support $ORIGIN in rpath so we need to emulate it
+cd bin
+# yes this is a nested bin dir
+mkdir bin 
+# move everything to bin
+find . -maxdepth 1 -type f -exec mv "{}" ./bin/ ";"
+
+cat << "EOF" > java-multicall.sh
+#!/usr/bin/bash
+
+JDK_DIR="$(realpath "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"/../)"
+CMD=$(basename "$0")
+
+LD_LIBRARY_PATH="$(realpath $JDK_DIR/lib):$LD_LIBRARY_PATH" "$JDK_DIR/bin/bin/$CMD" "$@"
+EOF
+chmod +x java-multicall.sh
+
+# create symlinks to  java-multicall.sh based on the real bin folder
+ls bin/ | xargs -I {} ln -sf java-multicall.sh {}
+
+cd ../../
+tar -czf ~/openjdk25-qnx.tar.gz jdk
+```
+
+Now we have a fully cross-compiled OpenJDK ready for deployment and can be copied to our target. I could just run java --version and call it a day, but let's test something real. How about a Minecraft server?
 
 <aside>
    With the new Vulkan backend for Minecraft, I'll hopefully be able to show the client running on QNX as well :)

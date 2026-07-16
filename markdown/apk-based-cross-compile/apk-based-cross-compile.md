@@ -13,7 +13,7 @@ feedback_link: https://github.com/qnx/codelabs/issues
 ## Introduction
 Duration: 2:00
 
-The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use qcc, how do you utilizes the catalog of open source ports?
+The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use `qcc`, how do you utilizes the catalog of open source ports?
 
 **What you will learn:**
 
@@ -123,14 +123,14 @@ Part of apk-tools and abuild is its packaging signing system that validates that
 abuild-keygen -a
 ```
 
-## Building QNX wrapped apks
+## Building QNX wrapped APKs
 Duration: 5:00
 
-Now that we have our tooling set up we can now build our QNX wrapped apks.
+Now that we have our tooling set up we can now build our QNX wrapped APKs.
 
 ### Dependencies
 
-But first we need some runtime dependencies 
+But first we need some runtime dependencies.
 
 #### Debian
 
@@ -150,8 +150,8 @@ There is nothing needed because busybox provides netcat.
 ### Running build-qsc-apk
 
 For this step we will need 2 repositories:
-1. qnx-ports/qsc-apk: this is where all the APKBUILD definitions are stored and branched based on the sdp version
-2. qnx-packaging/build-qsc-apk: a helper script that will download the qpkgs from swcenter and build apks
+1. `qnx-ports/qsc-apk`: this is where all the APKBUILD definitions are stored and branched based on the sdp version
+2. `qnx-packaging/build-qsc-apk`: a helper script that will download the qpkgs from swcenter and build APKs
 
 ```sh
 git clone https://github.com/qnx-ports/qsc-apk --branch 804
@@ -169,7 +169,7 @@ build-qsc-apk -o  ~/.cache/qsc-apk/8.0.4/ --arch <x86_64|aarch64> --swc-cli-path
 
 ## Setting up the apk-tools sysroot
 
-We are now ready to setup our sysroot. a sysroot is a qnx system inside a folder, this allows your compiler/build system to discover libraries, headers and other things like pkg-conf
+We are now ready to setup our sysroot. a sysroot is a QNX system inside a folder, this allows your compiler/build system to discover libraries, headers and other things like pkg-conf
 
 
 #### Setting up the folder
@@ -194,7 +194,7 @@ Now that we have a folder structure we can ask apk to initialize the root for pa
 apk --root . add --initdb --usermode
 ```
 
-In order to install packages we need to tell apk what keys are trusted. We will setup our qnx signing key as well as the one we made back when we built abuild
+In order to install packages we need to tell apk what keys are trusted. We will setup our QNX signing key as well as the one we made back when we built abuild
 
 ```sh
 mkdir -p etc/apk/keys
@@ -236,7 +236,7 @@ After all that setup lets make sure we have everything working correctly. What's
 
 ### Dependencies
 
-Now we are going to use apk to get qnx dependencies that we need for C, this includes things like libc, gcc runtime libraries, and system headers
+Now we are going to use apk to get QNX dependencies that we need for C, this includes things like libc, gcc runtime libraries, and system headers
 
 ```sh
 apk --root <path-to-qnx-apk-sysroot> add --no-scripts qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
@@ -338,7 +338,7 @@ GTK4 is very complicated dependency-wise. There are a lot of moving parts to ren
 
 ### Dependencies
 
-Like hello world, we need some dependencies - but this time we are going to grab open source dependencies as well as a few qnx packages for crypto and graphics
+Like hello world, we need some dependencies - but this time we are going to grab open source dependencies as well as a few QNX packages for crypto and graphics
 
 <aside>
     <strong>NOTE:</strong> I'm assuming you completed building "hello world". If not, add the dependencies from that step as well 
@@ -350,7 +350,7 @@ apk --root <path-to-qnx-apk-sysroot> add --no-scripts gtk4-dev qnx-crypto-openss
 
 you will notice quite a few packages being added. About 140 packages are needed to properly build gtk applications!! This shows the power of using apk for compiling, as previously you would have to figure out how to build these dependencies yourself
 
-### The Code
+### The code
 
 Like hello world we are going to make a directory called `gtk4-hello-world-apk` with a `main.c` and a `Makefile` the result will look like this
 
@@ -435,7 +435,7 @@ export PKG_CONFIG_LIBDIR := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_LIBDIR)
 # 2. We also need to tell pkgconf that all definitions need to be relative to our sysroot
 export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
 
-# 3. We are the qnx target now
+# 3. We are the QNX target now
 export QNX_TARGET="$(SYSROOT)"
 
 # 4. Like hello world we tell the compiler where our headers are AND
@@ -468,7 +468,7 @@ Okay now.. lets ... make it ... with make ... again
 make
 ```
 
-Now like before ... let's get this on a qnx system. Since we are using gtk4, we will need a system with a desktop like the [Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
+Now like before ... let's get this on a QNX system. Since we are using gtk4, we will need a system with a desktop like the [Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
 
 ```sh
 scp hello-gtk4-qnx qnxuser@<ip/hostname>:~/
@@ -506,7 +506,7 @@ Thanks for following along, and happy cross-compiling!
 
 So now that we've covered the basics, how does this work in the real world? Well ... thanks to the `apk` sysroot, I was able to port OpenJDK 25 to QNX. Java is a self-hosted language, which means you need a working JDK to build a new one. Normally, this requires bootstrapping version by version until you reach your target. But instead of spending years building `n+1` versions, we can use Linux as a donor system. 
 
-### The Setup
+### The setup
 
 It's not as simple as grabbing OpenJDK from a package manager and compiling. We first need a JDK that understands the QNX target, which brings us back to the bootstrapping problem. OpenJDK handles this with three distinct JDK roles:
 
@@ -516,7 +516,7 @@ It's not as simple as grabbing OpenJDK from a package manager and compiling. We 
 
 In my case, I started with the official OpenJDK 25 release tarball for Linux as the Host JDK.
 
-#### Building the build jdk
+#### Building the build JDK
 
 The build JDK is essentially a "host" version of the same source code we want for the target. We need it because the final compiler needs to understand QNX-specific details to generate correct artifacts. This step is straightforward since it's just a native Linux build
 
@@ -627,17 +627,17 @@ Now we have a fully cross-compiled OpenJDK ready for deployment. I could just ru
    With the new Vulkan backend for Minecraft, I'll hopefully be able to show the client running on QNX as well :)
 </aside>
 
-![Minecraft client connected to a server running on qnx](minecraft_java.png)
+![Minecraft client connected to a server running on QNX](minecraft_java.png)
 
 ---
 
 ## Optional: Building Clang as your compiler
 
-While qcc and q++ is the default and recommended compile by qnx the self hosted system uses clang (llvm), which gives us access to a more moderns toolchain with newer c++ standards and allows us to work with and port newer languages like rust, zig and odin.
+While qcc and q++ is the default and recommended compile by QNX the self hosted system uses Clang (llvm), which gives us access to a more modern toolchain with newer c++ standards and allows us to work with and port newer languages like rust, zig and odin.
 
 ### Build dependencies
 
-Before we can begin to compile clang we need to acquire system dependencies.
+Before we can begin to compile Calng we need to acquire system dependencies.
 
 #### Debian
 ```sh
@@ -654,7 +654,7 @@ sudo pacman -S base-devel cmake ninja git python
 doas apk add build-essential cmake ninja git python3 zlib-dev linux-headers
 ```
 
-### The Code
+### The code
 
 While we have llvm support it has not been upstreamed yet so we will need to get our fork
 
@@ -669,12 +669,12 @@ git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 -
 
 ![All Your ram are belong to us](all_your_ram.webp)
 
-An important thing to note here clang and llvm like to use a lot of ram. To prevent other applications from crashing due to running out of memory, make sure to manually set `-j<number>`. To comfortably compile llvm i recommend using 3 gigs of ram per cpu core
+An important thing to note here Clang and llvm like to use a lot of ram. To prevent other applications from crashing due to running out of memory, make sure to manually set `-j<number>`. To comfortably compile llvm i recommend using 3 gigs of ram per cpu core
 
 
 #### Configuring Clang
 
-Now we need to setup llvm. We don't need the full suite of llvm libraries to install we just want clang so we will statically compile it
+Now we need to setup llvm. We don't need the full suite of llvm libraries to install we just want Clang so we will statically compile it
 
 <aside>
     <strong>NOTE:</strong> This will take some time anywhere from 30 minutes to a few hours depending in your setup to this is a good time to get some coffee
@@ -682,7 +682,7 @@ Now we need to setup llvm. We don't need the full suite of llvm libraries to ins
 
 ```sh
 # if you want the default target to be aarch64 use this triple aarch64-unknown-qnx
-# clang by default supports all targets from the same binary so can just clang --target=<triple>
+# Clamng by default supports all targets from the same binary so can just `clang --target=<triple>`
 cmake -B build -S llvm -G Ninja \
     -DCMAKE_INSTALL_PREFIX=~/.local \
     -DCMAKE_BUILD_TYPE=Release \
@@ -705,7 +705,7 @@ Thread model: posix
 InstalledDir: ~/.local/bin
 ```
 
-Now that we have clang lets take a look how this compared to our old setup
+Now that we have Clang lets take a look how this compared to our old setup
 
 
 ### Hello World r2
@@ -713,7 +713,7 @@ Now that we have clang lets take a look how this compared to our old setup
 To start lets take out original example Hello world. In order to make this work we just need to update our Makefile
 
 ```make
-# We are using our built clang
+# We are using our built Clang
 CC = clang
 # We still hae our sysroot variable
 SYSROOT ?= ../qnx-apk-sysroot
@@ -744,7 +744,7 @@ just like hello world we just need to change out `-L` and `-I` for `--sysroot` a
 
 ```
 # Makefile
-# We are using clang
+# We are using Clang
 CC = clang
 SYSROOT ?= ../qnx-apk-sysroot
 

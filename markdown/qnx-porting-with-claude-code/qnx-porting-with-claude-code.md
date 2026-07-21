@@ -29,7 +29,7 @@ What makes this work is the workspace itself. Claude Code reads a small set of s
 **Prerequisites:**
 
 * A Linux host with [Claude Code](https://www.anthropic.com/claude-code) installed
-* `sshpass` on the host (for non-interactive SSH to the target)
+* Non-interactive SSH access to the target. Key-based authentication is recommended (the agent needs to connect without a password prompt). For a password-only target, `sshpass` works as a fallback.
 * A reachable QNX 8.0 target you can SSH into
 * A GitHub account with access to your aports fork
 
@@ -100,7 +100,13 @@ QSTI is also available for [Raspberry Pi](https://www.qnx.com/developers/docs/qn
 
 Tell the workspace how to reach your target by editing `TARGET.md`. It holds the SSH details, the authentication method, and the one authoritative aports tree path on the target. Claude Code reads it at the start of every session, so this is how it knows where and how to build.
 
-Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use `qnxuser`, other images may use a different account). For a target using a password, `sshpass` avoids the interactive prompt that would otherwise block an automated session:
+Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use `qnxuser`, other images may use a different account). Claude Code needs to connect without an interactive password prompt, so set up key-based authentication: copy your public key to the target (for example with `ssh-copy-id <user>@<target-ip>`, if available) so the connection needs no password:
+
+```bash
+ssh <user>@<target-ip> 'uname -a'
+```
+
+If your target only supports password authentication, `sshpass` works as a fallback to feed the password non-interactively (note that `sshpass` is a workaround; prefer keys where you can):
 
 ```bash
 sshpass -p <password> ssh <user>@<target-ip> 'uname -a'
@@ -108,7 +114,7 @@ sshpass -p <password> ssh <user>@<target-ip> 'uname -a'
 
 If your setup reaches the target through a forwarded port rather than its own IP (a hand-rolled QEMU launcher, for example), add `-p <port>` to the ssh command. QSTI targets have their own IP, so no port is needed.
 
-> **About authentication:** A local development target often uses a simple shared password, which is fine for that case. For anything shared or networked, use key-based SSH and proper secrets handling instead. `TARGET.md` is where you record whichever method your target uses.
+> **About authentication:** Key-based SSH is the recommended approach, especially for anything shared or networked. A shared password on a throwaway local target is acceptable for that case only. `TARGET.md` is where you record whichever method your target uses.
 
 That is the whole setup. You do not need to pre-configure permissions: when you give Claude Code a task it will work through it and ask before running anything it does not yet have permission for. If you would rather it prompt less, you can pre-approve the common commands by merging `settings.template.json` into your `~/.claude/settings.json`, but this is optional and you can always do it later.
 

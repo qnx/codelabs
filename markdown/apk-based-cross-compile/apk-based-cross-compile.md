@@ -150,8 +150,8 @@ There is nothing needed because busybox provides netcat.
 ### Running build-qsc-apk
 
 For this step we will need 2 repositories:
-1. `qnx-ports/qsc-apk`: this is where all the APKBUILD definitions are stored and branched based on the sdp version
-2. `qnx-packaging/build-qsc-apk`: a helper script that will download the qpkgs from swcenter and build APKs
+1. `qnx-ports/qsc-apk`: this is where all the `APKBUILD` definitions are stored and branched based on the sdp version
+2. `qnx-packaging/build-qsc-apk`: a helper script that will download the QNX packages from software center and build APKs
 
 ```sh
 git clone https://github.com/qnx-ports/qsc-apk --branch 804
@@ -241,6 +241,10 @@ Now we are going to use apk to get QNX dependencies that we need for C, this inc
 ```sh
 apk --root <path-to-qnx-apk-sysroot> add --no-scripts qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
 ```
+
+<aside>
+    If your already familiar with apk-tools you may see that im passing `--no-scripts`. we pass this because the scripts are intended to run on a QNX system and not compatible with linux
+</aside>
 
 ### The code
 
@@ -783,10 +787,12 @@ clean:
 	rm -f $(TARGET)
 ```
 
+You will notice that the Makefile is quite simular to the base one but we swap out `-I$(SYSROOT)/usr/include` and `-L$(SYSROOT)/usr/lib` for just `--sysroot=$(SYSROOT)` this is because clang does not know about QNX software center and will work on any sysroot that follows the [Filesystem Hierarchy Standard (FHS)](https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard). The only other thing we now need to add is `-fuse-ld` we still need the qnx linker so we pass the absolule path.
+
 
 ### GTK 4 r2
 
-just like hello world we just need to change out `-L` and `-I` for `--sysroot` and `-fuse-ld`
+okay now that we have done our hello world lets do the same thing for GTK
 
 ```
 # Makefile
@@ -815,3 +821,19 @@ $(TARGET): $(SRCS)
 clean:
 	rm -f $(TARGET)
 ```
+
+just like hello world we just need to change out `-L$(SYSROOT)/usr/lib` and `-I$(SYSROOT)/usr/include` for `--sysroot` and `-fuse-ld`. 
+
+### Is it worth it?
+So, you just spent 30 minutes (or 3 hours, depending on your RAM) building Clang. Is it worth it?
+
+**Yes, if:**
+
+- You need newer C++ standards that qcc might lag on.
+- You’re porting software that expects a standard Clang environment (many modern OSS projects default to Clang).
+- You want to experiment with languages like Rust or Zig that integrate tightly with LLVM.
+
+**Stick with qcc if:**
+
+- you are developing systems with safety requirments
+- You need deep integration with QNX-specific debugging tools (though Clang works with them too, qcc is the "native" citizen).

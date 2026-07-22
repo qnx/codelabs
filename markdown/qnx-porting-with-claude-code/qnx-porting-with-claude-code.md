@@ -90,7 +90,7 @@ mkqnximage --getip
 
 QSTI is also available for [Raspberry Pi](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html) if you want to run on hardware. Either way, once the target is up and you have its IP, you have everything you need for the next step.
 
-> If you already have your own QNX 8.0 disk image, the bundle includes a `run.sh` QEMU launcher template you can edit and tune instead; see its header comments and `TARGET.md`.
+> If you already have your own QNX 8.0 disk image for QEMU, the bundle includes a `run.sh` QEMU launcher template that you can edit and customize instead; see its header comments and `TARGET.md`.
 
 > If you already have a QNX target running (an existing image, a Pi on your network), you can skip straight to Step 4 and just record its connection details.
 

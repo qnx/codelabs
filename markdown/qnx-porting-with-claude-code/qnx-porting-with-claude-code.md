@@ -158,7 +158,7 @@ With the workspace set up and a target connected, you start a port with a single
 
 From there it works on its own. Under the hood, guided by its skills, it runs a flow like this:
 
-1. **Find the recipe.** It locates the package on the Alpine aports tree and identifies the right version and repository (`core` or `extra`).
+1. **Find the recipe.** It locates the package on the Alpine aports tree and identifies the correct version and package repository (`core` or `extra`).
 2. **Place it in the tree.** It puts the recipe in the authoritative aports tree on the target and adapts the APKBUILD for QNX conventions.
 3. **Build on the target.** It builds the package on the target, pulling the upstream source and dependencies as needed.
 4. **Work through QNX problems.** When the build hits a QNX-specific wall, it consults its skills, applies the fix, and if a source change is needed it makes a tested patch the QNX way.

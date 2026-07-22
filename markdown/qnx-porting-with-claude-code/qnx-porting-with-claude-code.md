@@ -140,7 +140,7 @@ qnx-porting (router, read first)
 The router holds a small set of universal rules that apply to every task, no matter which skill is active. The most important ones:
 
 * **Prove claims with command output.** Claude Code does not assert that something works without the command that shows it.
-* **Never patch an untested change.** A source change is tested first, then turned into a patch.
+* **Never create a patch from an untested change.** A source change is tested first, then turned into a patch.
 * **The human runs git.** Claude Code builds and prepares the change; you handle commits and pushes.
 * **Capture what it learns.** When Claude Code hits and solves a problem, it records the fact back into the right skill or into `TARGET.md`, so the next port starts ahead of this one.
 

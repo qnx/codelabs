@@ -7,7 +7,7 @@ This is the workspace bootstrap. Read it at the start of every session before do
 1. Read this file.
 2. Read `TARGET.md` for the target connection (SSH, auth, the one authoritative tree path, the on-target loop). All work happens on the target over SSH.
 3. Load the `qnx-porting` skill. It is the router: it holds the universal rules and points to the focused skill for the task at hand.
-4. When working a specific port, read everything in `projects/apks/<portname>/` before touching anything. `PROJECT-INDEX.md` is the starting point when it exists.
+4. When working on a specific port, read everything in `projects/apks/<portname>/` before touching anything. `PROJECT-INDEX.md` is the starting point when it exists.
 
 ## Universal rules (apply to every task)
 

@@ -8,16 +8,16 @@ description: "MANDATORY: Check this skill before providing ANY patch content, pa
 ## Purpose
 This skill provides the definitive workflow for creating patches for Alpine Linux APKBUILD packages. It emphasizes verification before patch creation and follows Alpine's patch format standards.
 
-## Critical Principles
+## Critical principles
 
 1. **NEVER create patches speculatively** - Always test changes work first
 2. **NEVER use `abuild -r` during development** - It wipes your working directory
 3. **ALWAYS verify patch format** matches Alpine standards before using
 4. **Follow the exact workflow** - Don't skip steps or improvise
 
-## Two-Phase Workflow
+## Two-phase workflow
 
-### Phase 1: Development & Testing (Iterative)
+### Phase 1: Development and testing (iterative)
 
 This phase happens in the extracted source directory. Make changes, test with native build tools (cmake/make/ninja), verify they work. Repeat until satisfied.
 
@@ -45,7 +45,7 @@ cd src/pkgname-version/
 - Create patches yet (changes aren't finalized)
 - Modify APKBUILD (testing phase only)
 
-### Phase 2: Patch Creation (Once changes work)
+### Phase 2: Patch creation (once changes work)
 
 Only proceed here after Phase 1 changes are tested and working.
 
@@ -142,7 +142,7 @@ The patch file's own commit message (the text above the `---` separator) is one 
 
 A matching sha512 proves the patch file is byte-identical to what is recorded, NOT that it still applies to the unpacked tree. QNX uses BusyBox `patch` with zero fuzz tolerance, so a patch that applies on Alpine (GNU patch tolerates fuzz) can be rejected on QNX. Always verify application with `abuild clean && abuild -K unpack prepare` and confirm there is no "Hunk FAILED" and no `.rej` file, rather than trusting the checksum.
 
-## Common Mistakes & Solutions
+## Common mistakes and solutions
 
 ### Mistake: Patch paths don't match
 **Symptom:** `abuild unpack` fails with "can't find file to patch"
@@ -180,7 +180,7 @@ A matching sha512 proves the patch file is byte-identical to what is recorded, N
 - If independent changes, use separate patches
 - Use descriptive names: `001-fix-qnx-audio.patch`, `002-add-wayland-support.patch`
 
-## Patch Naming Convention
+## Patch naming convention
 
 Format: `NNN-descriptive-kebab-case-name.patch`
 
@@ -198,7 +198,7 @@ Format: `NNN-descriptive-kebab-case-name.patch`
 - `001_Fix_QNX.patch` (underscores, wrong case)
 - `qnx-processor.patch` (no number)
 
-## Multi-File Patches
+## Multi-file patches
 
 If multiple files need changes:
 
@@ -216,7 +216,7 @@ diff -Nur . . > ../../NNN-description.patch
 
 Or use `diff -r` for directory comparison.
 
-## Quick Reference
+## Quick reference
 
 **Workflow commands:**
 ```bash
@@ -244,7 +244,7 @@ abuild checksum
 abuild -r
 ```
 
-## When Claude Should Ask Before Acting
+## When Claude should ask before acting
 
 Claude should ASK the user before:
 1. Creating any patch - confirm changes are tested first
@@ -258,7 +258,7 @@ Claude should NEVER:
 3. Create patches without confirming changes work
 4. Guess at file paths in patch headers
 
-## Verification Checklist
+## Verification checklist
 
 Before considering patch complete:
 
@@ -270,7 +270,7 @@ Before considering patch complete:
 - [ ] `abuild -r` completes without errors
 - [ ] Patch actually applied (check build log or manually verify in src/)
 
-## Integration with Build System
+## Integration with build system
 
 After creating patch, verify it's being applied:
 

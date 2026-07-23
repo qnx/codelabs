@@ -100,7 +100,7 @@ QSTI is also available for [Raspberry Pi](https://www.qnx.com/developers/docs/qn
 
 Tell the workspace how to reach your target by editing `TARGET.md`. It holds the SSH details, the authentication method, and the one authoritative aports tree path on the target. Claude Code reads it at the start of every session, so this is how it knows where and how to build.
 
-Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use `qnxuser`, other images may use a different account). Claude Code needs to connect without an interactive password prompt, so set up key-based authentication: copy your public key to the target (for example with `ssh-copy-id <user>@<target-ip>`, if available) so the connection needs no password:
+Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use `qnxuser`, other images may use a different account). Claude Code needs to connect without an interactive password prompt, so set up key-based authentication: copy your public key to the target (for example with `ssh-copy-id &lt;user&gt;@&lt;target-ip&gt;`, if available) so the connection needs no password:
 
 ```bash
 ssh <user>@<target-ip> 'uname -a'
@@ -112,7 +112,7 @@ If your target only supports password authentication, `sshpass` works as a fallb
 sshpass -p <password> ssh <user>@<target-ip> 'uname -a'
 ```
 
-If your setup reaches the target through a forwarded port rather than its own IP (a hand-rolled QEMU launcher, for example), add `-p <port>` to the ssh command. QSTI targets have their own IP, so no port is needed.
+If your setup reaches the target through a forwarded port rather than its own IP (a hand-rolled QEMU launcher, for example), add `-p &lt;port&gt;` to the ssh command. QSTI targets have their own IP, so no port is needed.
 
 > **About authentication:** Key-based SSH is the recommended approach, especially for anything shared or networked. A shared password on a throwaway local target is acceptable for that case only. `TARGET.md` is where you record whichever method your target uses.
 
@@ -173,7 +173,9 @@ What it actually does in step 4 depends on the package, and that is the point. O
 
 ## Step 7 - Read the report
 
-When a port finishes (or stops at a blocker), Claude Code writes a report to that package's folder under `projects/apks/<package>/`. This is the thing you read to review the port, instead of scrolling back through the whole session.
+When a port finishes (or stops at a blocker), Claude Code writes an after-action report named `REPORT.md` to that package's folder under `projects/apks/&lt;package&gt;/`. This is the thing you read to review the port, instead of scrolling back through the whole session.
+
+You will find two other files in that folder alongside it: `PROJECT-INDEX.md`, the entry point listing what to read first, and a project README carrying the running notes and changelog for the package. `REPORT.md` is the one written to be read top to bottom by a reviewer.
 
 The report is structured so you can read it top to bottom: a summary and status, the packages it produced, the changes it made (each with what changed and why), the problems it hit and how it resolved them, the validation results, and any open items. A clean port looks something like this:
 

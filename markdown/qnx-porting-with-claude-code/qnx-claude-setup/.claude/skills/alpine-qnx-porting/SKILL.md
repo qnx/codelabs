@@ -9,31 +9,31 @@ description: Guide for porting Alpine Linux projects to QNX 8.0, specifically fo
 
 This skill provides guidance for porting Alpine Linux projects to QNX 8.0, with particular emphasis on APKBUILD system integration, managing cross-platform compatibility challenges, and working with the Vala compiler on QNX's unique environment.
 
-## Environment Context
+## Environment context
 
 > This skill covers native aports porting: packages are built **on the QNX target itself** with `abuild` (the host does not cross-compile them). For platform-level QNX facts shared across all ports, see the `qnx-platform-facts` skill; for the universal rules (including the native-build rule and where the SDP applies) and task routing, see `qnx-porting`.
 
-### Development Setup
+### Development setup
 - **Host System**: Ubuntu, used only to launch the QEMU target (not for compiling)
 - **Target System**: QNX 8.0 (QEMU x86_64 or RPi5 aarch64), where the build actually runs
 - **QNX Image**: Custom configured to resemble Linux for easier building
 - **Build System**: Alpine's APKBUILD, built natively on the target with abuild
 - **Primary Focus (historical)**: Building "granite" library and its dependencies
 
-### Key Toolchain Details
+### Key toolchain details
 - **Vala Compiler**: valac 0.56.18
 - **Build System**: Meson (primary), with APKBUILD wrappers
 - **Compiler Settings**: Debug builds with LTO disabled, single-threaded compilation for stability
 
-## Core Porting Workflow
+## Core porting workflow
 
-### Phase 1: Dependency Analysis
+### Phase 1: Dependency analysis
 1. Identify all project dependencies from APKBUILD
 2. Check which dependencies are already available on QNX
 3. Port missing dependencies first (bottom-up approach)
 4. Document any QNX-specific patches needed for each dependency
 
-### Phase 2: Header Conflicts Resolution
+### Phase 2: Header conflicts resolution
 **Common Issue**: QNX's stdlib.h macros conflict with library method names
 
 **Solution Pattern**:
@@ -50,7 +50,7 @@ This skill provides guidance for porting Alpine Linux projects to QNX 8.0, with 
 - Test with isolated compilation units first
 - Document which methods required shimming
 
-### Phase 3: Vala Compiler Stability on QNX
+### Phase 3: Vala compiler stability on QNX
 
 **Known Issues**:
 - Valac 0.56.18 segfaults on certain complex Vala syntax patterns
@@ -90,7 +90,7 @@ This skill provides guidance for porting Alpine Linux projects to QNX 8.0, with 
    meson compile -j1  # Single-threaded to avoid race conditions
    ```
 
-### Phase 4: APKBUILD Integration
+### Phase 4: APKBUILD integration
 
 **Structure Pattern**:
 ```bash
@@ -156,14 +156,14 @@ export CFLAGS="$CFLAGS -fPIC -Qunused-arguments"
 
 **Sockets often link themselves.** An autotools project whose configure does `AC_SEARCH_LIBS(socket, ...)` finds `/usr/lib/libsocket.so` and links it automatically, so the classic QNX `-lsocket` wall may never appear. Observe what the build actually does before adding a socket fix (see qnx-platform-facts).
 
-## Common Challenges and Solutions
+## Common challenges and solutions
 
-### Challenge 1: Macro Name Collisions
+### Challenge 1: Macro name collisions
 **Symptom**: Compilation errors about redefined `min`, `max`, or similar
 **Root Cause**: QNX stdlib.h defines macros that conflict with library methods
 **Solution**: Header-based #undef shims (see Phase 2)
 
-### Challenge 2: Vala Compiler Crashes
+### Challenge 2: Vala compiler crashes
 **Symptom**: Segmentation fault during compilation
 **Root Cause**: Complex syntax patterns exceed QNX valac stability limits
 **Solution**: Systematic file isolation + sed-based simplification (see Phase 3)
@@ -173,12 +173,12 @@ export CFLAGS="$CFLAGS -fPIC -Qunused-arguments"
 - Compact class property syntax
 - Files mixing signals and properties
 
-### Challenge 3: Missing Dependencies
+### Challenge 3: Missing dependencies
 **Symptom**: Build fails with "Package X not found"
 **Root Cause**: Alpine dependencies not yet ported to QNX
 **Solution**: Port dependencies first, document patches needed
 
-### Challenge 4: Runtime Library Paths
+### Challenge 4: Runtime library paths
 **Symptom**: Binary runs but can't find shared libraries
 **Solution**: 
 ```bash
@@ -187,9 +187,9 @@ export CFLAGS="$CFLAGS -fPIC -Qunused-arguments"
 export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib"
 ```
 
-## Debugging Workflow
+## Debugging workflow
 
-### Isolating Compilation Issues
+### Isolating compilation issues
 ```bash
 # Test individual Vala files
 valac --pkg=dependency file.vala
@@ -202,7 +202,7 @@ valac -C file.vala
 gcc -c file.c  # See if C compilation works
 ```
 
-### Testing Patches
+### Testing patches
 ```bash
 # Always test patches before committing to APKBUILD
 patch --dry-run -p1 < changes.patch
@@ -211,7 +211,7 @@ patch --dry-run -p1 < changes.patch
 diff -u a/file.vala b/file.vala > file.patch
 ```
 
-### Build System Debugging
+### Build system debugging
 ```bash
 # Meson introspection
 meson introspect output --targets
@@ -221,9 +221,9 @@ meson introspect output --buildsystem-files
 ninja -C output -v
 ```
 
-## Best Practices
+## Best practices
 
-### Source Modifications
+### Source modifications
 1. **New QNX-specific source changes go in patch files, not sed.** When you introduce a source change for QNX, make it a proper `.patch` file (see aports-patch-creation), not a `sed` rewrite hidden in `prepare()`. Patches are reviewable and a reviewer can see exactly what changed and why.
 2. **Preserve inherited Alpine packaging behavior as-is.** This is the important distinction: the rule above applies to *new* QNX deltas we introduce. Existing Alpine `prepare()` logic, `sed` commands, generated files, and package-specific conventions that came with the upstream APKBUILD should be kept unchanged, unless that exact logic is what causes the QNX porting problem. Do not rewrite inherited Alpine sed into patches just for style; only touch it when it is the actual blocker.
 3. **The one exception for new changes:** if the project's established standard for that specific package already uses simple `sed` setup, follow the package's own convention rather than forcing a patch.
@@ -243,17 +243,17 @@ These are established conventions of the aports repo; following them keeps a por
 
 Do not comment repo-wide conventions like LTO or `-Qunused-arguments`. Reserve comments for package-specific QNX deviations (see qnx-apk-packaging step 3).
 
-### Collaboration Support
+### Collaboration support
 - **Patch Generation**: Always use `diff -u` with `a/` and `b/` prefixes
 - **Testing Patches**: Use `patch --dry-run` before applying
 - **Documentation**: Keep notes on which files required which fixes
 
-### Memory Management
+### Memory management
 - **Use debug builds**: `-g -O0` helps catch issues early
 - **Single-threaded compilation**: Reduces race conditions
 - **Disable LTO**: Link-Time Optimization causes instability on QNX
 
-## Troubleshooting Decision Tree
+## Troubleshooting decision tree
 
 ```
 Compilation Failure
@@ -276,7 +276,7 @@ Compilation Failure
    └─ Verify all dependencies built for QNX
 ```
 
-## Quick Reference Commands
+## Quick reference commands
 
 ```bash
 # Iterate on a change in the unpacked tree (does NOT wipe src):
@@ -305,7 +305,7 @@ meson setup output
 meson compile -C output -j1
 ```
 
-## Additional Resources
+## Additional resources
 
 For comprehensive QNX porting guidance beyond Alpine-specific workflows, refer to references/qnx-porting-guide.md which contains the full Linux to QNX porting documentation.
 

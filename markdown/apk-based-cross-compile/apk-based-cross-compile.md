@@ -45,6 +45,10 @@ Before we can begin we can compile apk-tools we first need to acquire system dep
 sudo apt install build-essential meson ninja-build pkg-config git libssl-dev zlib1g-dev libzstd-dev lua5.3
 ```
 
+<aside>
+    <strong>NOTE:</strong> apk-tools needs a semi-newer version of meson if your system has conflicts you can install <a href="https://mesonbuild.com/Getting-meson.html#installing-meson-with-pip">meson with pip</a>
+</aside>
+
 #### Arch
 ```sh
 sudo pacman -S base-devel meson ninja git openssl zlib zstd lua53
@@ -182,7 +186,7 @@ cd ./qnx-apk-sysroot
 # We are a user merged system so we need to setup symlinks
 mkdir -p usr/lib usr/bin
 ln -s usr/lib usr/bin .
-# Pick one arch here based on your target this is comparability for qcc
+# Pick one arch here based on your target this is compatibility for qcc
 ln -s . <x86_64|aarch64le>
 ```
 

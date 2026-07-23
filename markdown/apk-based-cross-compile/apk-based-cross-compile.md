@@ -600,8 +600,8 @@ apk --root <openjdk-25-sysroot> add --no-scripts \
 Now we configure OpenJDK to use the sysroot and cross-compile.
 
 ```sh
-# build-cross-x86_64.sh
 #!/bin/bash
+#build-cross-x86_64.sh
 
 _sysroot=$(realpath ../sysroot-openjdk-x86_64)
 

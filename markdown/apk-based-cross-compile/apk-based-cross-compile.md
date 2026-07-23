@@ -556,7 +556,7 @@ cp main-targets.gmk ./build/linux-$(arch)-server-release/make-support/
 make jdk-image
 ```
 
-Once this is complete you'll have a JDK here `build/linux-<arch>-server-release/` that will be used to build out final target
+Once this is complete you'll have a JDK here `build/linux-&lt;arch&gt;-server-release/` that will be used to build out final target
 
 #### Cross-compiling to QNX
 

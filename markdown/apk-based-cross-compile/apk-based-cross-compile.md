@@ -603,6 +603,8 @@ Now we configure OpenJDK to use the sysroot and cross-compile.
 #!/bin/bash
 #build-cross-x86_64.sh
 
+# Make sure to source your sdp before running configure
+
 _sysroot=$(realpath ../sysroot-openjdk-x86_64)
 
 PKG_CONFIG_LIBDIR=$(realpath $_sysroot/lib/pkgconfig) \

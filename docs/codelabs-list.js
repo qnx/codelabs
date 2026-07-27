@@ -158,6 +158,24 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Porting Alpine Packages to QNX 8.0 with Claude Code",
+    "href": "qnx-porting-with-claude-code/index.html",
+    "id": "qnx-porting-with-claude-code",
+    "authors": "Elliott Mazzuca",
+    "summary": "Set up a Claude Code workspace with a structured skill hierarchy, point it at a QNX 8.0 target, and have it port Alpine Linux packages for you with a single instruction",
+    "updated": "2026-07-27T14:30:26-04:00",
+    "category": [
+      "qnx",
+      "alpine",
+      "porting",
+      "ai",
+      "claude-code"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
     "href": "qsti-qemu-on-wsl/index.html",
     "id": "qsti-qemu-on-wsl",

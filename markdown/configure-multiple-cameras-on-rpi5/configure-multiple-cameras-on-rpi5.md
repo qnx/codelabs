@@ -29,7 +29,7 @@ com.qnx.qnx800.quickstart.rpi5/0.5.0.00012T202608130112L
 - Power on the Raspberry Pi 5.
 
 ### Dependent packages
-The required packages are already installed. If they are not, install the following packages:
+The required packages are already installed. In the case that you need re-installation, install the following packages:
 ```sh
 sudo apk add \
     yaml \
@@ -58,26 +58,18 @@ sudo apk add \
 
 ## Validate Configuration
 
-### Switch to the root account
-
-```sh
-[qnxuser@qnxpi ~]$ sudo su -
-[sudo] password for qnxuser:
-```
-
 ### Verify that the sensor service is running
-Run `pidin ar | grep sensor`
+Run `sudo pidin ar | grep sensor`
 
 You should see output similar to the following:
 ```sh
-[root@qnxpi ~]# pidin ar | grep sensor
+[qnxuser@qnxpi ~]$ sudo pidin ar | grep sensor
   913444 sensor -U 521:521 -b external -r /data/share/sensor -c /etc/config/sensor/sensor_rpi5.conf
 ```
 
-
 ### Verify that the I2C interfaces are configured correctly with `-q0xa8`, `-q0xab` and `-q0xad`
 ```sh
-[root@qnxpi ~]# pidin ar | grep i2c-dwc-rpi5
+[qnxuser@qnxpi ~]$ sudo pidin ar | grep i2c-dwc-rpi5
   671765 /system/bin/i2c-dwc-rpi5 -p0x1f00074000 -c200000000 -q0xa8
   856098 /system/bin/i2c-dwc-rpi5 -p0x1f00080000 -c200000000 -q0xab
   884771 /system/bin/i2c-dwc-rpi5 -p0x1f00088000 -c200000000 -q0xad
@@ -88,7 +80,7 @@ Run `ls -al /dev/sensor`
 
 You should see `camera1` through `camera5`.
 ```sh
-[root@qnxpi ~]# ls -al /dev/sensor
+[qnxuser@qnxpi ~]$ ls -al /dev/sensor
 total 0
 -rw-rw----  1 521 sensor 0 1970-01-01 00:00 camera1
 -rw-rw----  1 521 sensor 0 1970-01-01 00:00 camera2
@@ -100,11 +92,11 @@ total 0
 ```
 
 ### Verify that the IRQs are enabled for the two Camera Module 3 units
-Run `msix-rp1 | grep -E "I2C4|I2C6|MIPI0|MIPI1`
+Run `sudo msix-rp1 | grep -E "I2C4|I2C6|MIPI0|MIPI1`
 
 You should see output similar to the following:
 ```sh
-[root@qnxpi ~]# msix-rp1 | grep -E "I2C4|I2C6|MIPI0|MIPI1"
+[qnxuser@qnxpi ~]$ sudo msix-rp1 | grep -E "I2C4|I2C6|MIPI0|MIPI1"
   11 |             I2C4 | -EI | **-Ml | *l
   13 |             I2C6 | -EI | **-Ml | *l
   47 |            MIPI0 | -EI | ---Me | -e
@@ -122,22 +114,26 @@ In this configuration, the cameras are assigned as follows:
 ### Run `camera_example3_viewfinder -u N`, where N is the camera number
 Run the commands one by one to view each camera.
 ```sh
-[root@qnxpi ~]# camera_example3_viewfinder -u 1 &
-[root@qnxpi ~]# camera_example3_viewfinder -u 2 &
-[root@qnxpi ~]# camera_example3_viewfinder -u 3 &
-[root@qnxpi ~]# camera_example3_viewfinder -u 4 &
-[root@qnxpi ~]# camera_example3_viewfinder -u 5 &
+[qnxuser@qnxpi ~]$ camera_example3_viewfinder -u 1 &
+...
+[qnxuser@qnxpi ~]$ camera_example3_viewfinder -u 2 &
+...
+[qnxuser@qnxpi ~]$ camera_example3_viewfinder -u 3 &
+...
+[qnxuser@qnxpi ~]$ camera_example3_viewfinder -u 4 &
+...
+[qnxuser@qnxpi ~]$ camera_example3_viewfinder -u 5 &
+...
 ```
 
 ### Verify that the background processes are running
 ```sh
-[root@qnxpi ~]$ pidin ar | grep camera_example3_viewfinder
- 1679412 camera_example3_viewfinder -u 1
- 1683509 camera_example3_viewfinder -u 2
- 1687606 camera_example3_viewfinder -u 3
- 1691703 camera_example3_viewfinder -u 4
- 1695800 camera_example3_viewfinder -u 5
-[root@qnxpi ~]$
+[qnxuser@qnxpi ~]$ pidin ar | grep camera_example3_viewfinder
+1679412 camera_example3_viewfinder -u 1
+1683509 camera_example3_viewfinder -u 2
+1687606 camera_example3_viewfinder -u 3
+1691703 camera_example3_viewfinder -u 4
+1687606 camera_example3_viewfinder -u 5
 ```
 
 ### Switch between cameras
@@ -148,17 +144,17 @@ If a USB keyboard is connected to the Raspberry Pi 5, you can press `Alt` + `Tab
 Stop the `camera_example3_viewfinder` applications with `slay camera_example3_viewfinder`. When prompted, answer `Y` for each process.
 
 ```sh
-[root@qnxpi ~]# slay camera_example3_viewfinder
+[qnxuser@qnxpi ~]$ slay camera_example3_viewfinder
 slay: usr/bin/camera_example3_viewfinder 1679412 on (tty not known) (y/N)? Y
 slay: usr/bin/camera_example3_viewfinder 1683509 on (tty not known) (y/N)? Y
 slay: usr/bin/camera_example3_viewfinder 1687606 on (tty not known) (y/N)? Y
 slay: usr/bin/camera_example3_viewfinder 1691703 on (tty not known) (y/N)? Y
-slay: usr/bin/camera_example3_viewfinder 1695800 on (tty not known) (y/N)? Y
+slay: usr/bin/camera_example3_viewfinder 1687606 on (tty not known) (y/N)? Y
 ```
 
 Alternatively, you can force-stop the `camera_example3_viewfinder` applications without being prompted by using `slay -f camera_example3_viewfinder`.
 ```sh
-[root@qnxpi ~]# slay -f camera_example3_viewfinder
+[qnxuser@qnxpi ~]$ slay -f camera_example3_viewfinder
 slay: usr/bin/camera_example3_viewfinder 10252340 on (tty not known)
 slay: usr/bin/camera_example3_viewfinder 10256437 on (tty not known)
 slay: usr/bin/camera_example3_viewfinder 10260534 on (tty not known)
@@ -171,8 +167,8 @@ However, the `fullscreen-winmgr` process currently prevents this.
 
 Stop the `fullscreen-winmgr` process before multiplexing the camera streams.
 ```sh
-[root@qnxpi ~]# slay fullscreen-winmgr
-[root@qnxpi ~]# camera_mux -n 5
+[qnxuser@qnxpi ~]$ sudo slay fullscreen-winmgr
+[qnxuser@qnxpi ~]$ camera_mux -n 5
 ```
 
 The following image shows five cameras being multiplexed:
@@ -180,15 +176,14 @@ The following image shows five cameras being multiplexed:
 
 ## Troubleshooting
 ### Verify that the two Camera Module 3 units are detected
-While logged in as `root`, run `slog2info -b sensor_service | grep -E "Camera 3|Camera 4"`
+Run `sudo slog2info -b sensor_service | grep -E "Camera 3|Camera 4"`
 You should see output similar to the following:
 ```sh
-[root@qnxpi ~]# slog2info -b sensor_service | grep -E "Camera 3|Camera 4"
+[qnxuser@qnxpi ~]$ sudo slog2info -b sensor_service | grep -E "Camera 3|Camera 4"
 Jan 01 00:00:05.273          sensor_service.852004                debug      1  [ext]int getResolutions(platform_external_handle_t, fsp_sensor_UnitType, fsp_sensor_FormatType, int*, const fsp_sensor_ResType**)(966): Camera 3: 2 resolutions for type 1
 Jan 01 00:00:05.273          sensor_service.852004                debug      1  [ext]int getFramerates(platform_external_handle_t, fsp_sensor_UnitType, fsp_sensor_ResType*, fsp_sensor_FormatType, int*, bool*, float*)(1010): Camera 3: rates 1, type 1, resolution 2304 x 1296 maxmin 0
 Jan 01 00:00:05.273          sensor_service.852004                debug      1  [ext]int getResolutions(platform_external_handle_t, fsp_sensor_UnitType, fsp_sensor_FormatType, int*, const fsp_sensor_ResType**)(966): Camera 4: 2 resolutions for type 1
 Jan 01 00:00:05.273          sensor_service.852004                debug      1  [ext]int getFramerates(platform_external_handle_t, fsp_sensor_UnitType, fsp_sensor_ResType*, fsp_sensor_FormatType, int*, bool*, float*)(1010): Camera 4: rates 1, type 1, resolution 2304 x 1296 maxmin 0
-[root@qnxpi ~]#
 
 
 ```

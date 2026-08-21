@@ -106,7 +106,7 @@ You should see output similar to the following:
 ## Launch the cameras
 In this configuration, the cameras are assigned as follows:
 - camera 1: simulation camera
-- camera 2: simulation camera
+- camera 2: video playback camera
 - camera 3: Camera Module 3 connected to DISP0
 - camera 4: Camera Module 3 connected to DISP1
 - camera 5: Logitech C920x (or C920) USB camera

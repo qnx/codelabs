@@ -22,7 +22,7 @@ This codelab describes how to configure multiple camera sources on the Raspberry
 
 ### Quick Start Target Image (QSTI)
 - On the host, launch QNX Software Center and install the QSTI image for QNX 8.0, for example:
-com.qnx.qnx800.quickstart.rpi5/0.5.0.00012T202608130112L
+com.qnx.qnx800.quickstart.rpi5/0.5.0.00025T202608191358L
 - Use Raspberry Pi Imager or another imaging tool to write the image to the SD card.
 - Insert the SD card into the Raspberry Pi 5.
 - Connect the two Camera Module 3 units and the C920 USB camera.

@@ -1,0 +1,702 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Cross-compile for QNX Using Open Source Packages</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="apk-based-cross-compile"
+                  title="Cross-compile for QNX Using Open Source Packages"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="2">
+        <p>The self-hosted environment is a powerful tool, but in cases where you have an existing project that needs to use <code>qcc</code>, how do you utilizes the catalog of open source ports?</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>How to setup a apk-tools managed sysroot</li>
+<li>How to setup qcc to use the apk-tools managed sysroot</li>
+<li>Building a simple C program</li>
+<li>Building a GTK 4 application</li>
+<li>How to cross compile existing oss projects</li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>QNX Software Center installed and SDP 8.0.4</li>
+<li>Sourcing the SDP version</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Setting up apk-tools" duration="5">
+        <p>apk ... no not android apk!!! apk-tools from Alpine linux is a lightweight but powerful package manager designed for systems that are optimized at scale. We have ported apk-tools to QNX. In order to install the packages from the <a href="https://repo.oss.qnx.com/" target="_blank">QNX open-source repository</a>, we need to have apk-tools built and installed on our host system. For this exercise we are going to assume a linux system.</p>
+<h2 is-upgraded>Build dependencies</h2>
+<p>Before we can begin we can compile apk-tools we first need to acquire system dependencies.</p>
+<h3 is-upgraded>Debian</h3>
+<pre><code language="language-sh" class="language-sh">sudo apt install build-essential meson ninja-build pkg-config git libssl-dev zlib1g-dev libzstd-dev lua5.3
+</code></pre>
+<aside class="special"><p><strong>NOTE:</strong> apk-tools needs a semi-newer version of meson if your system has conflicts you can install <a href="https://mesonbuild.com/Getting-meson.html#installing-meson-with-pip" target="_blank">meson with pip</a></p>
+</aside>
+<h3 is-upgraded>Arch</h3>
+<pre><code language="language-sh" class="language-sh">sudo pacman -S base-devel meson ninja git openssl zlib zstd lua53
+</code></pre>
+<h3 is-upgraded>Alpine</h3>
+<pre><code language="language-sh" class="language-sh">doas apk add build-base meson ninja pkgconf git openssl-dev zlib-dev zstd-dev lua5.3
+</code></pre>
+<h2 is-upgraded>Compiling a static apk-tools binary</h2>
+<p>In order to make our life just a bit easier we are going to setup apk as a static binary. That way we don&#39;t need to set LD library paths.</p>
+<pre><code language="language-sh" class="language-sh"># 3.0.6 is the latest version we are using at the time of writing. Check what version of apk-tools we are using for your system
+git clone https://gitlab.alpinelinux.org/alpine/apk-tools.git --branch v3.0.6
+</code></pre>
+<pre><code language="language-sh" class="language-sh">meson setup -Dc_link_args=&#34;-static&#34; -Dprefer_static=true -Ddefault_library=static build
+ninja -C build src/apk
+./build/src/apk --help
+
+mkdir -p ~/.local/bin
+cp ./build/src/apk ~/.local/bin
+
+# If you want to have apk available all the time add this to your ~/.bashrc or ~/.zshrc
+export PATH=$PATH:~/.local/bin
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Setting up abuild" duration="3">
+        <p>abuild is alpine&#39;s build system for packaging using APKBUILD files, we will need to setup abuild on our host in order to build apk wrapped qpkgs (QNX Software Center packages) which allows apk-tools to integrate QNX provided software.</p>
+<h2 is-upgraded>Build dependencies</h2>
+<p>Before we can begin we can compile abuild we first need to acquire system dependencies.</p>
+<h3 is-upgraded>Debian</h3>
+<pre><code language="language-sh" class="language-sh">sudo apt install build-essential git make pkg-config libssl-dev scdoc fakeroot pax bsdextrautils curl bc pax-utils
+</code></pre>
+<h3 is-upgraded>Arch</h3>
+<pre><code>sudo pacman -S base-devel git openssl scdoc fakeroot patch curl bc pax-utils
+</code></pre>
+<h3 is-upgraded>Alpine</h3>
+<pre><code language="language-sh" class="language-sh">doas apk add build-base git make openssl-dev scdoc fakeroot patch curl bc pax-utils
+</code></pre>
+<h2 is-upgraded>Building abuild</h2>
+<pre><code language="language-sh" class="language-sh"># 3.15.0 is the latest version we using at the time of writing. Check what version of abuild we are using for your system
+git clone https://github.com/qnx-ports/abuild --branch qnx-3.15.0
+</code></pre>
+<p>We are going to install this in your <code>.local</code> directory to not pollute your system</p>
+<pre><code language="language-sh" class="language-sh">make install prefix=&#34;$HOME/.local&#34; sysconfdir=&#34;$HOME/.local/etc&#34;
+</code></pre>
+<h2 is-upgraded>Setting up signing key</h2>
+<p>Part of apk-tools and abuild is its packaging signing system that validates that a trusted authority has made these packages. For this you are going create your own signing keys for these packages and set yourself as a trusted authority.</p>
+<pre><code language="language-sh" class="language-sh">abuild-keygen -a
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Building QNX wrapped APKs" duration="5">
+        <p>Now that we have our tooling set up we can now build our QNX wrapped APKs.</p>
+<h2 is-upgraded>Dependencies</h2>
+<p>But first we need some runtime dependencies.</p>
+<h3 is-upgraded>Debian</h3>
+<pre><code language="language-sh" class="language-sh">sudo apt install netcat-openbsd python3
+</code></pre>
+<h3 is-upgraded>Arch</h3>
+<pre><code language="language-sh" class="language-sh">sudo pacman -S openbsd-netcat
+</code></pre>
+<h3 is-upgraded>Alpine</h3>
+<p>There is nothing needed because busybox provides netcat.</p>
+<h2 is-upgraded>Running build-qsc-apk</h2>
+<p>For this step we will need 2 repositories:</p>
+<ol type="1">
+<li><code>qnx-ports/qsc-apk</code>: this is where all the <code>APKBUILD</code> definitions are stored and branched based on the sdp version</li>
+<li><code>qnx-packaging/build-qsc-apk</code>: a helper script that will download the QNX packages from software center and build APKs</li>
+</ol>
+<pre><code language="language-sh" class="language-sh">git clone https://github.com/qnx-ports/qsc-apk --branch 804
+git clone https://github.com/qnx-packaging/build-qsc-apk.git
+</code></pre>
+<p>we need to know which architecture we want to package for - so pick what you want to build for (or if you build both, run the command again just with the other arch)</p>
+<pre><code language="language-sh" class="language-sh">build-qsc-apk -o  ~/.cache/qsc-apk/8.0.4/ --arch &lt;x86_64|aarch64&gt; --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-core
+build-qsc-apk -o  ~/.cache/qsc-apk/8.0.4/ --arch &lt;x86_64|aarch64&gt; --swc-cli-path ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter_clt ./qsc-apk/qnx-extra
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Setting up the apk-tools sysroot" duration="0">
+        <p>We are now ready to setup our sysroot. a sysroot is a QNX system inside a folder, this allows your compiler/build system to discover libraries, headers and other things like pkg-conf</p>
+<h3 is-upgraded>Setting up the folder</h3>
+<pre><code language="language-sh" class="language-sh">mkdir -p ./qnx-apk-sysroot
+cd ./qnx-apk-sysroot
+
+# We are a user merged system so we need to setup symlinks
+mkdir -p usr/lib usr/bin
+ln -s usr/lib usr/bin .
+# Pick one arch here based on your target this is compatibility for qcc
+ln -s . &lt;x86_64|aarch64le&gt;
+</code></pre>
+<h3 is-upgraded>Initializing apk-tools</h3>
+<p>Now that we have a folder structure we can ask apk to initialize the root for package management</p>
+<pre><code language="language-sh" class="language-sh">apk --root . add --initdb --usermode
+</code></pre>
+<p>In order to install packages we need to tell apk what keys are trusted. We will setup our QNX signing key as well as the one we made back when we built abuild</p>
+<pre><code language="language-sh" class="language-sh">mkdir -p etc/apk/keys
+curl -L -o etc/apk/keys/qnxosd.rsa.pub https://repo.oss.qnx.com/keys/qnxosd.rsa.pub
+
+cp ~/.abuild/*.pub etc/apk/keys/
+</code></pre>
+<p>Now we need to tell apk what repositories we want to pull packages from. Here we are doing an 8.0.4 system so we grab those repos plus the qsc-apk packages we made before</p>
+<pre><code language="language-sh" class="language-sh">cat &lt;&lt; EOF &gt; etc/apk/repositories
+https://repo.oss.qnx.com/8.0.3/core
+https://repo.oss.qnx.com/8.0.3/extra
+https://repo.oss.qnx.com/8.0.4/core
+https://repo.oss.qnx.com/8.0.4/qnx-extra
+$HOME/.cache/qsc-apk/8.0.4/qnx-core
+$HOME/.cache/qsc-apk/8.0.4/qnx-extra
+EOF
+</code></pre>
+<p>Lets tell apk to update its database with the new keys and repositories</p>
+<pre><code>apk --root . update 
+</code></pre>
+<p>Now that our sysroot is all setup lets copy the full path</p>
+<pre><code language="language-sh" class="language-sh"># This could be just `pwd` ... but i like paths relative to home
+echo &#34;${PWD/#$HOME/\~}&#34;
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Hello world from C" duration="0">
+        <p>After all that setup lets make sure we have everything working correctly. What&#39;s better than a good old hello world!!!?</p>
+<h2 is-upgraded>Dependencies</h2>
+<p>Now we are going to use apk to get QNX dependencies that we need for C, this includes things like libc, gcc runtime libraries, and system headers</p>
+<pre><code language="language-sh" class="language-sh">apk --root &lt;path-to-qnx-apk-sysroot&gt; add --no-scripts qnx-microkernel qnx-microkernel-dev qnx-gcc-libs qnx-gcc
+</code></pre>
+<aside class="special"><p>     If your already familiar with apk-tools you may see that im passing `--no-scripts`. we pass this because the scripts are intended to run on a QNX system and not compatible with linux </p>
+</aside>
+<h2 is-upgraded>The code</h2>
+<p>We are going to make a directory called <code>hello-world-apk</code> with a <code>main.c</code> and a <code>Makefile</code> the result will look like this</p>
+<pre><code>hello-world-apk/
+|-- main.c
+|-- Makefile
+</code></pre>
+<p>Just a very simple hello-world which should look familiar to everyone</p>
+<pre><code language="language-c" class="language-c">// main.c
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(int argc, char *argv[]) {
+    printf(&#34;Hello, World from Linux on QNX!\n&#34;);
+    return EXIT_SUCCESS;
+}
+
+</code></pre>
+<p>While I could just give you a single command line to run and get the same result, having a makefile makes it easier to understand whats going on</p>
+<pre><code language="language-make" class="language-make"># Makefile
+# We are using qcc
+CC = qcc
+# we need the path to our sysroot. if you have been following along exactly this should work
+# if not just `make SYSROOT=&lt;path-to-qnx-apk-sysroot&gt;`
+SYSROOT ?= ../qnx-apk-sysroot
+
+# This is where the magic happens
+# 1. We add CFLAGS in-order for the compiler to recognize our sysroot for headers
+CFLAGS += -I$(SYSROOT)/usr/include
+# 2. We add LDFLAGS in-order to tell the linker in where to find shared libraries
+LDFLAGS += -L$(SYSROOT)/usr/lib
+# 3. We are the QNX target now
+export QNX_TARGET=&#34;$(SYSROOT)&#34;
+
+# the rest of this make file is nothing special its just a standard makefile.
+TARGET = hello-qnx
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+	rm -f $(TARGET)
+</code></pre>
+<h2 is-upgraded>Building hello-world</h2>
+<p>Okay now.. lets ... make it ... with make ... say that 5 times fast</p>
+<pre><code>make
+</code></pre>
+<p>so now it should&#39;ve worked :tada: ... but let&#39;s validate my claims first with handy dandy <code>file</code></p>
+<pre><code language="language-sh" class="language-sh">$ file hello-qnx
+hello-qnx: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx-64.so.2, BuildID[md5/uuid]=34294113c5f608180bcc564d5a80ac01, with debug_info, not stripped
+</code></pre>
+<p>you should get something like this. What we really care about is the interpreter part. We should see <code>/usr/lib/ldqnx-64.so.2</code> ... if so we are good to go. Copy this onto your target and give it a run</p>
+<pre><code language="language-sh" class="language-sh">scp hello-qnx qnxuser@&lt;ip/hostname&gt;:~/
+</code></pre>
+<p>and lets give it a run</p>
+<pre><code language="language-sh" class="language-sh">ssh qnxuser@&lt;ip/hostname&gt;
+
+$ ~/hello-qnx
+Hello, World from Linux on QNX!
+
+</code></pre>
+<p>Well that was a simple example. Let&#39;s get into something more complicated with lots of dependencies. Why not GTK4 ?</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Hello world from GTK4" duration="0">
+        <p>GTK4 is very complicated dependency-wise. There are a lot of moving parts to render to the screen - in this case either a wayland session or qnx-screen</p>
+<h2 is-upgraded>Dependencies</h2>
+<p>Like hello world, we need some dependencies - but this time we are going to grab open source dependencies as well as a few QNX packages for crypto and graphics</p>
+<aside class="special"><p><strong>NOTE:</strong> I&#39;m assuming you completed building &#34;hello world&#34;. If not, add the dependencies from that step as well  </p>
+</aside>
+<pre><code language="language-sh" class="language-sh">apk --root &lt;path-to-qnx-apk-sysroot&gt; add --no-scripts gtk4-dev qnx-crypto-openssl3 qnx-screen-virtio bash 
+</code></pre>
+<p>you will notice quite a few packages being added. About 140 packages are needed to properly build gtk applications!! This shows the power of using apk for compiling, as previously you would have to figure out how to build these dependencies yourself</p>
+<h2 is-upgraded>The code</h2>
+<p>Like hello world we are going to make a directory called <code>gtk4-hello-world-apk</code> with a <code>main.c</code> and a <code>Makefile</code> the result will look like this</p>
+<pre><code>gtk4-hello-world-apk/
+|-- main.c
+|-- Makefile
+</code></pre>
+<p>This is just <a href="https://docs.gtk.org/gtk4/getting_started.html#hello-world-in-c" target="_blank">&#34;Hello World in C&#34;</a> taken directly from gtk&#39;s documentation</p>
+<pre><code language="language-c" class="language-c">// main.c
+#include &lt;gtk/gtk.h&gt;
+
+static void
+print_hello (GtkWidget *widget,
+             gpointer   data)
+{
+  g_print (&#34;Hello World\n&#34;);
+}
+
+static void
+activate (GtkApplication *app,
+          gpointer        user_data)
+{
+  GtkWidget *window;
+  GtkWidget *button;
+  GtkWidget *box;
+
+  window = gtk_application_window_new (app);
+  gtk_window_set_title (GTK_WINDOW (window), &#34;Window&#34;);
+  gtk_window_set_default_size (GTK_WINDOW (window), 200, 200);
+
+  box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_halign (box, GTK_ALIGN_CENTER);
+  gtk_widget_set_valign (box, GTK_ALIGN_CENTER);
+
+  gtk_window_set_child (GTK_WINDOW (window), box);
+
+  button = gtk_button_new_with_label (&#34;Hello World&#34;);
+
+  g_signal_connect (button, &#34;clicked&#34;, G_CALLBACK (print_hello), NULL);
+  g_signal_connect_swapped (button, &#34;clicked&#34;, G_CALLBACK (gtk_window_destroy), window);
+
+  gtk_box_append (GTK_BOX (box), button);
+
+  gtk_window_present (GTK_WINDOW (window));
+}
+
+int
+main (int    argc,
+      char **argv)
+{
+  GtkApplication *app;
+  int status;
+
+  app = gtk_application_new (&#34;org.gtk.example&#34;, G_APPLICATION_DEFAULT_FLAGS);
+  g_signal_connect (app, &#34;activate&#34;, G_CALLBACK (activate), NULL);
+  status = g_application_run (G_APPLICATION (app), argc, argv);
+  g_object_unref (app);
+
+  return status;
+}
+
+</code></pre>
+<p>Now like before we are going to use a makefile to explain what the key parts are</p>
+<pre><code language="language-make" class="language-make"># Makefile
+# We are using qcc
+CC = qcc
+# we need tha path to our sysroot. if you have been following along exactly this should work
+# if not just `make SYSROOT=&lt;path-to-qnx-apk-sysroot&gt;`
+SYSROOT ?= ../qnx-apk-sysroot
+
+# Now here is where things get interesting we need to configure 
+# 1. We tell pkgconf to look in our sysroot for pkgconf definitions
+export PKG_CONFIG_LIBDIR := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_LIBDIR)
+
+# 2. We also need to tell pkgconf that all definitions need to be relative to our sysroot
+export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
+
+# 3. We are the QNX target now
+export QNX_TARGET=&#34;$(SYSROOT)&#34;
+
+# 4. Like hello world we tell the compiler where our headers are AND
+#.     we use pkg-conf to add cflags that we need for gtk4 and its dependencies
+CFLAGS = -I$(SYSROOT)/usr/include -O2 $(shell pkg-config --cflags gtk4)
+
+# 5. Like hello world we tell the linker where our libraries are AND
+#.     we use pkg-conf to add libraries that we need for gtk4 and its dependencies
+LDFLAGS = -L$(SYSROOT)/usr/lib $(shell pkg-config --libs gtk4)
+
+# the rest of this make file is nothing special its just a standard makefile.
+
+TARGET = hello-gtk4-qnx
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+	rm -f $(TARGET)
+</code></pre>
+<h2 is-upgraded>Building</h2>
+<p>Okay now.. lets ... make it ... with make ... again</p>
+<pre><code language="language-sh" class="language-sh">make
+</code></pre>
+<p>Now like before ... let&#39;s get this on a QNX system. Since we are using gtk4, we will need a system with a desktop like the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html" target="_blank">Developer Desktop</a></p>
+<pre><code language="language-sh" class="language-sh">scp hello-gtk4-qnx qnxuser@&lt;ip/hostname&gt;:~/
+</code></pre>
+<p>This time we can&#39;t just ssh in. We need to go into the desktop, open a terminal and run our application</p>
+<p class="image-container"><img alt="GTK4 Application Cross-Compiled to QNX" src="img/36b5aa41bbe03d3f.png"></p>
+<p>We have now cross compiled an application with a complex dependency chain. Almost as simply as you would your own system</p>
+<aside class="special"><p> As an exercise I suggest you take a look at the <a href="https://github.com/qnx-ports/build-files/tree/main/ports/gtk" target="_blank">cross compiler setup for gtk4</a> we have come a long way to simplify the process and lower the barrier for end users </p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Conclusion" duration="0">
+        <p>Let&#39;s recap what you just did! You built a fully managed <code>apk-tools</code> sysroot, wired it up to <code>qcc</code>, and successfully cross-compiled a basic C program and a GTK4 app—without having to build a single dependency yourself.</p>
+<p>Cross-compilation has always been the standard for QNX development, and this setup slots right into that workflow. While QNXe introduces a self-hosted environment, many developers still rely on cross-compilation for existing projects or specific build pipelines. This <code>apk</code> sysroot gives you a clean way to tap into the growing ecosystem of open-source ports without reinventing the dependency wheel.</p>
+<p>It&#39;s not just for <code>make</code> and simple programs either. The same sysroot concepts you saw here translate directly to complex build systems like Meson, CMake, or Bazel. (We&#39;ll leave that as an exercise for the reader, but the core <code>PKG_CONFIG_LIBDIR</code>, <code>QNX_TARGET</code>, and header/library flags apply to any system.)</p>
+<p>While this wraps up the main codelab, the next two sections are optional deep dives you can skip or tackle depending on your needs:</p>
+<ul>
+<li><strong>Cross-compiling OpenJDK 25</strong>: A &#34;Director&#39;s Cut&#34; walkthrough of how I used this exact setup to bootstrap the JVM for QNX - a real-world scenario where cross-compiling from another OS was a hard requirement.</li>
+<li><strong>Building Clang as your compiler</strong>: Swap out <code>qcc</code> for <code>clang</code>, the same compiler we use on the self-hosted system.</li>
+</ul>
+<p>Thanks for following along, and happy cross-compiling!</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Example: Cross-compiling OpenJDK 25" duration="0">
+        <p>So now that we&#39;ve covered the basics, how does this work in the real world? Well ... thanks to the <code>apk</code> sysroot, I was able to port OpenJDK 25 to QNX. Java is a self-hosted language, which means you need a working JDK to build a new one. Normally, this requires bootstrapping version by version until you reach your target. But instead of spending years building <code>n+1</code> versions, we can use Linux as a donor system.</p>
+<h2 is-upgraded>The setup</h2>
+<p>It&#39;s not as simple as grabbing OpenJDK from a package manager and compiling. We first need a JDK that understands the QNX target, which brings us back to the bootstrapping problem. OpenJDK handles this with three distinct JDK roles:</p>
+<ul>
+<li><strong>Host JDK:</strong> A working JDK on your build machine (usually from your package manager or a prebuilt tarball).</li>
+<li><strong>Build JDK:</strong> A JDK compiled for your host machine that knows about the new target platform. It&#39;s used to compile the final target JDK.</li>
+<li><strong>Target JDK:</strong> The final OpenJDK build for your target system (QNX in this case).</li>
+</ul>
+<p>In my case, I started with the official <a href="https://wiki.openjdk.org/spaces/JDKUpdates/pages/42598676/Archived+Releases" target="_blank">OpenJDK 25.0.2+10 release tarball</a> for Linux as the Host JDK. If your distribution provides OpenJDK 25 you can also get from there.</p>
+<p>Let&#39;s grab QNX&#39;s fork of OpenJDK 25 we also need to grab a pre generate Makefile (QNX has limitations on argv size so the generation of this file has to be commented out to work on qnx <a href="https://github.com/qnx-ports/aports/blob/b74e80c3c4f1ae1d636f5a0b339888bf55c93aff/extra/openjdk25/APKBUILD#L151-L155" target="_blank">more details are here</a>)</p>
+<pre><code language="language-sh" class="language-sh">git clone https://github.com/qnx-ports/jdk25u.git --branch qnx-jdk-25.0.2+10_p1
+curl -L -o jdk25u/main-targets.gmk https://raw.githubusercontent.com/qnx-ports/aports/refs/heads/803/extra/openjdk25/main-targets.gmk
+</code></pre>
+<h3 is-upgraded>Building the build JDK</h3>
+<p>The build JDK is essentially a &#34;host&#34; version of the same source code we want for the target. We need it because the final compiler needs to understand QNX-specific details to generate correct artifacts. This step is straightforward since it&#39;s just a native Linux build</p>
+<pre><code language="language-sh" class="language-sh">bash configure \
+    --prefix=/usr/local/lib/jvm/java-25-openjdk \
+	--with-boot-jdk=../boot-jdk \
+	--with-extra-cflags=&#34;-D_LARGEFILE64_SOURCE&#34; \
+	--with-extra-cxxflags=&#34;-D_LARGEFILE64_SOURCE&#34; \
+	--with-jobs=$(nproc) \
+	--with-test-jobs=$(nproc) \
+	--disable-warnings-as-errors \
+	--disable-precompiled-headers \
+	--enable-dtrace=no \
+	--with-debug-level=release \
+	--with-native-debug-symbols=none
+
+# Copy the pregenerate file
+mkdir -p ./build/linux-$(arch)-server-release/make-support
+cp main-targets.gmk ./build/linux-$(arch)-server-release/make-support/
+
+make jdk-image
+</code></pre>
+<p>Once this is complete you&#39;ll have a JDK here <code>build/linux-&lt;arch&gt;-server-release/</code> that will be used to build out final target</p>
+<h3 is-upgraded>Cross-compiling to QNX</h3>
+<p>Like before, we&#39;ll set up an apk sysroot and install the packages OpenJDK needs to link against. I won&#39;t repeat the setup steps, but here are the packages required.</p>
+<pre><code language="language-sh" class="language-sh"># Dependencies pulled from: https://github.com/qnx-ports/aports/blob/803/extra/openjdk25/APKBUILD
+apk --root &lt;openjdk-25-sysroot&gt; add --no-scripts \
+    autoconf \
+    cups-dev \
+    fontconfig-dev \
+    freetype-dev \
+    gawk \
+    giflib-dev \
+    lcms2-dev \
+    libffi-dev \
+    libjpeg-turbo-dev \
+    libsysv-ipc-shim \
+    libsysv-ipc-shim-dev \
+    libx11-dev \
+    libxext \
+    libxext-dev \
+    libxrandr-dev \
+    libxrender-dev \
+    libxt-dev \
+    libxtst-dev \
+    qnx-alsa \
+    qnx-alsa-dev \
+    qnx-fd-notify-dev \
+    qnx-libc++-dev \
+    zlib-ng-dev \
+    zip \
+    qnx-crypto-openssl3 \
+    bash \
+    qnx-microkernel \
+    qnx-microkernel-dev \
+    qnx-gcc-libs \
+    qnx-io-sock-dev
+</code></pre>
+<p>Now we configure OpenJDK to use the sysroot and cross-compile.</p>
+<pre><code language="language-sh" class="language-sh">#!/bin/bash
+#build-cross-x86_64.sh
+
+# Make sure to source your sdp before running configure
+
+_sysroot=$(realpath ../sysroot-openjdk-x86_64)
+
+PKG_CONFIG_LIBDIR=$(realpath $_sysroot/lib/pkgconfig) \
+QNX_TARGET=&#34;$_sysroot&#34; \
+CC=&#34;ntox86_64-gcc&#34; \
+CXX=&#34;ntox86_64-c++&#34; \
+CPP=&#34;ntox86_64-cpp&#34; \
+PKG_CONFIG_SYSROOT_DIR=$_sysroot \
+bash ./configure \
+    --prefix=/usr/local/lib/jvm/java-25-openjdk \
+	--openjdk-target=x86_64-pc-qnx \
+	--with-boot-jdk=../boot-jdk \
+    --with-build-jdk=./build/linux-$(arch)-server-release/images/jdk \
+	--with-sysroot=&#34;$_sysroot&#34; \
+	--with-extra-cflags=&#34;-D_QNX_SOURCE -I$_sysroot/usr/include -I$_sysroot/usr/include/shims -D_LARGEFILE64_SOURCE&#34; \
+	--with-extra-cxxflags=&#34;-D_QNX_SOURCE -I$_sysroot/usr/include/c++/v1  -I$_sysroot/usr/include -D_LARGEFILE64_SOURCE&#34; \
+	--with-extra-ldflags=&#34;-L$_sysroot/usr/lib -shared-libgcc -L$_sysroot/usr/lib -lsocket -lepoll -leventfd -lsysv-ipc -lasound&#34; \
+	--with-zlib=system \
+	--with-libjpeg=system \
+	--with-giflib=system \
+	--with-libpng=system \
+	--with-lcms=system \
+	--with-jobs=$(nproc) \
+	--with-test-jobs=$(nproc) \
+	--disable-warnings-as-errors \
+	--disable-precompiled-headers \
+	--enable-dtrace=no \
+	--with-debug-level=release \
+	--with-native-debug-symbols=none
+
+mkdir -p ./build/qnx-x86_64-server-release/make-support
+cp main-targets.gmk ./build/qnx-x86_64-server-release/make-support/
+
+# Since we now have multiple configureations we need to explicitly pass the target
+QNX_TARGET=&#34;$_sysroot&#34; make jdk-image CONF=qnx-x86_64-server-release
+</code></pre>
+<p>There&#39;s a lot happening here, but you&#39;ll notice the same fundamentals we covered in the main codelab:</p>
+<ul>
+<li><code>-I$_sysroot/usr/include</code> (and <code>-I$_sysroot/usr/include/c++/v1</code> for C++) to pull headers from our sysroot</li>
+<li><code>PKG_CONFIG_LIBDIR</code> &amp; <code>PKG_CONFIG_SYSROOT_DIR</code> so OpenJDK&#39;s build system can locate our packages</li>
+<li><code>-L$_sysroot/usr/lib</code> to link against our sysroot libraries</li>
+</ul>
+<p>Lets take a look at the result and prepare a archive we can send to a qnx target</p>
+<pre><code language="language-sh" class="language-sh">cd build/qnx-x86_64-server-release/images/jdk
+
+# QNX does not support $ORIGIN in rpath so we need to emulate it
+cd bin
+# yes this is a nested bin dir
+mkdir bin 
+# move everything to bin
+find . -maxdepth 1 -type f -exec mv &#34;{}&#34; ./bin/ &#34;;&#34;
+
+cat &lt;&lt; &#34;EOF&#34; &gt; java-multicall.sh
+#!/usr/bin/bash
+
+JDK_DIR=&#34;$(realpath &#34;$(dirname &#34;$(readlink -f &#34;${BASH_SOURCE[0]}&#34;)&#34;)&#34;/../)&#34;
+CMD=$(basename &#34;$0&#34;)
+
+LD_LIBRARY_PATH=&#34;$(realpath $JDK_DIR/lib):$LD_LIBRARY_PATH&#34; &#34;$JDK_DIR/bin/bin/$CMD&#34; &#34;$@&#34;
+EOF
+chmod +x java-multicall.sh
+
+# create symlinks to  java-multicall.sh based on the real bin folder
+ls bin/ | xargs -I {} ln -sf java-multicall.sh {}
+
+cd ../../
+tar -czf ~/openjdk25-qnx.tar.gz jdk
+</code></pre>
+<p>Now we have a fully cross-compiled OpenJDK ready for deployment and can be copied to our target. I could just run java –version and call it a day, but let&#39;s test something real. How about a Minecraft server?</p>
+<aside class="special"><p>    With the new Vulkan backend for Minecraft, I&#39;ll hopefully be able to show the client running on QNX as well :) </p>
+</aside>
+<p class="image-container"><img alt="Minecraft client connected to a server running on QNX" src="img/8ee95913244eaafa.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Optional: Building Clang as your compiler" duration="0">
+        <p>While qcc and q++ is the default and recommended compile by QNX the self hosted system uses Clang (llvm), which gives us access to a more modern toolchain with newer c++ standards and allows us to work with and port newer languages like rust, zig and odin.</p>
+<h2 is-upgraded>Build dependencies</h2>
+<p>Before we can begin to compile Calng we need to acquire system dependencies.</p>
+<h3 is-upgraded>Debian</h3>
+<pre><code language="language-sh" class="language-sh">sudo apt install build-essential cmake ninja-build git python3 zlib1g-dev
+</code></pre>
+<h3 is-upgraded>Arch</h3>
+<pre><code language="language-sh" class="language-sh">sudo pacman -S base-devel cmake ninja git python
+</code></pre>
+<h3 is-upgraded>Alpine</h3>
+<pre><code language="language-sh" class="language-sh">doas apk add build-essential cmake ninja git python3 zlib-dev linux-headers
+</code></pre>
+<h2 is-upgraded>The code</h2>
+<p>While we have llvm support it has not been upstreamed yet so we will need to get our fork</p>
+<pre><code language="language-sh" class="language-sh"># Depth 1 here is to speed this up if you want do patch it make sure you get the whole history
+git clone https://github.com/qnx-ports/llvm-project.git --branch qnx-22.1.7_p0 --depth=1
+</code></pre>
+<h2 is-upgraded>Building Clang</h2>
+<h3 is-upgraded>Ram usage</h3>
+<p class="image-container"><img alt="All Your ram are belong to us" src="img/89bdd73b95151d86.webp"></p>
+<p>An important thing to note here Clang and llvm like to use a lot of ram. To prevent other applications from crashing due to running out of memory, make sure to manually set <code>-j<number></code>. To comfortably compile llvm i recommend using 3 gigs of ram per cpu core</p>
+<h3 is-upgraded>Configuring Clang</h3>
+<p>Now we need to setup llvm. We don&#39;t need the full suite of llvm libraries to install we just want Clang so we will statically compile it</p>
+<aside class="special"><p><strong>NOTE:</strong> This will take some time anywhere from 30 minutes to a few hours depending in your setup to this is a good time to get some coffee </p>
+</aside>
+<pre><code language="language-sh" class="language-sh"># if you want the default target to be aarch64 use this triple aarch64-unknown-qnx
+# Clamng by default supports all targets from the same binary so can just `clang --target=&lt;triple&gt;`
+cmake -B build -S llvm -G Ninja \
+    -DCMAKE_INSTALL_PREFIX=~/.local \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD=&#34;X86;AArch64&#34; \
+    -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-pc-qnx \
+    -DLLVM_ENABLE_PROJECTS=&#34;clang&#34;
+
+ninja -C build -j&lt;number&gt;
+
+ninja -C build install
+</code></pre>
+<p>Now lets see the results</p>
+<pre><code language="language-sh" class="language-sh">$ clang --version
+clang version 22.1.7 (https://github.com/qnx-ports/llvm-project af405f22587173152a9a47153428a2738348a504)
+Target: x86_64-pc-qnx
+Thread model: posix
+InstalledDir: ~/.local/bin
+</code></pre>
+<p>Now that we have Clang lets take a look how this compared to our old setup</p>
+<h2 is-upgraded>Hello World r2</h2>
+<p>To start lets take out original example Hello world. In order to make this work we just need to update our Makefile</p>
+<pre><code language="language-make" class="language-make"># We are using our built Clang
+CC = clang
+# We still hae our sysroot variable
+SYSROOT ?= ../qnx-apk-sysroot
+
+# We don&#39;t need to set -L and -I we can just pass our sysroot
+CFLAGS += --sysroot=$(SYSROOT)
+# Because we don&#39;t have lld we need to pass in the absolute path to the linker
+LDFLAGS +=  -fuse-ld=$(shell which ntox86_64-ld)
+
+# Nothing to note here same as before
+
+TARGET = hello
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+	rm -f $(TARGET)
+</code></pre>
+<p>You will notice that the Makefile is quite simular to the base one but we swap out <code>-I$(SYSROOT)/usr/include</code> and <code>-L$(SYSROOT)/usr/lib</code> for just <code>--sysroot=$(SYSROOT)</code> this is because clang does not know about QNX software center and will work on any sysroot that follows the <a href="https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard" target="_blank">Filesystem Hierarchy Standard (FHS)</a>. The only other thing we now need to add is <code>-fuse-ld</code> we still need the qnx linker so we pass the absolule path.</p>
+<h2 is-upgraded>GTK 4 r2</h2>
+<p>okay now that we have done our hello world lets do the same thing for GTK</p>
+<pre><code># Makefile
+# We are using Clang
+CC = clang
+SYSROOT ?= ../qnx-apk-sysroot
+
+# We still tell pkgconf about our sysroot
+export PKG_CONFIG_LIBDIR := $(SYSROOT)/lib/pkgconfig:$(PKG_CONFIG_LIBDIR)
+export PKG_CONFIG_SYSROOT_DIR := $(SYSROOT)
+
+# Use sysroot and fuse-ld
+CFLAGS = --sysroot=$(SYSROOT) -O2 $(shell pkg-config --cflags gtk4)
+LDFLAGS = -fuse-ld=$(shell which ntox86_64-ld) $(shell pkg-config --libs gtk4)
+
+# Nothing to note here same as before
+
+TARGET = hello-gtk4-qnx
+SRCS = main.c
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
+
+clean:
+	rm -f $(TARGET)
+</code></pre>
+<p>just like hello world we just need to change out <code>-L$(SYSROOT)/usr/lib</code> and <code>-I$(SYSROOT)/usr/include</code> for <code>--sysroot</code> and <code>-fuse-ld</code>.</p>
+<h2 is-upgraded>Is it worth it?</h2>
+<p>So, you just spent 30 minutes (or 3 hours, depending on your RAM) building Clang. Is it worth it?</p>
+<p><strong>Yes, if:</strong></p>
+<ul>
+<li>You need newer C++ standards that qcc might lag on.</li>
+<li>You&#39;re porting software that expects a standard Clang environment (many modern OSS projects default to Clang).</li>
+<li>You want to experiment with languages like Rust or Zig that integrate tightly with LLVM.</li>
+</ul>
+<p><strong>Stick with qcc if:</strong></p>
+<ul>
+<li>you are developing systems with safety requirments</li>
+<li>You need deep integration with QNX-specific debugging tools (though Clang works with them too, qcc is the &#34;native&#34; citizen).</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

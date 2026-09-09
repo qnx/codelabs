@@ -1,5 +1,21 @@
 window.CODELABS = [
   {
+    "title": "Cross-compile for QNX Using Open Source Packages",
+    "href": "apk-based-cross-compile/index.html",
+    "id": "apk-based-cross-compile",
+    "authors": "Aaron Bassett",
+    "summary": "Simplify QNX cross-compilation with prebuilt open source packages. Use apk-tools to manage dependencies, wire to qcc, and build C & GTK4 applications.",
+    "updated": "2026-07-23T09:58:21-04:00",
+    "category": [
+      "qnx",
+      "porting",
+      "apk"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "Building Maelstrom on QNX",
     "href": "build-maelstrom-on-qnx/index.html",
     "id": "build-maelstrom-on-qnx",
@@ -20,7 +36,7 @@ window.CODELABS = [
     "id": "claude-code",
     "authors": "QNX Developer Relations",
     "summary": "Learn how to leverage Claude Code for target-aware AI development on QNX 8.",
-    "updated": "2026-04-30T14:58:04-04:00",
+    "updated": "2026-06-19T17:30:20-07:00",
     "category": [
       "ai"
     ],
@@ -113,7 +129,7 @@ window.CODELABS = [
     "id": "mediapipe-camera-sample",
     "authors": "Ethan Leir",
     "summary": "Write a camera application with MediaPipe and native QNX APIs",
-    "updated": "2026-06-18T15:59:38-04:00",
+    "updated": "2026-06-19T17:30:20-07:00",
     "category": [
       "qnx",
       "mediapipe",
@@ -136,6 +152,24 @@ window.CODELABS = [
       "qnx",
       "alpine",
       "porting"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
+    "title": "Porting Alpine Packages to QNX 8.0 with Claude Code",
+    "href": "qnx-porting-with-claude-code/index.html",
+    "id": "qnx-porting-with-claude-code",
+    "authors": "Elliott Mazzuca",
+    "summary": "Set up a Claude Code workspace with a structured skill hierarchy, point it at a QNX 8.0 target, and have it port Alpine Linux packages for you with a single instruction",
+    "updated": "2026-07-27T14:30:26-04:00",
+    "category": [
+      "qnx",
+      "alpine",
+      "porting",
+      "ai",
+      "claude-code"
     ],
     "tags": [
       "intermediate"
@@ -182,7 +216,7 @@ window.CODELABS = [
     "id": "running-llama-cpp-qnx",
     "authors": "Elliott Mazzuca",
     "summary": "Install the llama.cpp packages on QNX 8.0, set up a Vulkan-capable QEMU target, load a model, and run LLM inference on CPU and on the GPU",
-    "updated": "2026-06-18T15:59:38-04:00",
+    "updated": "2026-06-20T16:56:29-07:00",
     "category": [
       "qnx",
       "llama.cpp",

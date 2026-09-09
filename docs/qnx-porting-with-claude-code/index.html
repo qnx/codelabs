@@ -1,0 +1,260 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Porting Alpine Packages to QNX 8.0 with Claude Code</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="qnx-porting-with-claude-code"
+                  title="Porting Alpine Packages to QNX 8.0 with Claude Code"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p>This codelab sets up a Claude Code workspace that ports Alpine Linux packages to QNX 8.0 for you. Once it is set up, you hand it a package name and it does the work: it pulls the Alpine recipe, builds it on a QNX target, works through the QNX-specific problems, and reports back what it produced.</p>
+<p>The work is native. Packages are built on a QNX target with Alpine&#39;s <code>abuild</code>, compiled by the target&#39;s own toolchain rather than cross-compiled from the host. Claude Code runs on your machine and reaches the target over SSH. (See the Scope note below for how this differs from the SDP cross-compile path.)</p>
+<p>What makes this work is the workspace itself. Claude Code reads a small set of skill files and two bootstrap documents, so it starts every session already knowing the porting rules, how to reach your target, and everything it has learned from past ports. This codelab is about setting that workspace up and running it. It does not teach you to port packages by hand; the system does that part.</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>How the workspace is laid out and what each piece does</li>
+<li>How to point it at a QNX 8.0 target (QEMU, a Raspberry Pi, or any QNX target)</li>
+<li>How the skill system lets Claude Code drive a port from a single instruction</li>
+<li>What the system does under the hood when you give it a package</li>
+<li>How the workspace improves itself as it is used</li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A Linux host with <a href="https://www.anthropic.com/claude-code" target="_blank">Claude Code</a> installed</li>
+<li>Non-interactive SSH access to the target. Key-based authentication is recommended (the agent needs to connect without a password prompt). For a password-only target, <code>sshpass</code> works as a fallback.</li>
+<li>A reachable QNX 8.0 target you can SSH into</li>
+<li>A GitHub account with access to your aports fork</li>
+</ul>
+<p><strong>Scope:</strong> This is the self-hosted native porting path: the build runs on the QNX target, not cross-compiled from the host with <code>qcc</code>/<code>q++</code> and toolchain files. (The QNX SDP is still used on the host to launch a QEMU target in Step 3; it just isn&#39;t used to build the package.) The host-side cross-compile workflow is a different path and is out of scope here.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 1 - The mental model" duration="0">
+        <p>Get the model straight first, because it shapes everything else.</p>
+<p>Porting here is native. You take an Alpine package recipe (an APKBUILD), and it is built on a QNX target by the target&#39;s own compiler, headers, and libraries. There is no host toolchain in the build at all. This is simpler than cross-compiling: one tree, one toolchain, no sysroot.</p>
+<p>Claude Code runs on your Linux machine. It reaches the QNX target over SSH to do the actual building. The commands it runs happen on the target over that SSH connection. You do not run the porting commands yourself; Claude Code does, guided by its skills. Your job is to set the workspace up, point it at a target, and give it a package.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 2 - Lay down the workspace" duration="0">
+        <p>The setup files live alongside this codelab in the repository, in the <code>qnx-claude-setup/</code> directory. You can browse them there to see exactly what the workspace contains. To use them, copy that directory&#39;s contents into a working directory on your host so that <code>CLAUDE.md</code> and the <code>.claude/</code> directory sit at the top level:</p>
+<pre><code language="language-bash" class="language-bash">mkdir -p ~/claude
+cp -r path/to/qnx-claude-setup/. ~/claude/
+cd ~/claude
+</code></pre>
+<p>The pieces:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>File or directory</p>
+</td><td colspan="1" rowspan="1"><p>Purpose</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>CLAUDE.md</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>Session bootstrap. Claude Code reads it first, automatically. Holds the universal rules and the skill map.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>TARGET.md</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>Your target: how to connect, the authoritative tree path, and a running log of target-specific facts. You edit this.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>.claude/skills/</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>The skill hierarchy. Claude Code loads these on demand to do the porting work.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>projects/apks/</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>Where Claude Code keeps its per-port notes and reports, one folder per package.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>run.sh</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>Optional QEMU launcher template, for the bring-your-own-image case (an alternative to QSTI).</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong><code>settings.template.json</code></strong></p>
+</td><td colspan="1" rowspan="1"><p>Optional. Pre-approves the commands the workflow uses, so Claude Code prompts less.</p>
+</td></tr>
+</table>
+<p>Claude Code reads <code>CLAUDE.md</code> automatically when it opens in this directory, so the rules and skill map are loaded from the first message of every session.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 3 - Provide a QNX target" duration="0">
+        <p>You need a reachable QNX 8.0 target that you can SSH into, with the self-build tooling on it. Claude Code does not care what the target is, a QEMU virtual machine or a Raspberry Pi, as long as it can connect over SSH and build there.</p>
+<p>The simplest way to get one is the official Quick Start Target Image (QSTI). The <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti_qemu/about.html" target="_blank">QSTI for QEMU guide</a> walks through getting a free non-commercial license, installing the image through the QNX Software Center, and launching it. In short, once the image is unpacked and your SDP environment is sourced, you launch it with:</p>
+<pre><code language="language-bash" class="language-bash">mkqnximage --run
+</code></pre>
+<p>and find its IP address from another terminal in the same runtime folder with:</p>
+<pre><code language="language-bash" class="language-bash">mkqnximage --getip
+</code></pre>
+<p>QSTI is also available for <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html" target="_blank">Raspberry Pi</a> if you want to run on hardware. Either way, once the target is up and you have its IP, you have everything you need for the next step.</p>
+<p>If you already have your own QNX 8.0 disk image for QEMU, the bundle includes a <code>run.sh</code> QEMU launcher template that you can edit and customize instead; see its header comments and <code>TARGET.md</code>.</p>
+<p>If you already have a QNX target running (an existing image, a Pi on your network), you can skip straight to Step 4 and just record its connection details.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 4 - Connect Claude Code to the target" duration="0">
+        <p>Tell the workspace how to reach your target by editing <code>TARGET.md</code>. It holds the SSH details, the authentication method, and the one authoritative aports tree path on the target. Claude Code reads it at the start of every session, so this is how it knows where and how to build.</p>
+<p>Confirm you can reach the target yourself first. The login user depends on the image (the QSTI images use <code>qnxuser</code>, other images may use a different account). Claude Code needs to connect without an interactive password prompt, so set up key-based authentication: copy your public key to the target (for example with <code>ssh-copy-id &lt;user&gt;@&lt;target-ip&gt;</code>, if available) so the connection needs no password:</p>
+<pre><code language="language-bash" class="language-bash">ssh &lt;user&gt;@&lt;target-ip&gt; &#39;uname -a&#39;
+</code></pre>
+<p>If your target only supports password authentication, <code>sshpass</code> works as a fallback to feed the password non-interactively (note that <code>sshpass</code> is a workaround; prefer keys where you can):</p>
+<pre><code language="language-bash" class="language-bash">sshpass -p &lt;password&gt; ssh &lt;user&gt;@&lt;target-ip&gt; &#39;uname -a&#39;
+</code></pre>
+<p>If your setup reaches the target through a forwarded port rather than its own IP (a hand-rolled QEMU launcher, for example), add <code>-p &lt;port&gt;</code> to the ssh command. QSTI targets have their own IP, so no port is needed.</p>
+<p><strong>About authentication:</strong> Key-based SSH is the recommended approach, especially for anything shared or networked. A shared password on a throwaway local target is acceptable for that case only. <code>TARGET.md</code> is where you record whichever method your target uses.</p>
+<p>That is the whole setup. You do not need to pre-configure permissions: when you give Claude Code a task it will work through it and ask before running anything it does not yet have permission for. If you would rather it prompt less, you can pre-approve the common commands by merging <code>settings.template.json</code> into your <code>~/.claude/settings.json</code>, but this is optional and you can always do it later.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 5 - How the skill system works" duration="0">
+        <p>This is the heart of the workspace, and the reason a single instruction is enough to drive a port.</p>
+<p>The skills live under <code>.claude/skills/</code> as plain markdown files, each describing when it applies. They are arranged as a hierarchy: a router that Claude Code reads first, which points to focused skills for each kind of task.</p>
+<pre><code>qnx-porting (router, read first)
+├── qnx-platform-facts        QNX platform truths (libc gaps, stack, macros)
+├── alpine-qnx-porting        APKBUILD adaptation, per build system
+├── qnx-apk-packaging         the end-to-end port-to-package workflow
+├── qnx-port-reporting        the per-port report written after a port
+├── aports-patch-creation     how QNX patches are made and verified
+├── github-fork-workflow      git and PR conventions
+└── qnx-driver-development     driver porting (char, i2c, spi, hid, usb, sensor)
+</code></pre>
+<p>The router holds a small set of universal rules that apply to every task, no matter which skill is active. The most important ones:</p>
+<ul>
+<li><strong>Prove claims with command output.</strong> Claude Code does not assert that something works without the command that shows it.</li>
+<li><strong>Never create a patch from an untested change.</strong> A source change is tested first, then turned into a patch.</li>
+<li><strong>The human runs git.</strong> Claude Code builds and prepares the change; you handle commits and pushes.</li>
+<li><strong>Capture what it learns.</strong> When Claude Code hits and solves a problem, it records the fact back into the right skill or into <code>TARGET.md</code>, so the next port starts ahead of this one.</li>
+</ul>
+<p>That last rule is why the workspace gets better with use. The skills are not a fixed manual; they are a memory the system extends as it works. More on that in Step 8.</p>
+<p>The focused skills carry the actual knowledge: <code>qnx-platform-facts</code> is the catalogue of QNX-specific gotchas (the C library has no sockets or regex, the default stack is small, <code>uname -m</code> reports <code>x86pc</code>, and so on); <code>alpine-qnx-porting</code> covers adapting the APKBUILD for QNX across different build systems; <code>qnx-apk-packaging</code> covers building and validating the package; <code>aports-patch-creation</code> covers making source patches the QNX way; <code>qnx-port-reporting</code> covers the report it writes at the end. You do not need to read these to use the system. They are how Claude Code knows what to do.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 6 - Give it a package to port" duration="0">
+        <p>With the workspace set up and a target connected, you start a port with a single instruction. Open Claude Code in the workspace directory and tell it what to port, for example:</p>
+<p>Port <code>json-c</code> to QNX.</p>
+<p>From there it works on its own. Under the hood, guided by its skills, it runs a flow like this:</p>
+<ol type="1">
+<li><strong>Find the recipe.</strong> It locates the package on the Alpine aports tree and identifies the correct version and package repository (<code>core</code> or <code>extra</code>).</li>
+<li><strong>Place it in the tree.</strong> It puts the recipe in the authoritative aports tree on the target and adapts the APKBUILD for QNX conventions.</li>
+<li><strong>Build on the target.</strong> It builds the package on the target, pulling the upstream source and dependencies as needed.</li>
+<li><strong>Work through QNX problems.</strong> When the build hits a QNX-specific wall, it consults its skills, applies the fix, and if a source change is needed it makes a tested patch the QNX way.</li>
+<li><strong>Validate.</strong> It runs the full build clean, confirms the expected packages and subpackages were produced, and runs the tests.</li>
+<li><strong>Write the report.</strong> It writes up the port (covered in the next step).</li>
+</ol>
+<p>What it actually does in step 4 depends on the package, and that is the point. One package needs only a few <code>build()</code> flag changes; another needs a source patch; another needs a test handled and documented. The system adapts to what the package in front of it requires, rather than following a fixed script. You watch it work and review the result. Because the universal rules keep it honest (prove claims, test before patching), what it reports is backed by real build output, not assertion.</p>
+<p><strong>A note on git:</strong> The system stops before committing. Preparing the branch, opening a pull request, and the review conventions are deliberately left to you, and are outside the scope of this codelab. The skills know to hand off at that boundary.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 7 - Read the report" duration="0">
+        <p>When a port finishes (or stops at a blocker), Claude Code writes an after-action report named <code>REPORT.md</code> to that package&#39;s folder under <code>projects/apks/&lt;package&gt;/</code>. This is the thing you read to review the port, instead of scrolling back through the whole session.</p>
+<p>You will find two other files in that folder alongside it: <code>PROJECT-INDEX.md</code>, the entry point listing what to read first, and a project README carrying the running notes and changelog for the package. <code>REPORT.md</code> is the one written to be read top to bottom by a reviewer.</p>
+<p>The report is structured so you can read it top to bottom: a summary and status, the packages it produced, the changes it made (each with what changed and why), the problems it hit and how it resolved them, the validation results, and any open items. A clean port looks something like this:</p>
+<pre><code># json-c Port Report
+
+- Package: json-c 0.18
+- Repo: extra
+- Target: x86_64 QNX 8.0 QEMU
+- Status: built and validated
+
+## What was produced
+- json-c-0.18-r0.apk
+- json-c-dev-0.18-r0.apk
+
+## Changes made
+- APKBUILD: adapted build flags for the QNX clang toolchain
+- (no source patch was required)
+
+## Problems hit and how they were resolved
+- &lt;symptom&gt; -&gt; &lt;root cause&gt; -&gt; &lt;fix applied&gt;
+
+## Validation
+- clean unpack, full build: succeeded, packages produced
+- tests: passed
+
+## Open items
+- none
+</code></pre>
+<p>The report is honest by design. If a test failed or something was worked around rather than fixed, it says so in the open-items section rather than rounding the result up. When a port is more involved (a stubborn test, a real defect found, an open question), the report is longer and the open-items section carries the detail; you read the summary and status first, then the sections that matter for your review. Either way, the report is a reliable place to start before you take the port further.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Step 8 - How the system improves itself" duration="0">
+        <p>The workspace is not static. One of the universal rules tells Claude Code to record what it learns, and that is what makes the second port easier than the first.</p>
+<p>When Claude Code solves a problem during a port, it routes the lesson to where a future session will look for it. A platform gotcha goes into <code>qnx-platform-facts</code>. A build-system or packaging technique goes into <code>alpine-qnx-porting</code> or <code>qnx-apk-packaging</code>. A connection or target quirk goes into <code>TARGET.md</code>. The rule it follows is simple: if a future session would otherwise rediscover this the hard way, record it now.</p>
+<p>The per-port folders under <code>projects/apks/</code> work the same way at the package level. Each port leaves behind its report and notes, so returning to a package later (or porting something similar) starts from real history instead of a blank page.</p>
+<p>The practical effect is that the system accumulates QNX porting knowledge as you use it. The skills you started with are a foundation; the workspace fills in the specifics of your targets and the packages you care about over time.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You set up a Claude Code workspace that ports Alpine Linux packages to QNX 8.0, connected it to a QNX target, and ran a port from a single instruction.</p>
+<p>Key points to carry forward:</p>
+<ul>
+<li>The work is native, on a QNX target, reached over SSH. Claude Code runs on your host; the target does the building. No cross-compile.</li>
+<li>The workspace is driven by a skill hierarchy: a router with the universal rules, plus focused skills it consults as needed. You do not run the porting steps yourself; the system does.</li>
+<li>What it does for a given package depends on that package. The system adapts rather than following a fixed script.</li>
+<li>The rules that keep ports sound: prove claims with command output, never patch an untested change, and the human handles git.</li>
+<li>Every port ends with a report under <code>projects/apks/</code>, the honest summary you review before taking it further.</li>
+<li>The system improves itself. Each problem it solves is recorded back into the skills or <code>TARGET.md</code>, so every port starts ahead of the last.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

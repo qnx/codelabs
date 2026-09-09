@@ -21,8 +21,9 @@ This codelab describes how to configure multiple camera sources on the Raspberry
 - 1 x Logitech C920x (or C920)
 
 ### Quick Start Target Image (QSTI)
-- On the host, launch QNX Software Center and install the QSTI image for QNX 8.0, for example:
+- On the host, launch QNX Software Center and install the QSTI image for QNX 8.0.5, for example:
 com.qnx.qnx800.quickstart.rpi5/0.5.0.00050T202609021847L
+- Previous QSTI images, such as the image with QNX 8.0.4, are not compatible with this codelab and should not be used.
 - Use Raspberry Pi Imager or another imaging tool to write the image to the SD card.
 - Insert the SD card into the Raspberry Pi 5.
 - Connect the two Camera Module 3 units and the C920 USB camera.
@@ -205,6 +206,22 @@ The following image shows five cameras being multiplexed:
 ![Multiplex 5 Cameras](multiplex-cameras.jpg)
 
 ## Troubleshooting
+### Verify the QSTI Image Version
+Run the following command to verify the QSTI image version:
+
+```sh
+sudo use -i /proc/boot/procnto-smp-instr
+```
+
+The output should contain a TAGID indicating QNX OS 8.0.5, for example:
+
+```sh
+$ sudo use -i /proc/boot/procnto-smp-instr
+...
+TAGID=QNXOS_805-XXX
+...
+```
+
 ### Verify that the two Camera Module 3 units are detected
 Run
 ```sh

@@ -1,0 +1,584 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Machine Learning Inference on QNX with TensorFlow Lite</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  id="mobilenet-tflite-qnx"
+                  title="Machine Learning Inference on QNX with TensorFlow Lite"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="0">
+        <p>TensorFlow Lite (TFLite) is a lightweight ML inference runtime designed for edge and embedded platforms. The <code>tflite-runtime</code> package in the QNX aports repository brings TFLite to QNX 8.0, including the XNNPACK neural network backend for multi-threaded CPU inference.</p>
+<p>This codelab walks through three classic computer vision tasks — image classification, object detection, and semantic segmentation — each backed by a different MobileNet-family model. It finishes with a combined benchmark so you can measure throughput on your target.</p>
+<h2 is-upgraded>What you will learn</h2>
+<ul>
+<li>How to install <code>tflite-runtime</code> on QNX 8.0 and verify the Python binding</li>
+<li>How the TFLite <code>Interpreter</code> API works: tensors, shapes, dtypes, and delegates</li>
+<li>How to pre-process images and decode outputs for classification, detection, and segmentation</li>
+<li>How to measure inference throughput with XNNPACK on QNX</li>
+</ul>
+<h2 is-upgraded>Prerequisites</h2>
+<ul>
+<li>A QNX 8.0 target — this codelab is validated on both a Raspberry Pi 5 and an x86_64 QEMU VM</li>
+<li>The <code>qnx-ports</code> APK repository configured on the target</li>
+<li>Basic familiarity with SSH and Python 3</li>
+<li>A JPEG or PNG test image available on the target</li>
+</ul>
+<p><strong>Note on hardware:</strong> This codelab uses CPU inference via XNNPACK, which runs on any QNX 8.0 target regardless of GPU. Benchmark numbers are shown for both Raspberry Pi 5 (aarch64, Cortex-A76) and a 4-vCPU x86_64 QEMU VM.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install TFLite Runtime" duration="0">
+        <p>Install the TFLite runtime and its Python bindings from the <code>qnx-ports</code> APK repository.</p>
+<pre><code language="language-sh" class="language-sh">apk add tflite-runtime python3-tflite-runtime python3-numpy python3-pillow
+</code></pre>
+<p>Verify the installation:</p>
+<pre><code language="language-sh" class="language-sh">python3 -c &#34;import tflite_runtime.interpreter as tflite; print(&#39;TFLite OK&#39;)&#34;
+</code></pre>
+<p>You should see:</p>
+<pre><code>TFLite OK
+</code></pre>
+<p>If the import fails, confirm the <code>qnx-ports</code> repository is enabled:</p>
+<pre><code language="language-sh" class="language-sh">cat /etc/apk/repositories
+</code></pre>
+<p>The <code>qnx-ports</code> community repository URL should be present. If it is not, add it and run <code>apk update</code> before retrying.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Download Models and Test Data" duration="0">
+        <p>The models used in this codelab are from the <a href="https://ai.google.dev/edge/litert/models/trained" target="_blank">TFLite Model Zoo</a>. Run the following commands on your QNX target.</p>
+<pre><code language="language-sh" class="language-sh">cd ~
+
+# MobileNetV2 — image classification (float32, ~14 MB)
+curl -sL -o mobilenet_v2.tflite \
+  &#34;https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v2_1.0_224.tflite&#34;
+
+# ImageNet labels (1001 classes, line 0 = background)
+curl -sL -o labels.txt \
+  &#34;https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt&#34;
+
+# SSD MobileNet V1 — object detection (uint8, COCO, ~7 MB)
+curl -sL -o detect.zip \
+  &#34;https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip&#34;
+unzip -o detect.zip detect.tflite &amp;&amp; rm detect.zip
+
+# COCO labelmap
+curl -sL -o labelmap.txt \
+  &#34;https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29/labelmap.txt&#34;
+
+# DeepLab v3 — semantic segmentation (float32, PASCAL VOC, ~3.5 MB)
+curl -sL -o deeplabv3_257.tflite \
+  &#34;https://storage.googleapis.com/download.tensorflow.org/models/tflite/gpu/deeplabv3_257_mv_gpu.tflite&#34;
+</code></pre>
+<p>You also need a test image. Any JPEG photograph works. A portrait with a clearly visible person gives the best results across all three tasks. Copy one from your host:</p>
+<pre><code language="language-sh" class="language-sh">scp /path/to/photo.jpg qnxuser@&lt;target-ip&gt;:~/test.jpg
+</code></pre>
+<p>The examples in this codelab use a NASA portrait of Canadian astronaut David Saint-Jacques (public domain). Download it directly on your target:</p>
+<pre><code language="language-sh" class="language-sh">curl -sL -o test.jpg \
+  &#34;https://upload.wikimedia.org/wikipedia/commons/f/f8/David_Saint-Jacques_official_portrait.jpg&#34;
+</code></pre>
+<p>Confirm everything is in place:</p>
+<pre><code language="language-sh" class="language-sh">ls -lh ~/*.tflite ~/labels.txt ~/labelmap.txt
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Image Classification" duration="0">
+        <p><a href="https://huggingface.co/tasks/image-classification" target="_blank">Image classification</a> answers: <em>what is the dominant object in this image?</em></p>
+<p>MobileNetV2 was trained on ImageNet — 1000 everyday object categories plus a catch-all background class for images that don&#39;t clearly belong to any of them. Given a photograph, it returns a confidence score for each class; the highest score is the model&#39;s prediction.</p>
+<p>The model requires colour images resized to exactly 224×224 pixels, with each pixel value expressed as a decimal in the range 0.0–1.0 rather than the standard 0–255 integer. This scaling is called normalisation — it must match what the model saw during training, otherwise predictions will be wrong. The <code>classify.py</code> script handles both the resizing and normalisation automatically before running inference.</p>
+<p class="image-container"><img alt="David Saint-Jacques NASA portrait with MobileNetV2 top-5 classification results" src="img/e48c746b6ebf6918.png"></p>
+<h2 is-upgraded>Inspect the model</h2>
+<p>Before writing inference code it is useful to look at the model&#39;s tensor shapes:</p>
+<pre><code language="language-sh" class="language-sh">python3 - &lt;&lt; &#39;EOF&#39;
+import tflite_runtime.interpreter as tflite
+
+interp = tflite.Interpreter(model_path=&#39;mobilenet_v2.tflite&#39;, num_threads=4)
+interp.allocate_tensors()
+
+inp = interp.get_input_details()[0]
+out = interp.get_output_details()[0]
+print(f&#34;Input  #{inp[&#39;index&#39;]}: shape={inp[&#39;shape&#39;]}  dtype={inp[&#39;dtype&#39;].__name__}&#34;)
+print(f&#34;Output #{out[&#39;index&#39;]}: shape={out[&#39;shape&#39;]}  dtype={out[&#39;dtype&#39;].__name__}&#34;)
+EOF
+</code></pre>
+<pre><code>Input  #0: shape=[1, 224, 224, 3]  dtype=float32
+Output #0: shape=[1, 1001]  dtype=float32
+</code></pre>
+<p>The input shape <code>[1, 224, 224, 3]</code> encodes one 224×224 colour image. The four dimensions are <code>[batch, height, width, channels]</code>:</p>
+<ul>
+<li><strong>batch</strong> — how many images are passed in a single call. We use <code>1</code> because on a device we classify one image at a time. During model training, large batches are processed simultaneously for efficiency; at inference we don&#39;t need that.</li>
+<li><strong>height / width</strong> — the fixed pixel dimensions the model was trained on. Any input image must be resized to 224×224 before it can be passed in.</li>
+<li><strong>channels</strong> — the three colour planes: Red, Green, and Blue. The model was trained on colour images and expects all three.</li>
+</ul>
+<p>The output shape <code>[1, 1001]</code> is one confidence score per class — the 1000 ImageNet categories plus the background class — for each image in the batch.</p>
+<h2 is-upgraded>Write and run the classifier</h2>
+<p>Create <code>~/classify.py</code>:</p>
+<pre><code language="language-python" class="language-python">import sys
+import numpy as np
+from PIL import Image
+import tflite_runtime.interpreter as tflite
+
+MODEL  = &#39;mobilenet_v2.tflite&#39;
+LABELS = &#39;labels.txt&#39;
+IMAGE  = sys.argv[1] if len(sys.argv) &gt; 1 else &#39;test.jpg&#39;
+
+# Load class labels — one name per line; the index matches the model&#39;s output position
+with open(LABELS) as f:
+    labels = [l.strip() for l in f]
+
+# Load the model and allocate memory for its input/output tensors
+# num_threads=4 enables XNNPACK multi-threaded CPU inference
+interp = tflite.Interpreter(model_path=MODEL, num_threads=4)
+interp.allocate_tensors()
+
+# Read the input dimensions directly from the model so the script works with any TFLite model
+inp = interp.get_input_details()[0]
+out = interp.get_output_details()[0]
+h, w = inp[&#39;shape&#39;][1], inp[&#39;shape&#39;][2]
+
+# Resize the image to the model&#39;s required dimensions, then normalise pixels from 0–255 to 0.0–1.0
+img  = Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h))
+data = np.expand_dims(np.array(img, dtype=np.float32) / 255.0, axis=0)
+
+# Copy the prepared image into the model&#39;s input tensor and run inference
+interp.set_tensor(inp[&#39;index&#39;], data)
+interp.invoke()
+
+# Read the output scores and rank the top 5 classes in descending order
+scores = interp.get_tensor(out[&#39;index&#39;])[0]
+top5   = np.argsort(scores)[::-1][:5]
+
+print(f&#34;Image: {IMAGE}&#34;)
+print(&#34;Top-5 predictions:&#34;)
+for rank, idx in enumerate(top5, 1):
+    name = labels[idx] if idx &lt; len(labels) else f&#39;class_{idx}&#39;
+    print(f&#34;  {rank}. {name:&lt;40} {scores[idx]*100:.2f}%&#34;)
+</code></pre>
+<p>Run it from your home directory:</p>
+<pre><code language="language-sh" class="language-sh">cd ~ &amp;&amp; python3 classify.py test.jpg
+</code></pre>
+<p>Expected output for the Saint-Jacques portrait:</p>
+<pre><code>Image: test.jpg
+Top-5 predictions:
+  1. sweatshirt                                21.91%
+  2. jersey                                    18.97%
+  3. torch                                     3.65%
+  4. pinwheel                                  1.82%
+  5. pajama                                    1.78%
+</code></pre>
+<p><strong>Note:</strong> MobileNetV2 was trained on everyday ImageNet categories and has no &#34;flight suit&#34; class. It maps the blue NASA uniform to the closest it has seen — sweatshirt and jersey — which together account for ~41% of the confidence. The remaining predictions reflect confusion from the NASA and CSA patches visible on the suit.</p>
+<p>The key TFLite API calls used here are:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Call</p>
+</td><td colspan="1" rowspan="1"><p>Purpose</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>Interpreter(model_path, num_threads=4)</code></p>
+</td><td colspan="1" rowspan="1"><p>Load the flatbuffer model; set CPU thread count for XNNPACK</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>allocate_tensors()</code></p>
+</td><td colspan="1" rowspan="1"><p>Allocate input/output buffers — must be called before use</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>set_tensor(index, data)</code></p>
+</td><td colspan="1" rowspan="1"><p>Copy a numpy array into an input buffer</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>invoke()</code></p>
+</td><td colspan="1" rowspan="1"><p>Run the full inference graph</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>get_tensor(index)</code></p>
+</td><td colspan="1" rowspan="1"><p>Read an output buffer into a numpy array</p>
+</td></tr>
+</table>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Object Detection" duration="0">
+        <p><a href="https://huggingface.co/tasks/object-detection" target="_blank">Object detection</a> answers: <em>where are objects in this image, and what are they?</em></p>
+<p>SSD MobileNet V1 was trained on COCO — Common Objects in Context, a dataset covering 80 everyday categories such as people, vehicles, and furniture. Unlike the classifier, which produces a single answer for the whole image, the detector reports every object it finds, each described by four pieces of information: where it is (a bounding box), what it is (a class label), how confident the model is (a score), and a total count of valid detections.</p>
+<p>This model is <em>quantised</em> — its weights have been compressed to use 8-bit integers rather than 32-bit decimals, making it smaller and faster. As a result it expects raw pixel bytes (0–255) as input rather than the normalised decimals used by MobileNetV2. The model handles the internal scaling itself.</p>
+<p class="image-container"><img alt="Street scene with SSD MobileNet detection boxes showing bicycle and car detections" src="img/89f757589701ef61.png"></p>
+<h2 is-upgraded>Inspect the model</h2>
+<pre><code language="language-sh" class="language-sh">python3 - &lt;&lt; &#39;EOF&#39;
+import tflite_runtime.interpreter as tflite
+
+interp = tflite.Interpreter(model_path=&#39;detect.tflite&#39;, num_threads=4)
+interp.allocate_tensors()
+
+for d in interp.get_input_details():
+    print(f&#34;Input  #{d[&#39;index&#39;]}: shape={d[&#39;shape&#39;]}  dtype={d[&#39;dtype&#39;].__name__}&#34;)
+for d in interp.get_output_details():
+    print(f&#34;Output #{d[&#39;index&#39;]}: shape={d[&#39;shape&#39;]}  dtype={d[&#39;dtype&#39;].__name__}&#34;)
+EOF
+</code></pre>
+<pre><code>Input  #0: shape=[1, 300, 300, 3]  dtype=uint8
+Output #0: shape=[1, 10, 4]  dtype=float32   ← bounding boxes [ymin, xmin, ymax, xmax]
+Output #1: shape=[1, 10]     dtype=float32   ← class IDs
+Output #2: shape=[1, 10]     dtype=float32   ← confidence scores
+Output #3: shape=[1]         dtype=float32   ← detection count
+</code></pre>
+<p>The input shape follows the same <code>[batch, height, width, channels]</code> pattern as the classifier, but this model requires 300×300 images. The four output tensors each contain 10 slots — the model always fills all 10, and the final tensor (shape <code>[1]</code>) tells you how many of those slots hold real detections. The rest can be ignored.</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Output</p>
+</td><td colspan="1" rowspan="1"><p>Shape</p>
+</td><td colspan="1" rowspan="1"><p>Contents</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>outs[0]</code></p>
+</td><td colspan="1" rowspan="1"><p><code>[1, 10, 4]</code></p>
+</td><td colspan="1" rowspan="1"><p>Bounding box per detection — four coordinates (top, left, bottom, right) as fractions of the image size</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>outs[1]</code></p>
+</td><td colspan="1" rowspan="1"><p><code>[1, 10]</code></p>
+</td><td colspan="1" rowspan="1"><p>Class ID for each detection slot</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>outs[2]</code></p>
+</td><td colspan="1" rowspan="1"><p><code>[1, 10]</code></p>
+</td><td colspan="1" rowspan="1"><p>Confidence score for each detection slot</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>outs[3]</code></p>
+</td><td colspan="1" rowspan="1"><p><code>[1]</code></p>
+</td><td colspan="1" rowspan="1"><p>Number of valid detections in the 10 slots</p>
+</td></tr>
+</table>
+<p><strong>uint8 input:</strong> Unlike <code>classify.py</code>, this script passes raw pixel integers (0–255) directly to the model. No normalisation step is needed — the scaling is built into the model&#39;s quantised weights.</p>
+<p><strong>Label offset:</strong> The <code>labelmap.txt</code> file has a background class <code>???</code> at line 0 and real COCO classes from line 1 onward. The model outputs 0-indexed class IDs where 0 = the first real class (&#34;person&#34;), so add 1 when indexing into the label file.</p>
+<h2 is-upgraded>Write and run the detector</h2>
+<p>Create <code>~/detect.py</code>:</p>
+<pre><code language="language-python" class="language-python">import sys
+import numpy as np
+from PIL import Image
+import tflite_runtime.interpreter as tflite
+
+MODEL    = &#39;detect.tflite&#39;
+LABELMAP = &#39;labelmap.txt&#39;
+IMAGE    = sys.argv[1] if len(sys.argv) &gt; 1 else &#39;test.jpg&#39;
+
+# Load COCO labels — line 0 is a &#34;???&#34; background placeholder; real class names start at line 1
+with open(LABELMAP) as f:
+    coco = [l.strip() for l in f]
+
+# Load the model and allocate memory for its input/output tensors
+interp = tflite.Interpreter(model_path=MODEL, num_threads=4)
+interp.allocate_tensors()
+
+# This model has four output tensors; get_output_details() returns all of them as a list
+inp  = interp.get_input_details()[0]
+outs = interp.get_output_details()
+_, h, w, _ = inp[&#39;shape&#39;]
+
+# Detection model expects raw uint8 pixels (0–255), not normalised floats
+img  = Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h))
+data = np.expand_dims(np.array(img, dtype=np.uint8), axis=0)
+
+# Copy the prepared image into the model&#39;s input tensor and run inference
+interp.set_tensor(inp[&#39;index&#39;], data)
+interp.invoke()
+
+# Unpack the four output tensors: bounding boxes, class IDs, confidence scores, detection count
+boxes   = interp.get_tensor(outs[0][&#39;index&#39;])[0]       # [10, 4] — box corners as image fractions
+classes = interp.get_tensor(outs[1][&#39;index&#39;])[0]       # [10]   — class index per detection
+scores  = interp.get_tensor(outs[2][&#39;index&#39;])[0]       # [10]   — confidence score per detection
+count   = int(interp.get_tensor(outs[3][&#39;index&#39;])[0])  # number of valid detections returned
+
+print(f&#34;Image: {IMAGE}  ({count} detections)&#34;)
+print(f&#34;{&#39;#&#39;:&lt;3} {&#39;Class&#39;:&lt;20} {&#39;Score&#39;:&gt;7}  Box [ymin, xmin, ymax, xmax]&#34;)
+for i in range(count):
+    cls_id = int(classes[i])
+    # Add 1 to skip the background placeholder at line 0 of the label file
+    label  = coco[cls_id + 1] if (cls_id + 1) &lt; len(coco) else f&#39;cls_{cls_id}&#39;
+    ymin, xmin, ymax, xmax = boxes[i]
+    print(f&#34;  {i+1:&lt;2} {label:&lt;20} {scores[i]*100:&gt;6.1f}%  &#34;
+          f&#34;[{ymin:.2f}, {xmin:.2f}, {ymax:.2f}, {xmax:.2f}]&#34;)
+</code></pre>
+<p>Run it:</p>
+<pre><code language="language-sh" class="language-sh">cd ~ &amp;&amp; python3 detect.py test.jpg
+</code></pre>
+<p>Example output for a street scene:</p>
+<pre><code>Image: test.jpg  (5 detections)
+#   Class                 Score  Box [ymin, xmin, ymax, xmax]
+  1  car                  71.1%  [0.38, 0.72, 0.93, 1.00]
+  2  car                  68.8%  [0.34, 0.00, 0.89, 0.32]
+  3  car                  66.8%  [0.35, 0.40, 0.87, 0.71]
+  4  bicycle              65.6%  [0.10, 0.18, 0.98, 0.88]
+  5  car                  63.3%  [0.37, 0.44, 0.81, 0.64]
+</code></pre>
+<p>Bounding box coordinates are fractions of the image dimensions. Multiply by pixel width/height to get pixel coordinates.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Semantic Segmentation" duration="0">
+        <p><a href="https://huggingface.co/tasks/image-segmentation" target="_blank">Semantic segmentation</a> answers: <em>what class does each pixel belong to?</em></p>
+<p>DeepLab v3 was trained on PASCAL VOC — a dataset covering 21 categories including people, animals, and common vehicles. Rather than labelling the image as a whole, it assigns a category to every individual pixel, producing a complete map of what is where in the scene.</p>
+<p>For each pixel in the 257×257 output grid, the model produces a raw score for all 21 possible categories. The script then picks the category with the highest score at each pixel — a step called <code>argmax</code> — resulting in a 257×257 grid where every cell contains a single category label. The output tensor shape <code>[1, 257, 257, 21]</code> encodes this directly: one image, 257×257 pixel positions, 21 scores per position.</p>
+<p class="image-container"><img alt="David Saint-Jacques portrait with DeepLab v3 segmentation overlay — person vs background regions" src="img/1d7efbd662e5801c.png"></p>
+<p>The 21 categories are: background (catch-all for pixels that don&#39;t match any category), aeroplane, bicycle, bird, boat, bottle, bus, car, cat, chair, cow, diningtable, dog, horse, motorbike, person, pottedplant, sheep, sofa, train, tvmonitor.</p>
+<p><strong>Different normalisation:</strong> MobileNetV2 scales pixel values to the range 0.0–1.0 by dividing by 255. DeepLab uses a different range, −1.0 to 1.0, achieved with <code>(pixel / 127.5) − 1.0</code>. Using the wrong formula produces incorrect segmentation maps — the two models were trained differently and each expects its own scale.</p>
+<h2 is-upgraded>Write and run the segmentation script</h2>
+<p>Create <code>~/segment.py</code>:</p>
+<pre><code language="language-python" class="language-python">import sys
+import numpy as np
+from PIL import Image
+import tflite_runtime.interpreter as tflite
+
+MODEL  = &#39;deeplabv3_257.tflite&#39;
+IMAGE  = sys.argv[1] if len(sys.argv) &gt; 1 else &#39;test.jpg&#39;
+
+# The 21 PASCAL VOC classes this model was trained to recognise — index matches the model&#39;s class axis
+PASCAL = [
+    &#39;background&#39;, &#39;aeroplane&#39;, &#39;bicycle&#39;, &#39;bird&#39;, &#39;boat&#39;, &#39;bottle&#39;,
+    &#39;bus&#39;, &#39;car&#39;, &#39;cat&#39;, &#39;chair&#39;, &#39;cow&#39;, &#39;diningtable&#39;, &#39;dog&#39;, &#39;horse&#39;,
+    &#39;motorbike&#39;, &#39;person&#39;, &#39;pottedplant&#39;, &#39;sheep&#39;, &#39;sofa&#39;, &#39;train&#39;, &#39;tvmonitor&#39;
+]
+
+# Load the model and allocate memory for its input/output tensors
+interp = tflite.Interpreter(model_path=MODEL, num_threads=4)
+interp.allocate_tensors()
+
+inp = interp.get_input_details()[0]
+out = interp.get_output_details()[0]
+_, h, w, _ = inp[&#39;shape&#39;]
+
+# Resize and normalise to the range [-1, 1] — DeepLab uses a different scale than MobileNetV2
+img  = Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h))
+data = np.expand_dims((np.array(img, dtype=np.float32) / 127.5) - 1.0, axis=0)
+
+# Copy the prepared image into the model&#39;s input tensor and run inference
+interp.set_tensor(inp[&#39;index&#39;], data)
+interp.invoke()
+
+# The output holds a score for each of 21 classes at every pixel position
+# argmax picks the class with the highest score, giving one class ID per pixel
+logits  = interp.get_tensor(out[&#39;index&#39;])        # [1, 257, 257, 21]
+seg_map = np.argmax(logits[0], axis=-1)          # [257, 257] — one class ID per pixel
+
+# Count how many pixels were assigned to each class and report the top 3
+total = seg_map.size
+unique, counts = np.unique(seg_map, return_counts=True)
+top3  = sorted(zip(counts, unique), reverse=True)[:3]
+
+print(f&#34;Image: {IMAGE}  (segmented at {w}×{h})&#34;)
+print(&#34;Top-3 pixel classes:&#34;)
+for n, cls_id in top3:
+    name = PASCAL[cls_id] if cls_id &lt; len(PASCAL) else f&#39;cls_{cls_id}&#39;
+    print(f&#34;  {name:&lt;15} {n/total*100:.1f}% of pixels&#34;)
+</code></pre>
+<p>Run it:</p>
+<pre><code language="language-sh" class="language-sh">cd ~ &amp;&amp; python3 segment.py test.jpg
+</code></pre>
+<p>Expected output for the Saint-Jacques portrait:</p>
+<pre><code>Image: test.jpg  (segmented at 257×257)
+Top-3 pixel classes:
+  person          61.3% of pixels
+  background      38.7% of pixels
+</code></pre>
+<h2 is-upgraded>Save a colour-coded segmentation map</h2>
+<p>Add these lines at the end of <code>segment.py</code> to write a PNG where each class gets a distinct colour:</p>
+<pre><code language="language-python" class="language-python"># One RGB colour per PASCAL VOC class — index matches the class ID in seg_map
+COLOURS = [
+    (0,0,0),(128,0,0),(0,128,0),(128,128,0),(0,0,128),(128,0,128),
+    (0,128,128),(128,128,128),(64,0,0),(192,0,0),(64,128,0),(192,128,0),
+    (64,0,128),(192,0,128),(64,128,128),(192,128,128),(0,64,0),(128,64,0),
+    (0,192,0),(128,192,0),(0,64,128),
+]
+# Use each pixel&#39;s class ID as an index into the colour table to produce an RGB image
+seg_rgb = np.array(COLOURS, dtype=np.uint8)[seg_map]
+Image.fromarray(seg_rgb).save(&#39;segmentation.png&#39;)
+print(&#34;Colour map saved to segmentation.png&#34;)
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Benchmark All Three Tasks" duration="0">
+        <p>Now that the three tasks work individually, combine them into a single benchmark to measure steady-state inference throughput.</p>
+<p>Create <code>~/benchmark.py</code>:</p>
+<pre><code language="language-python" class="language-python">import sys, time
+import numpy as np
+from PIL import Image
+import tflite_runtime.interpreter as tflite
+
+IMAGE = sys.argv[1] if len(sys.argv) &gt; 1 else &#39;test.jpg&#39;
+N     = 10  # number of timed inference runs per task
+
+PASCAL = [
+    &#39;background&#39;, &#39;aeroplane&#39;, &#39;bicycle&#39;, &#39;bird&#39;, &#39;boat&#39;, &#39;bottle&#39;,
+    &#39;bus&#39;, &#39;car&#39;, &#39;cat&#39;, &#39;chair&#39;, &#39;cow&#39;, &#39;diningtable&#39;, &#39;dog&#39;, &#39;horse&#39;,
+    &#39;motorbike&#39;, &#39;person&#39;, &#39;pottedplant&#39;, &#39;sheep&#39;, &#39;sofa&#39;, &#39;train&#39;, &#39;tvmonitor&#39;
+]
+
+# Load label files once; each task function reuses the appropriate list
+with open(&#39;labels.txt&#39;)   as f: imagenet = [l.strip() for l in f]
+with open(&#39;labelmap.txt&#39;) as f: coco     = [l.strip() for l in f]
+
+
+def timed(interp, n):
+    # Run inference n times and return each duration in milliseconds
+    times = []
+    for _ in range(n):
+        t0 = time.perf_counter()
+        interp.invoke()
+        times.append((time.perf_counter() - t0) * 1000)
+    return times
+
+
+def run_classify():
+    interp = tflite.Interpreter(model_path=&#39;mobilenet_v2.tflite&#39;, num_threads=4)
+    interp.allocate_tensors()
+    inp = interp.get_input_details()[0]
+    out = interp.get_output_details()[0]
+    h, w = inp[&#39;shape&#39;][1], inp[&#39;shape&#39;][2]
+    data = np.expand_dims(
+        np.array(Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h)),
+                 dtype=np.float32) / 255.0, 0)
+    interp.set_tensor(inp[&#39;index&#39;], data)
+    interp.invoke()          # one warmup run — compiles XNNPACK kernels
+    times  = timed(interp, N)
+    scores = interp.get_tensor(out[&#39;index&#39;])[0]
+    return times, imagenet[np.argmax(scores)]
+
+
+def run_detect():
+    interp = tflite.Interpreter(model_path=&#39;detect.tflite&#39;, num_threads=4)
+    interp.allocate_tensors()
+    inp  = interp.get_input_details()[0]
+    outs = interp.get_output_details()
+    _, h, w, _ = inp[&#39;shape&#39;]
+    data = np.expand_dims(
+        np.array(Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h)),
+                 dtype=np.uint8), 0)
+    interp.set_tensor(inp[&#39;index&#39;], data)
+    interp.invoke()          # warmup
+    times   = timed(interp, N)
+    # Report the label of the highest-scoring detection
+    classes = interp.get_tensor(outs[1][&#39;index&#39;])[0]
+    scores  = interp.get_tensor(outs[2][&#39;index&#39;])[0]
+    idx     = int(classes[np.argmax(scores)])
+    return times, coco[idx + 1] if (idx + 1) &lt; len(coco) else f&#39;cls_{idx}&#39;
+
+
+def run_segment():
+    interp = tflite.Interpreter(model_path=&#39;deeplabv3_257.tflite&#39;, num_threads=4)
+    interp.allocate_tensors()
+    inp = interp.get_input_details()[0]
+    out = interp.get_output_details()[0]
+    _, h, w, _ = inp[&#39;shape&#39;]
+    data = np.expand_dims(
+        (np.array(Image.open(IMAGE).convert(&#39;RGB&#39;).resize((w, h)),
+                  dtype=np.float32) / 127.5) - 1.0, 0)
+    interp.set_tensor(inp[&#39;index&#39;], data)
+    interp.invoke()          # warmup
+    times   = timed(interp, N)
+    # Report the class that covers the most pixels
+    seg_map = np.argmax(interp.get_tensor(out[&#39;index&#39;])[0], axis=-1)
+    top1_id = int(np.bincount(seg_map.flatten()).argmax())
+    return times, PASCAL[top1_id] if top1_id &lt; len(PASCAL) else f&#39;cls_{top1_id}&#39;
+
+
+import platform
+print(f&#34;\nTFLite MobileNet Benchmark  —  {platform.system()} {platform.release()}&#34;)
+print(f&#34;Image: {IMAGE}    Runs per task: {N}\n&#34;)
+
+TASKS = [
+    (&#39;Classification  (MobileNetV2 224)&#39;,   run_classify),
+    (&#39;Detection       (SSD MobileNet 300)&#39;, run_detect),
+    (&#39;Segmentation    (DeepLab v3 257)&#39;,    run_segment),
+]
+
+# Run each task, collect timing, and print a summary table
+results = []
+for name, fn in TASKS:
+    print(f&#34;  Running {name} ...&#34;, end=&#39; &#39;, flush=True)
+    times, top1 = fn()
+    avg = sum(times) / len(times)
+    print(f&#34;{avg:5.1f} ms  →  {top1}&#34;)
+    results.append((name, avg, top1))
+
+print(f&#34;\n{&#39;Task&#39;:&lt;42} {&#39;Avg&#39;:&gt;8}  {&#39;FPS&#39;:&gt;7}  Top result&#34;)
+print(&#39;─&#39; * 78)
+for name, avg, top1 in results:
+    print(f&#34;  {name:&lt;40} {avg:&gt;7.1f}ms  {1000/avg:&gt;6.1f}  {top1}&#34;)
+print()
+</code></pre>
+<p>Run the benchmark from your home directory:</p>
+<pre><code language="language-sh" class="language-sh">cd ~ &amp;&amp; python3 benchmark.py test.jpg
+</code></pre>
+<h2 is-upgraded>Raspberry Pi 5 (Cortex-A76, 4 cores)</h2>
+<pre><code>TFLite MobileNet Benchmark  —  QNX 8.0.0
+
+Task                                       Avg (ms)     FPS  Top result
+──────────────────────────────────────────────────────────────────────────────
+  Classification  (MobileNetV2 224)           24.2    41.4  sweatshirt
+  Detection       (SSD MobileNet 300)         38.3    26.1  person
+  Segmentation    (DeepLab v3 257)            48.0    20.8  person
+</code></pre>
+<h2 is-upgraded>x86_64 QEMU VM (4 vCPUs)</h2>
+<pre><code>TFLite MobileNet Benchmark  —  QNX 8.0.5
+
+Task                                       Avg (ms)     FPS  Top result
+──────────────────────────────────────────────────────────────────────────────
+  Classification  (MobileNetV2 224)            5.6   179.1  sweatshirt
+  Detection       (SSD MobileNet 300)         16.1    62.0  person
+  Segmentation    (DeepLab v3 257)            10.4    96.5  person
+</code></pre>
+<p><strong>Note on FPS:</strong> The FPS column is a projected figure — <code>1000 ÷ avg_ms</code> — representing how many frames per second the model alone could sustain if fed images back-to-back with no other overhead. In practice a real camera pipeline also pays for frame capture, colour conversion, and OS scheduling, so effective throughput will be lower. That said, classification at ~41 FPS and detection at ~26 FPS on the Raspberry Pi 5 leave meaningful headroom against a standard 30fps camera feed, making these models practical for real-time use on the target.</p>
+<p><strong>Tip:</strong> Run the benchmark a second time to see steady-state numbers. The first run includes Python import overhead and XNNPACK kernel cache warm-up. Subsequent runs are representative of production throughput.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary" duration="0">
+        <p>You installed and ran three TFLite MobileNet-family models on QNX 8.0 using CPU inference via the XNNPACK delegate.</p>
+<h2 is-upgraded>Key points to carry forward</h2>
+<ul>
+<li><strong>The TFLite API is the same on QNX as any other platform.</strong> Models, scripts, and label files developed on a Linux workstation transfer to QNX without modification.</li>
+<li><strong>Each task requires different pre-processing.</strong> Classification scales pixels to 0.0–1.0; detection passes raw uint8 pixels unchanged; segmentation scales to −1.0 to 1.0. Using the wrong scale for any model produces wrong results.</li>
+<li><strong>Always run one warmup </strong><strong><code>invoke()</code></strong><strong> before timing.</strong> The first call compiles XNNPACK kernels; subsequent calls represent steady-state latency.</li>
+<li><strong><code>num_threads=4</code></strong><strong> enables XNNPACK multi-threaded inference.</strong> Match this to the core count of your target for best throughput.</li>
+<li><strong>MobileNet-class models run well on embedded QNX targets.</strong> The Raspberry Pi 5 delivers ~41 FPS for image classification and ~21–26 FPS for detection and segmentation — sufficient for real-time camera pipelines when combined with efficient capture and decode.</li>
+</ul>
+<h2 is-upgraded>Visualization scripts</h2>
+<p>The composite result images shown in this codelab were generated with standalone PIL scripts. If you want to produce the same images on your target, the scripts are in the <a href="https://github.com/qnx/codelabs/tree/main/markdown/mobilenet-tflite-qnx/scripts" target="_blank"><code>scripts/</code></a> directory alongside this codelab&#39;s source: <code>classify_viz.py</code>, <code>detect_viz.py</code>, and <code>segment_viz.py</code>. Each script takes <code>[image] [output]</code> arguments and uses only the packages already installed.</p>
+<h2 is-upgraded>What to explore next</h2>
+<ul>
+<li><strong>Quantised models</strong> — uint8 variants of MobileNetV2 are 4× smaller and typically 2–3× faster; the API is identical.</li>
+<li><strong>EfficientNet-Lite0/2</strong> — higher accuracy than MobileNetV2 at similar latency; the <code>classify.py</code> script works without changes.</li>
+<li><strong>Camera pipeline</strong> — the models in this codelab run fast enough for real-time camera input on the Raspberry Pi 5. The <a href="https://qnx.github.io/codelabs/mediapipe-camera-sample/" target="_blank">MediaPipe Camera Sample</a> codelab is the natural next step: it wires a live camera feed into a MediaPipe detection graph running on QNX, building directly on the inference concepts covered here.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-09-15T15:04:18-04:00",
+  "id": "mobilenet-tflite-qnx",
+  "duration": 0,
+  "title": "Machine Learning Inference on QNX with TensorFlow Lite",
+  "authors": "Cris Sinnott",
+  "summary": "Run image classification, object detection, and semantic segmentation on QNX 8.0 using the TFLite runtime and MobileNet family models.",
+  "source": "markdown/mobilenet-tflite-qnx/mobilenet-tflite-qnx.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "ai"
+  ],
+  "tags": [
+    "intermediate"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "mobilenet-tflite-qnx"
+}

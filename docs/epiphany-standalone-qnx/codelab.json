@@ -9,7 +9,7 @@
   "title": "Building Standalone Epiphany Browser on QNX 8.0",
   "authors": "Elliott Mazzuca",
   "summary": "Running the Epiphany web browser on a minimal QNX 8.0 image without the full desktop stack",
-  "source": "./markdown/epiphany-standalone-qnx/epiphany-standalone-qnx.md",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/epiphany-standalone-qnx/epiphany-standalone-qnx.md",
   "theme": "",
   "status": [
     "published"

@@ -4,23 +4,23 @@
   "prefix": "https://storage.googleapis.com",
   "mainga": "UA-49880327-14",
   "updated": "2026-04-30T14:58:04-04:00",
-  "id": "godot-codelab",
-  "duration": 0,
-  "title": "Running Pong with Godot on QNX",
-  "authors": "Yun Lee",
-  "summary": "Running Pong with Godot on QNX",
-  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/godot-codelab/godot-codelab.md",
+  "id": "markdown-template",
+  "duration": 9,
+  "title": "Codelabs to create Codelabs",
+  "authors": "Your Team",
+  "summary": "Learn how to add new Codelabs",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/markdown-template.md",
   "theme": "",
   "status": [
     "published"
   ],
   "category": [
-    "qnx",
-    "godot"
+    "codelabs",
+    "setup"
   ],
   "tags": [
     "beginner"
   ],
   "feedback": "https://github.com/qnx/codelabs/issues",
-  "url": "godot-codelab"
+  "url": "markdown-template"
 }

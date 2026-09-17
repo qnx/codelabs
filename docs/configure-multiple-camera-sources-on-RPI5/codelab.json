@@ -3,13 +3,13 @@
   "format": "html",
   "prefix": "https://storage.googleapis.com",
   "mainga": "UA-49880327-14",
-  "updated": "2026-06-18T15:59:38-04:00",
+  "updated": "2026-09-17T10:31:55-04:00",
   "id": "configure-multiple-camera-sources-on-RPI5",
   "duration": 0,
   "title": "Configure multiple camera sources on Raspberry Pi 5",
   "authors": "Terence Ang",
-  "summary": "Learn how to configure multiple camera sources on a Pi 5 target with QNX 8.0.",
-  "source": "./markdown/configure-multiple-cameras-on-rpi5/configure-multiple-cameras-on-rpi5.md",
+  "summary": "Learn how to configure multiple camera sources on a Raspberry Pi 5 target with QNX 8.0.",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/configure-multiple-cameras-on-rpi5/configure-multiple-cameras-on-rpi5.md",
   "theme": "",
   "status": [
     "published"

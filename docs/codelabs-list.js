@@ -5,7 +5,7 @@ window.CODELABS = [
     "id": "apk-based-cross-compile",
     "authors": "Aaron Bassett",
     "summary": "Simplify QNX cross-compilation with prebuilt open source packages. Use apk-tools to manage dependencies, wire to qcc, and build C & GTK4 applications.",
-    "updated": "2026-07-23T09:58:21-04:00",
+    "updated": "2026-07-27T14:30:26-04:00",
     "category": [
       "qnx",
       "porting",
@@ -21,7 +21,7 @@ window.CODELABS = [
     "id": "build-maelstrom-on-qnx",
     "authors": "Roberto Speranza",
     "summary": "Learn how to modify and build the game Maelstrom on QNX",
-    "updated": "2026-04-30T14:58:04-04:00",
+    "updated": "2026-07-27T14:36:44-04:00",
     "category": [
       "self-hosting",
       "sdlgames"

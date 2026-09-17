@@ -9,7 +9,7 @@
   "title": "Building Maelstrom on QNX",
   "authors": "Roberto Speranza",
   "summary": "Learn how to modify and build the game Maelstrom on QNX",
-  "source": "./markdown/build-maelstrom-on-qnx/build-maelstrom-on-qnx.md",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/build-maelstrom-on-qnx/build-maelstrom-on-qnx.md",
   "theme": "",
   "status": [
     "published"

@@ -9,7 +9,7 @@
   "title": "Porting Alpine Packages to QNX 8.0 with Claude Code",
   "authors": "Elliott Mazzuca",
   "summary": "Set up a Claude Code workspace with a structured skill hierarchy, point it at a QNX 8.0 target, and have it port Alpine Linux packages for you with a single instruction",
-  "source": "./markdown/qnx-porting-with-claude-code/qnx-porting-with-claude-code.md",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/qnx-porting-with-claude-code/qnx-porting-with-claude-code.md",
   "theme": "",
   "status": [
     "published"

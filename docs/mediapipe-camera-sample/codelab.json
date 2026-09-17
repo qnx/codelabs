@@ -3,13 +3,13 @@
   "format": "html",
   "prefix": "https://storage.googleapis.com",
   "mainga": "UA-49880327-14",
-  "updated": "2026-06-19T17:30:20-07:00",
+  "updated": "2026-06-20T19:56:29-04:00",
   "id": "mediapipe-camera-sample",
   "duration": 63,
   "title": "MediaPipe Camera Sample",
   "authors": "Ethan Leir",
   "summary": "Write a camera application with MediaPipe and native QNX APIs",
-  "source": "./markdown/mediapipe-camera-sample/mediapipe-camera-sample.md",
+  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/mediapipe-camera-sample/mediapipe-camera-sample.md",
   "theme": "",
   "status": [
     "published"

@@ -142,6 +142,21 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Machine Learning Inference on QNX with TensorFlow Lite",
+    "href": "mobilenet-tflite-qnx/index.html",
+    "id": "mobilenet-tflite-qnx",
+    "authors": "Cris Sinnott",
+    "summary": "Run image classification, object detection, and semantic segmentation on QNX 8.0 using the TFLite runtime and MobileNet family models.",
+    "updated": "2026-09-15T11:32:03-04:00",
+    "category": [
+      "qnx",
+      "ai"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "Porting an Alpine Linux Package to QNX 8.0",
     "href": "porting-alpine-package-qnx/index.html",
     "id": "porting-alpine-package-qnx",

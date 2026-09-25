@@ -1,4 +1,3 @@
-
 id: claude-code
 title: Use Claude Code on QNX Developer Desktop
 summary: Learn how to leverage Claude Code for target-aware AI development on QNX 8.
@@ -17,7 +16,7 @@ Duration: 1:00
 
 This codelab walks you through the process of installing Claude Code on the QNX Developer Desktop.
 
-It is based on this repo: https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md
+This codelab follows the [`claude-code-qnx` installation guide](https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md).
 
 ### AI Coding on the Target
 
@@ -46,12 +45,27 @@ _When you're ready, please continue._
 
 ---
 
+## How Claude Code runs on QNX
+Duration: 1:00
+
+A quick note on what you're about to install, because it is not the stock package.
+
+The official Claude Code is distributed as a single self-contained binary built with the [Bun](https://bun.sh) runtime. Bun has not been ported to QNX, so that stock binary does not run here. The Claude Code *application* itself is just JavaScript, though, and QNX does have Node.js.
+
+The [`claude-code-qnx`](https://github.com/qnx/claude-code-qnx) project bridges that gap. It extracts the JavaScript application out of the official Bun binary and runs it under QNX's Node.js, with a small compatibility shim that reimplements the handful of Bun-specific APIs the app expects. The `claude-qnx` launcher runs the extracted application on your QNX target.
+
+In the next steps you'll install Node.js, then set up Claude Code by following that project's instructions.
+
+_Next up: install Node.js._
+
+---
+
 ## Install Node.js
 Duration: 2:00
 
-Tools like Claude Code are based on Node.js and can be installed with NPM. So first, we have to install Node.js and NPM on our target.
+Claude Code runs on Node.js, so first install Node.js and npm on your target.
 
-1. On your QNX target, open a terminal (can be on the Desktop or SSH, for example) and run:
+1. On your QNX target, open a terminal (on the Desktop or over SSH, for example) and run:
     ```bash
     sudo apk update
     sudo apk add npm
@@ -59,7 +73,7 @@ Tools like Claude Code are based on Node.js and can be installed with NPM. So fi
 
     (The default password for `sudo` is `qnxuser`.) You should see a successful installation of several packages, including `node`.
 
-2. Configure npm to install global packages without root, do so now:
+2. Configure npm to install global packages without root:
 
     ```sh
     npm config set prefix '~/.local'
@@ -70,54 +84,51 @@ Tools like Claude Code are based on Node.js and can be installed with NPM. So fi
     node -v
     ```
 
-_Next up: install Claude Code._
+    Confirm it reports version 18 or later.
+
+_Next up: set up Claude Code for QNX._
 
 ---
 
-## Install Claude Code
+## Set up Claude Code for QNX
+Duration: 4:00
+
+Use the [`claude-code-qnx`](https://github.com/qnx/claude-code-qnx) project to install Claude Code on your QNX target.
+
+1. Open the project's [`README.md`](https://github.com/qnx/claude-code-qnx).
+
+2. Follow the README's set up instructions in the linked [`INSTALL.md`](https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md). For **Step 2: Extract the JavaScript bundle**, use the following command in place of `node extract.js --latest`:
+
+    ```bash
+    cd /usr/lib/claude-code
+    node extract.js --version 2.1.196
+    ```
+
+    Continue with the installation guide's remaining steps. If you repeat extraction during troubleshooting, use version `2.1.196` again.
+
+3. When you finish, confirm the launcher runs:
+    ```bash
+    claude-qnx --version
+    ```
+
+> If a step gives you trouble, the project's installation guide includes a troubleshooting section covering the most common issues.
+
+_Next up: run Claude Code and log in._
+
+---
+
+## Run Claude Code
 Duration: 3:00
 
-1. Clone this repository directly on your QNX system and take ownership of the install directory:
-
-    ```sh
-    sudo git clone https://github.com/qnx/claude-code-qnx.git /usr/lib/claude-code
-    sudo chown -R $(whoami) /usr/lib/claude-code
-    ```
-
-2. Extract the JavaScript bundle: Claude Code's application code is distributed inside the official Linux Bun binary. You need to extract it once (and re-run this step whenever Anthropic releases a new version).
-
-    ```sh
-    cd /usr/lib/claude-code
-    node extract.js --latest
-    ```
-
-    This produces `claude-code.js` (~14 MB) in the install directory. It is not committed to this repo because it is a generated artifact that must be refreshed on each Claude Code release.
-
-3. Install npm dependencies
-
-    ```sh
-    cd /usr/lib/claude-code
-    npm install
-    ```
-
-4. Add `claude-qnx` to your PATH
-
-    ```sh
-    sudo chmod +x /usr/lib/claude-code/claude-qnx
-    sudo ln -s /usr/lib/claude-code/claude-qnx /usr/bin/claude-qnx
-    ```
-
-5. Navigate to a directory you trust (empty or with a project in it) and run Claude Code:
-
-    ```sh
-    cd myProjectHere/
-    claude-qnx --version
+1. Navigate to a directory you trust (empty or with a project in it) and launch Claude Code with the QNX launcher:
+    ```bash
+    cd myProject/
     claude-qnx
     ```
 
 The Claude Code interface should launch and guide you through the setup process. You may be asked to trust the current working directory and to log in to your Claude account.
 
-If you are not prompted to log in, you can use the Claude command `/login`, where you can authenticate using a browser or by providing an API key.
+If you are not prompted to log in, you can use the Claude command `/login`, where you can authenticate using a browser or by providing an API key. You can also set an `ANTHROPIC_API_KEY` environment variable in your shell profile ahead of time if you prefer.
 
 _Next up: give Claude some QNX tips._
 
@@ -165,4 +176,3 @@ We'd love to hear about what you're creating on QNX or if you've found interesti
 * on [Reddit](https://www.reddit.com/r/qnx)
 
 _See you there—_
-

@@ -3,13 +3,13 @@
   "format": "html",
   "prefix": "https://storage.googleapis.com",
   "mainga": "UA-49880327-14",
-  "updated": "2026-06-20T19:56:29-04:00",
+  "updated": "2026-09-25T15:20:24-04:00",
   "id": "claude-code",
-  "duration": 12,
+  "duration": 17,
   "title": "Use Claude Code on QNX Developer Desktop",
   "authors": "QNX Developer Relations",
   "summary": "Learn how to leverage Claude Code for target-aware AI development on QNX 8.",
-  "source": "/Users/jhanam/dev/codelabs-qnx/markdown/claude-code/claude-code.md",
+  "source": "./markdown/claude-code/claude-code.md",
   "theme": "",
   "status": [
     "published"

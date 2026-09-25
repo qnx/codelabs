@@ -41,7 +41,7 @@
     
       <google-codelab-step label="Welcome" duration="1">
         <p>This codelab walks you through the process of installing Claude Code on the QNX Developer Desktop.</p>
-<p>It is based on this repo: https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md</p>
+<p>This codelab follows the <a href="https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md" target="_blank"><code>claude-code-qnx</code> installation guide</a>.</p>
 <h2 is-upgraded>AI Coding on the Target</h2>
 <p>Agentic coding tools are even more effective for embedded project development when they run directly on the target system. With Claude Code running on your target, you can use it to build, deploy, test, debug, and monitor processes.</p>
 <p>This codelab leaves you with a working Claude Code installation, and a sample additional system prompt you can use to make the tool more aware of the QNX system. Out of the box, these tools have a strong knowledge of QNX systems already, so you don&#39;t have to do additional work to teach them about using QNX shell commands or QNX APIs.</p>
@@ -64,51 +64,62 @@
 
       </google-codelab-step>
     
-      <google-codelab-step label="Install Node.js" duration="2">
-        <p>Tools like Claude Code are based on Node.js and can be installed with NPM. So first, we have to install Node.js and NPM on our target.</p>
-<ol type="1">
-<li>On your QNX target, open a terminal (can be on the Desktop or SSH, for example) and run:<pre><code language="language-bash" class="language-bash">sudo apk update
-sudo apk add npm
-</code></pre>
-(The default password for <code>sudo</code> is <code>qnxuser</code>.) You should see a successful installation of several packages, including <code>node</code>.</li>
-<li>Configure npm to install global packages without root, do so now:<pre><code language="language-sh" class="language-sh">npm config set prefix &#39;~/.local&#39;
-</code></pre>
-</li>
-<li>Test your Node.js installation:<pre><code language="language-bash" class="language-bash">node -v
-</code></pre>
-</li>
-</ol>
-<p><em>Next up: install Claude Code.</em></p>
+      <google-codelab-step label="How Claude Code runs on QNX" duration="1">
+        <p>A quick note on what you&#39;re about to install, because it is not the stock package.</p>
+<p>The official Claude Code is distributed as a single self-contained binary built with the <a href="https://bun.sh" target="_blank">Bun</a> runtime. Bun has not been ported to QNX, so that stock binary does not run here. The Claude Code <em>application</em> itself is just JavaScript, though, and QNX does have Node.js.</p>
+<p>The <a href="https://github.com/qnx/claude-code-qnx" target="_blank"><code>claude-code-qnx</code></a> project bridges that gap. It extracts the JavaScript application out of the official Bun binary and runs it under QNX&#39;s Node.js, with a small compatibility shim that reimplements the handful of Bun-specific APIs the app expects. The <code>claude-qnx</code> launcher runs the extracted application on your QNX target.</p>
+<p>In the next steps you&#39;ll install Node.js, then set up Claude Code by following that project&#39;s instructions.</p>
+<p><em>Next up: install Node.js.</em></p>
 
 
       </google-codelab-step>
     
-      <google-codelab-step label="Install Claude Code" duration="3">
+      <google-codelab-step label="Install Node.js" duration="2">
+        <p>Claude Code runs on Node.js, so first install Node.js and npm on your target.</p>
+<ol type="1">
+<li>On your QNX target, open a terminal (on the Desktop or over SSH, for example) and run:<pre><code language="language-bash" class="language-bash">sudo apk update
+sudo apk add npm
+</code></pre>
+(The default password for <code>sudo</code> is <code>qnxuser</code>.) You should see a successful installation of several packages, including <code>node</code>.</li>
+<li>Configure npm to install global packages without root:<pre><code language="language-sh" class="language-sh">npm config set prefix &#39;~/.local&#39;
+</code></pre>
+</li>
+<li>Test your Node.js installation:<pre><code language="language-bash" class="language-bash">node -v
+</code></pre>
+Confirm it reports version 18 or later.</li>
+</ol>
+<p><em>Next up: set up Claude Code for QNX.</em></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Set up Claude Code for QNX" duration="4">
+        <p>Use the <a href="https://github.com/qnx/claude-code-qnx" target="_blank"><code>claude-code-qnx</code></a> project to install Claude Code on your QNX target.</p>
+<ol type="1">
+<li>Open the project&#39;s <a href="https://github.com/qnx/claude-code-qnx" target="_blank"><code>README.md</code></a>.</li>
+<li>Follow the README&#39;s set up instructions in the linked <a href="https://github.com/qnx/claude-code-qnx/blob/main/INSTALL.md" target="_blank"><code>INSTALL.md</code></a>. For <strong>Step 2: Extract the JavaScript bundle</strong>, use the following command in place of <code>node extract.js --latest</code>:<pre><code language="language-bash" class="language-bash">cd /usr/lib/claude-code
+node extract.js --version 2.1.196
+</code></pre>
+Continue with the installation guide&#39;s remaining steps. If you repeat extraction during troubleshooting, use version <code>2.1.196</code> again.</li>
+<li>When you finish, confirm the launcher runs:<pre><code language="language-bash" class="language-bash">claude-qnx --version
+</code></pre>
+</li>
+</ol>
+<p>If a step gives you trouble, the project&#39;s installation guide includes a troubleshooting section covering the most common issues.</p>
+<p><em>Next up: run Claude Code and log in.</em></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Run Claude Code" duration="3">
         <ol type="1">
-<li>Clone this repository directly on your QNX system and take ownership of the install directory:<pre><code language="language-sh" class="language-sh">sudo git clone https://github.com/qnx/claude-code-qnx.git /usr/lib/claude-code
-sudo chown -R $(whoami) /usr/lib/claude-code
-</code></pre>
-</li>
-<li>Extract the JavaScript bundle: Claude Code&#39;s application code is distributed inside the official Linux Bun binary. You need to extract it once (and re-run this step whenever Anthropic releases a new version).<pre><code language="language-sh" class="language-sh">cd /usr/lib/claude-code
-node extract.js --latest
-</code></pre>
-This produces <code>claude-code.js</code> (~14 MB) in the install directory. It is not committed to this repo because it is a generated artifact that must be refreshed on each Claude Code release.</li>
-<li>Install npm dependencies<pre><code language="language-sh" class="language-sh">cd /usr/lib/claude-code
-npm install
-</code></pre>
-</li>
-<li>Add <code>claude-qnx</code> to your PATH<pre><code language="language-sh" class="language-sh">sudo chmod +x /usr/lib/claude-code/claude-qnx
-sudo ln -s /usr/lib/claude-code/claude-qnx /usr/bin/claude-qnx
-</code></pre>
-</li>
-<li>Navigate to a directory you trust (empty or with a project in it) and run Claude Code:<pre><code language="language-sh" class="language-sh">cd myProjectHere/
-claude-qnx --version
+<li>Navigate to a directory you trust (empty or with a project in it) and launch Claude Code with the QNX launcher: <pre><code language="language-bash" class="language-bash">cd myProject/
 claude-qnx
 </code></pre>
 </li>
 </ol>
 <p>The Claude Code interface should launch and guide you through the setup process. You may be asked to trust the current working directory and to log in to your Claude account.</p>
-<p>If you are not prompted to log in, you can use the Claude command <code>/login</code>, where you can authenticate using a browser or by providing an API key.</p>
+<p>If you are not prompted to log in, you can use the Claude command <code>/login</code>, where you can authenticate using a browser or by providing an API key. You can also set an <code>ANTHROPIC_API_KEY</code> environment variable in your shell profile ahead of time if you prefer.</p>
 <p><em>Next up: give Claude some QNX tips.</em></p>
 
 

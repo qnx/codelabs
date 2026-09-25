@@ -36,7 +36,7 @@ window.CODELABS = [
     "id": "claude-code",
     "authors": "QNX Developer Relations",
     "summary": "Learn how to leverage Claude Code for target-aware AI development on QNX 8.",
-    "updated": "2026-06-19T17:30:20-07:00",
+    "updated": "2026-09-25T15:20:24-04:00",
     "category": [
       "ai"
     ],
@@ -50,7 +50,7 @@ window.CODELABS = [
     "id": "codelab-to-create-codelab",
     "authors": "Shweta Mazumder",
     "summary": "Learn how to contribute to QNX Codelabs",
-    "updated": "2026-05-06T09:38:34-04:00",
+    "updated": "2026-06-19T20:30:04-04:00",
     "category": [
       "codelabs",
       "setup"
@@ -64,8 +64,8 @@ window.CODELABS = [
     "href": "configure-multiple-camera-sources-on-RPI5/index.html",
     "id": "configure-multiple-camera-sources-on-RPI5",
     "authors": "Terence Ang",
-    "summary": "Learn how to configure multiple camera sources on a Pi 5 target with QNX 8.0.",
-    "updated": "2026-06-18T15:59:38-04:00",
+    "summary": "Learn how to configure multiple camera sources on a Raspberry Pi 5 target with QNX 8.0.",
+    "updated": "2026-09-17T10:31:55-04:00",
     "category": [
       "codelabs",
       "setup",
@@ -124,12 +124,27 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Codelabs to create Codelabs",
+    "href": "markdown-template/index.html",
+    "id": "markdown-template",
+    "authors": "Your Team",
+    "summary": "Learn how to add new Codelabs",
+    "updated": "2026-04-30T14:58:04-04:00",
+    "category": [
+      "codelabs",
+      "setup"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  },
+  {
     "title": "MediaPipe Camera Sample",
     "href": "mediapipe-camera-sample/index.html",
     "id": "mediapipe-camera-sample",
     "authors": "Ethan Leir",
     "summary": "Write a camera application with MediaPipe and native QNX APIs",
-    "updated": "2026-06-19T17:30:20-07:00",
+    "updated": "2026-06-20T19:56:29-04:00",
     "category": [
       "qnx",
       "mediapipe",
@@ -147,7 +162,7 @@ window.CODELABS = [
     "id": "porting-alpine-package-qnx",
     "authors": "Elliott Mazzuca",
     "summary": "A step-by-step guide to porting an existing Alpine Linux package (APKBUILD) to the QNX aports repository, using gtk4 as the worked example",
-    "updated": "2026-06-18T15:59:38-04:00",
+    "updated": "2026-06-19T20:30:04-04:00",
     "category": [
       "qnx",
       "alpine",
@@ -216,7 +231,7 @@ window.CODELABS = [
     "id": "running-llama-cpp-qnx",
     "authors": "Elliott Mazzuca",
     "summary": "Install the llama.cpp packages on QNX 8.0, set up a Vulkan-capable QEMU target, load a model, and run LLM inference on CPU and on the GPU",
-    "updated": "2026-06-20T16:56:29-07:00",
+    "updated": "2026-06-20T19:56:29-04:00",
     "category": [
       "qnx",
       "llama.cpp",

@@ -63,19 +63,55 @@ This step is optional, but highly recommended so you can fully render and previe
     git clone https://github.com/qnx/tools.git
     ```
 
-2. Navigate to the `claat` directory:
+4. Navigate to the `claat` directory:
 
     ```bash
     cd tools/claat
     ```
 
-3. Use `go` to build Claat:
+5. Patch the paths using below patch before installation
+    ```
+    cd tools
+    patch -p1 -i template.patch
+    ```
+
+    The suggested template.patch is as follows:
+    ```bash
+    --- a/claat/render/template.html
+    +++ b/claat/render/template.html
+    @@ -24,7 +24,7 @@ the License.
+ 
+       <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+       <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+    -  <link rel="stylesheet" href="{{.Prefix}}/claat-public/codelab-elements.css">
+    +  <link rel="stylesheet" href="../js/codelab-elements.css">
+ 
+       <!-- your custom override CSS -->
+       <style>
+    @@ -59,10 +59,10 @@ the License.
+         {{end}}{{end}}
+       </google-codelab>
+ 
+    -  <script src="{{.Prefix}}/claat-public/native-shim.js"></script>
+    -  <script src="{{.Prefix}}/claat-public/custom-elements.min.js"></script>
+    -  <script src="{{.Prefix}}/claat-public/prettify.js"></script>
+    -  <script src="{{.Prefix}}/claat-public/codelab-elements.js"></script>
+    +  <script src="../js/native-shim.js"></script>
+    +  <script src="../js/custom-elements.min.js"></script>
+    +  <script src="../js/prettify.js"></script>
+    +  <script src="../js/codelab-elements.js"></script>
+       <script src="//support.google.com/inapp/api.js"></script>
+ 
+       <script>
+    ```
+
+6. Use `go` to build Claat:
 
     ```bash
     go install
     ```
 
-4. Verify go and Claat are now working correctly in your terminal:
+7. Verify go and Claat are now working correctly in your terminal:
    ```bash
    go version
    claat --help

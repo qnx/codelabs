@@ -29,15 +29,22 @@ the specifics of the mediapipe APIs.
 ## Set Up Environment
 Duration: 1:00
 
-> aside positive
->
-> To follow these exact instructions for sensor framework, you will need a [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) with a [Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/).
+Use a [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) with a
+[Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/)
+and a QNX 8.0.5 QSTI aarch64 image. See the
+[QNX Self-hosted Developer Desktop guide](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html)
+for setup instructions. Keep the package repositories supplied with the image;
+do not add the incompatible QNX 8.0.4 `qnx-extra` repository.
 
-Get started on the [QNX 8.0 Self-hosted Developer Desktop](https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.qdd/topic/about.html).
+Connect Camera Module 3 to **DISP0** with the Pi powered off, and connect a display
+for the live camera example. The image must provide QNX Screen, the Raspberry Pi
+graphics stack and the QNX Sensor Framework. In this image's
+`/etc/config/sensor/sensor_rpi5.conf`, **camera unit 3** is the Camera Module 3 NV12
+stream on DISP0. Unit numbers come from the configuration, not the connector labels.
 
 Install the required dependencies:
 ```bash
-sudo apk add bazel6 cmake ninja opencv-dev qnx-sensor-framework-dev
+sudo apk add bazel6 cmake ninja opencv-dev qnx-sf-base-dev
 ```
 
 ---
@@ -50,6 +57,17 @@ Start by cloning MediaPipe,
 git clone https://github.com/qnx-ports/mediapipe.git --branch qnx-v0.10.26
 cd mediapipe
 ```
+
+When using Clang 22, make its resource directory available at the path expected
+by the build. If `/usr/lib/clang/22` does not already exist, run:
+
+```bash
+sudo mkdir -p /usr/lib/clang
+sudo ln -s /usr/lib/llvm22/lib/clang/22 /usr/lib/clang/22
+```
+
+The link target must exist. If `/usr/lib/clang/22` already exists, check that it
+resolves to `/usr/lib/llvm22/lib/clang/22` instead of replacing it.
 
 Then, build MediaPipe's QNX examples for cpu:
 ```bash
@@ -79,15 +97,33 @@ bazel build -c opt \
    ${bazeltarget}
 ```
 
-Finally, run the example:
+Before running the example, check the camera configuration and service:
+
+```bash
+ls -l /etc/config/sensor/sensor_rpi5.conf
+sudo pidin ar | grep '[s]ensor'
+waitfor /dev/sensor/camera3 10
+ls -l /dev/sensor/camera3
+```
+
+The sensor service should use `/etc/config/sensor/sensor_rpi5.conf`. If these
+checks succeed, continue without restarting it. If the configuration or device
+is missing, check the image version, DISP0 connection and sensor startup diagnostics.
+
+Run the example with the physical camera selected explicitly:
+
 ```bash
 ./bazel-bin/mediapipe/examples/qnx/face_detection/face_detection_cpu \
+    --camera_unit=3 \
     --calculator_graph_config_file=./mediapipe/graphs/face_detection/face_detection_desktop_live.pbtxt
 ```
+
+Place a face in view and check that the window shows the camera image with face
+annotations. Use `--camera_unit=3` when running the GPU example on the same camera
+configuration as well. The following sections explain the camera and display code.
 You can find the expected command line arguments in
 [their respective BUILD files](https://github.com/qnx-ports/mediapipe/blob/qnx-v0.10.26/mediapipe/examples/qnx/face_detection/BUILD).
 
-And that's it!
 
 ## Overview
 Duration: 2:00
@@ -141,80 +177,43 @@ typedef struct mp_camera_info {
 } mp_camera_info_t;
 ```
 
-But what is a camera unit? Running the following command:
+A camera unit identifies a source in the sensor service's configuration. Inspect
+the running service to find the configuration passed with its `-c` argument:
 
 ```bash
-$ sudo pidin ar | grep "sensor"
-  860196 sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/sensor/sensor_demo.conf
- 1204266 grep --color=auto sensor
+sudo pidin ar | grep '[s]ensor'
+cat /etc/config/sensor/sensor_rpi5.conf
 ```
-You will see that when the `sensor` service was started, it was provided a
-path to a configuration file with its `-c` flag. Opening up this configuration
-file we see the contents:
-```
-begin SENSOR_GLOBAL
-    external_platform_library_path = libsensor_platform_broadcom_rpi5.so
-    external_platform_library_variant = PLATFORM_VARIANT_BCM2712
-end SENSOR_GLOBAL
 
-begin SENSOR_UNIT_1
-    type = simulator_camera
-    name = front
-    position = 0, 0, 0
-    direction = 0, 0, 0
-    default_video_resolution = 1280, 720
-    default_video_format = ycbycr
-    num_user_buffers = 4
-end SENSOR_UNIT_1
-```
-The important thing here is the field starting with `begin SENSOR_UNIT_1`.
-This is your camera unit, which has the value 1 when interpreted as a literal.
-Another thing you will notice is that it explicitly states some properties, most
-notably a `default_video_format`, which is one of the formats we will need to
-handle in our code, but more on that later.
+On the QNX 8.0.5 QSTI Raspberry Pi 5 image, the default service uses
+`/etc/config/sensor/sensor_rpi5.conf`. That configuration includes a simulator as
+unit 1, file playback as unit 2, and the physical Camera Module 3 on DISP0 as unit 3.
+The relevant camera section is:
 
-This default configuration exists to give you an output of coloured bars if you
-have no physical camera. But we have a Camera Module 3, so we need to point
-sensor service at a different configuration. You will find that the
-`/system/etc/config/sensor` directory contains configurations for various
-cameras. We care about `/system/etc/config/sensor/camera_module3.conf`:
-```
-begin SENSOR_GLOBAL
-    external_platform_library_path = libsensor_platform_broadcom_rpi5.so
-    external_platform_library_variant = PLATFORM_VARIANT_BCM2712
-end SENSOR_GLOBAL
-
-begin SENSOR_UNIT_1
+```text
+begin SENSOR_UNIT_3
     type = external_camera
     name = imx708
-    address = /system/lib/libimx708_external_camera.so,1
+    address = /usr/lib/libimx708_external_camera.so,1
     use_hardware_capture = true
     i2c_path = /dev/i2c6
     default_video_format = nv12
-end SENSOR_UNIT_1
-
-begin INTERIM_DATA_UNIT_1
-    num_buffers = 5
-    buffer_size = 8096
-    queue_depth = 1
-    data_format = SENSOR_FORMAT_ISP_TUNING_REQUEST
-    name = tuning_requests
-end INTERIM_DATA_UNIT_1
-
-begin ISP_TUNING_1
-    request_interim_data_unit = INTERIM_DATA_UNIT_1
-    sensor_units = SENSOR_UNIT_1
-end ISP_TUNING_1
+    default_video_resolution = 2304, 1296
+    default_video_framerate = 30
+    algorithm_config = /etc/config/sensor/rpi5/rpi5_algorithm_imx708.json, imx708
+end SENSOR_UNIT_3
 ```
-Note down that the camera unit here still has the literal value 1, and the video
-format is nv12.
 
-To point sensor service at the new config, we need restart the sensor service
-using the PID that we got from the above `pidin` command:
-```bash
-sudo slay 860196
-sudo sensor -U 521:521 -b external -r /data/share/sensor -c /system/etc/config/sensor/camera_module3.conf
-```
+`SENSOR_UNIT_3` gives the camera unit its numeric value, 3. The
+`default_video_format` is NV12, the format handled by the camera sink below.
+This is an excerpt for understanding the existing configuration; keep the full
+configuration supplied with the image. The default service already supports
+this camera, so no configuration replacement or service restart is needed when
+the setup checks succeed.
+
+Other images or camera connections can use different units. Check the active
+configuration and select the physical camera's NV12 stream explicitly instead of
+assuming that the first available unit is the camera you connected.
 
 Now, we need some way for the user to choose which camera unit to use as input
 to the program. [Abseil Flags](https://abseil.io/docs/cpp/guides/flags) provides
@@ -237,15 +236,11 @@ mp_camera_info_t ci = {};
 MP_RETURN_IF_ERROR(InitCameraSink(ci, (camera_unit_t)camera_unit_long, save_video));
 ```
 
-You'll notice that the default camera unit is an invalid value. Typically,
-across our sensor samples, not choosing a camera unit is considered a fatal
-error. When writing this, I chose to be more permissive, and allow users to
-enter nothing to indicate the "preferred" camera unit. But, you'll notice that
-sensor framework doesn't have a concept of a "preferred" camera unit. Instead,
-we're going to add some code to assume what you want is the first available
-camera unit, and output a warning in case that isn't what you want. You'll find
-that in a lot of the configurations that come with the QNX Developer Desktop,
-there is only one camera unit, so this is a safe assumption to make.
+The flag defaults to `CAMERA_UNIT_INVALID`. The code below handles an omitted or
+invalid selection by choosing the first available camera unit and logging a warning.
+That fallback can select a simulator or file source when several units are configured;
+it does not identify the physical camera or guarantee an NV12 stream. For the setup
+in this codelab, pass `--camera_unit=3` to select Camera Module 3 explicitly.
 ```c++
 std::vector<camera_unit_t> QueryCameraUnits() {
   std::vector<camera_unit_t> result;

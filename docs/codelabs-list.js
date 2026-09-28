@@ -139,6 +139,24 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Run MediaPipe face detection from a QNX camera with Python",
+    "href": "mediapipe-camera-python/index.html",
+    "id": "mediapipe-camera-python",
+    "authors": "Elliott Mazzuca",
+    "summary": "Install prebuilt MediaPipe on QNX and run live face detection with Raspberry Pi Camera Module 3.",
+    "updated": "2026-09-28T09:57:50-04:00",
+    "category": [
+      "qnx",
+      "mediapipe",
+      "qnx-sensor-framework",
+      "ai",
+      "camera"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "MediaPipe Camera Sample",
     "href": "mediapipe-camera-sample/index.html",
     "id": "mediapipe-camera-sample",
@@ -154,6 +172,21 @@ window.CODELABS = [
     ],
     "tags": [
       "advanced"
+    ]
+  },
+  {
+    "title": "Run MobileNet Inference on QNX with TensorFlow Lite",
+    "href": "mobilenet-tflite-qnx/index.html",
+    "id": "mobilenet-tflite-qnx",
+    "authors": "Cris Sinnott",
+    "summary": "Run image classification, object detection, and semantic segmentation on QNX 8.0 using the TFLite runtime and MobileNet family models.",
+    "updated": "2026-09-28T10:21:37-04:00",
+    "category": [
+      "qnx",
+      "ai"
+    ],
+    "tags": [
+      "intermediate"
     ]
   },
   {

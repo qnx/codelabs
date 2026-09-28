@@ -1,0 +1,223 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Run MediaPipe face detection from a QNX camera with Python</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="../js/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="mediapipe-camera-python"
+                  title="Run MediaPipe face detection from a QNX camera with Python"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="2">
+        <p>This guide shows how to run a MediaPipe application on QNX using the prebuilt Python package. It focuses on the QNX camera and display integration, not on teaching MediaPipe itself. Refer to the <a href="https://ai.google.dev/edge/mediapipe/solutions/guide" target="_blank">official MediaPipe documentation</a> for details about its APIs and models.</p>
+<p>You will run face detection from a Raspberry Pi Camera Module 3, save an annotated frame, then show the live result through QNX Screen with SDL&#39;s hardware-accelerated OpenGL ES renderer.</p>
+<p>This is the short Python path. The existing <a href="https://qnx.github.io/codelabs/mediapipe-camera-sample/" target="_blank">MediaPipe Camera Sample</a> remains available if you want to build the C++ examples from source.</p>
+<h2 is-upgraded>What you&#39;ll build</h2>
+<p>The data path has four parts:</p>
+<ol type="1">
+<li>The QNX Camera Library captures frames from the Raspberry Pi Camera Module 3. This codelab uses the camera&#39;s NV12 output, and the companion helper intentionally handles NV12 for this sample. It uses event mode, validates the native buffer ABI and returned format, and bounds each frame wait with the documented QNX pulse timeout APIs. Other Camera Library formats and capabilities are outside this codelab.</li>
+<li>OpenCV converts NV12 to RGB and draws face boxes. The live demo also draws facial keypoints.</li>
+<li>MediaPipe Tasks runs the BlazeFace short-range face detector. MediaPipe is the perception layer; it does not open the camera on this target.</li>
+<li>PySDL2 sends the annotated RGB frames to SDL&#39;s exact <code>opengles2</code> renderer through QNX Screen. The demo checks the renderer name and acceleration flag, then prints the GPU identity for you to verify. It does not silently fall back to SDL&#39;s software renderer.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Prerequisites" duration="3">
+        <p>Use a <a href="https://www.raspberrypi.com/products/raspberry-pi-5/" target="_blank">Raspberry Pi 5</a> with a <a href="https://www.raspberrypi.com/products/camera-module-3/" target="_blank">Raspberry Pi Camera Module 3</a>.</p>
+<p>The following platform components must already be present in the target image; this codelab does not install them:</p>
+<ul>
+<li>A QNX 8.0.5 QSTI aarch64 image for Raspberry Pi 5 with its matching QNX APK repositories. Keep the repository configuration supplied with that image. It includes older core/extra fallback repositories; do not add the incompatible old 8.0.4 <code>qnx-extra</code> repository.</li>
+<li>The QNX Sensor Framework, which exposes the Raspberry Pi Camera Module 3 to the Camera Library through the image&#39;s <code>/etc/config/sensor/sensor_rpi5.conf</code> configuration.</li>
+<li>QNX Screen with the Raspberry Pi graphics stack, which SDL uses to create the live window.</li>
+<li>A display connected to the Pi for the live step.</li>
+<li>Network access from the target to its APK repositories and Google Cloud Storage.</li>
+<li>A shell on the target with <code>sudo</code> access.</li>
+</ul>
+<p>Connect Camera Module 3 to <strong>DISP0</strong> with the Pi powered off. These instructions and both companion demos select <strong>camera unit 3</strong>, as configured in the QNX 8.0.5 QSTI image. Camera unit numbers depend on the image and configuration; they are not physical connector numbers. The helper requires NV12 and rejects other frame formats.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Install MediaPipe and the display dependencies" duration="4">
+        <p>On the QNX target, install MediaPipe, SDL, and the small tools used by the codelab:</p>
+<pre><code language="language-bash" class="language-bash">sudo apk update
+sudo apk add mediapipe python3-pip curl sdl2-compat
+python3 -m pip install PySDL2==0.9.17 --break-system-packages
+</code></pre>
+<p>The <code>mediapipe</code> package supplies the MediaPipe Tasks Python API and its OpenCV and NumPy dependencies. <code>sdl2-compat</code> supplies the QNX SDL library; PySDL2 is its Python binding.</p>
+<p>Check the imports before continuing:</p>
+<pre><code language="language-bash" class="language-bash">python3 -c &#39;import cv2, mediapipe, numpy, sdl2; print(&#34;OpenCV&#34;, cv2.__version__, &#34;MediaPipe&#34;, mediapipe.__version__, &#34;NumPy&#34;, numpy.__version__, &#34;PySDL2&#34;, sdl2.__version__)&#39;
+</code></pre>
+<p>Example output (package versions may vary):</p>
+<pre><code language="language-text" class="language-text">OpenCV 4.12.0 MediaPipe 0.10.26 NumPy 2.4.1 PySDL2 0.9.17
+</code></pre>
+<p>Repository updates may provide newer compatible versions.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Get the companion files and face model" duration="4">
+        <p>Create a workspace and download the companion archive:</p>
+<pre><code language="language-bash" class="language-bash">mkdir -p ~/mediapipe-camera-python
+cd ~/mediapipe-camera-python
+curl --fail --location \
+  https://raw.githubusercontent.com/qnx/codelabs/main/markdown/mediapipe-camera-python/mediapipe-camera-python-companion.tar.gz \
+  --output companion.tar.gz
+tar -xzf companion.tar.gz
+ls qnx_camera_helper.py demo_capture_faces.py demo_display_faces.py
+</code></pre>
+<p>The <code>ls</code> command should print all three file names. The demos import <code>qnx_camera_helper.py</code>; you do not need to build any native code.</p>
+<p>You are still in <code>~/mediapipe-camera-python</code>, so <code>mkdir -p models</code> creates <code>~/mediapipe-camera-python/models</code>. Download the versioned MediaPipe BlazeFace short-range model there and verify its checksum:</p>
+<pre><code language="language-bash" class="language-bash">mkdir -p models
+curl --fail --location \
+  https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite \
+  --output models/blaze_face_short_range.tflite
+printf &#39;%s  %s\n&#39; \
+  b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f \
+  models/blaze_face_short_range.tflite | sha256sum -c -
+</code></pre>
+<p>Expected output:</p>
+<pre><code language="language-text" class="language-text">models/blaze_face_short_range.tflite: OK
+</code></pre>
+<p>This model is intended for short-range face detection and returns a face box plus six facial keypoints. It does not identify a person. See the <a href="https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20%28Short%20Range%29.pdf" target="_blank">MediaPipe BlazeFace model card</a> for its intended use, limitations, and Apache 2.0 license.</p>
+<p>View the available demo options:</p>
+<pre><code language="language-bash" class="language-bash">python3 demo_capture_faces.py --help
+python3 demo_display_faces.py --help
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Select Raspberry Pi Camera Module 3" duration="3">
+        <p>Check the image&#39;s configuration and currently running service before changing anything:</p>
+<pre><code language="language-bash" class="language-bash">ls -l /etc/config/sensor/sensor_rpi5.conf
+sudo pidin ar | grep &#39;[s]ensor&#39;
+waitfor /dev/sensor/camera3 10
+ls -l /dev/sensor/camera3
+</code></pre>
+<p>On QNX 8.0.5 QSTI, the default sensor service starts with <code>/etc/config/sensor/sensor_rpi5.conf</code> and exposes camera3 when the camera is detected. If these checks succeed, continue to capture; no service restart is needed. The next step checks that the camera supplies NV12 frames.</p>
+<p>If the configuration file or camera3 is missing, check the image version, DISP0 connection, and sensor startup diagnostics before continuing.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Capture and annotate frames" duration="4">
+        <p>Process 60 real-camera frames and save the last annotated RGB image:</p>
+<pre><code language="language-bash" class="language-bash">cd ~/mediapipe-camera-python
+python3 demo_capture_faces.py --camera-unit 3 --frames 60 --output annotated_face.png
+</code></pre>
+<p>Place a face in view of the camera. Example output:</p>
+<pre><code language="language-text" class="language-text">camera open; running 60 frames
+  frame 0 faces=1 size=2304x1296
+  ...
+PROCESSED 60 frames in 2.4s = 25.1 FPS; max faces=1
+wrote annotated_face.png
+CLEAN EXIT
+</code></pre>
+<p>The frame size comes from the selected NV12 stream. Face counts and frame rate vary with the scene and system load.</p>
+<p>To inspect the result on your development computer, run this command there and replace <code>TARGET_IP</code> with the Pi&#39;s address:</p>
+<pre><code language="language-bash" class="language-bash">scp &lt;TARGET_USER&gt;@&lt;TARGET_IP&gt;:~/mediapipe-camera-python/annotated_face.png .
+</code></pre>
+<p>Open <code>annotated_face.png</code> on your development computer. Detected faces should have a green bounding box. If there are no annotations, place a face closer to the camera and repeat the capture.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Run the hardware-accelerated live display" duration="4">
+        <p>Run the live demo for up to 1,200 frames. Press Escape in the window to stop earlier:</p>
+<pre><code language="language-bash" class="language-bash">cd ~/mediapipe-camera-python
+python3 demo_display_faces.py --camera-unit 3 --frames 1200 --width 1152 --height 648
+</code></pre>
+<p>During setup, the demo lists the available SDL render drivers and then verifies the selected one. Look for these lines:</p>
+<pre><code language="language-text" class="language-text">renderer selected name=opengles2 flags=0x...
+GLES vendor=&#39;Broadcom&#39; renderer=&#39;V3D ...&#39; version=&#39;OpenGL ES ...&#39;
+window+renderer+texture created (1152x648), video_driver=qnx renderer=opengles2
+</code></pre>
+<p>The demo fails if the selected renderer name or acceleration flag does not match. It prints the GLES vendor and renderer without checking their values. Confirm that they identify Broadcom and V3D before treating the run as hardware-accelerated on this Pi.</p>
+<p>While it runs, the window shows the camera image with face boxes and keypoints. The terminal reports face counts, end-to-end FPS, process CPU use, and per-stage timing. On a normal stop it releases MediaPipe, SDL, camera buffers, the viewfinder, and QNX pulse resources, then prints:</p>
+<pre><code language="language-text" class="language-text">CLEAN EXIT
+</code></pre>
+<p>A successful live run shows an updating QNX Screen window with face annotations, reports the <code>opengles2</code> renderer backed by Broadcom <code>V3D</code>, and prints <code>CLEAN EXIT</code> when it stops. Performance depends on the scene and system load.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Troubleshooting" duration="4">
+        <h2 is-upgraded>The camera shows color bars or <code>/dev/sensor/camera3</code> is missing</h2>
+<p>Check that Camera Module 3 is connected to DISP0, the target uses a QNX 8.0.5 QSTI image, and the sensor service uses <code>/etc/config/sensor/sensor_rpi5.conf</code>. Color bars can indicate a simulated stream. Verify the selected unit and its NV12 output against the active configuration before proceeding. Other images may use different camera units; both demos accept <code>--camera-unit</code> to select a verified compatible stream.</p>
+<h2 is-upgraded>A frame wait times out</h2>
+<p>The helper bounds each frame wait and reports a <code>TimeoutError</code> instead of hanging. Confirm the QNX Sensor Framework service is running, then stop any other application that has the selected camera unit open and try again.</p>
+<h2 is-upgraded><code>opengles2</code> setup fails or the GLES output does not identify V3D</h2>
+<p>If the demo rejects the SDL renderer or the printed GLES identity is not Broadcom V3D, confirm that QNX Screen is running with the Raspberry Pi graphics stack and that the image provides <code>libEGL.so.1</code>, <code>libGLESv2.so.1</code>, and the V3D driver. You can isolate display performance with the explicit diagnostic mode:</p>
+<pre><code language="language-bash" class="language-bash">python3 demo_display_faces.py --camera-unit 3 --frames 120 --renderer software
+</code></pre>
+<p>This proves the software display path only. It is not evidence of hardware acceleration.</p>
+<h2 is-upgraded><code>ModuleNotFoundError: No module named 'sdl2'</code></h2>
+<p>Install the Python binding again as your normal target user:</p>
+<pre><code language="language-bash" class="language-bash">python3 -m pip install PySDL2==0.9.17 --break-system-packages
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Next steps" duration="1">
+        <p>You now have a complete QNX Camera Library to MediaPipe Tasks to hardware-accelerated display pipeline. The companion demos expose model path, camera unit, frame count, frame timeout, display size, and renderer options through <code>--help</code>, so you can adapt the run without editing the camera integration.</p>
+<p>For another task, keep the QNX camera and display helpers and replace <code>FaceDetector</code> with the corresponding MediaPipe Tasks API and model. Keep capture in the QNX Camera Library; OpenCV&#39;s <code>VideoCapture(0)</code> is not the camera path used by this target.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="../js/native-shim.js"></script>
+  <script src="../js/custom-elements.min.js"></script>
+  <script src="../js/prettify.js"></script>
+  <script src="../js/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

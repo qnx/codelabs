@@ -94,6 +94,20 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Use Gemini CLI on QNX Developer Desktop",
+    "href": "gemini-cli-qnx/index.html",
+    "id": "gemini-cli-qnx",
+    "authors": "Deep Chordia",
+    "summary": "Learn how to set up and use Gemini CLI for target-aware AI development on QNX 8.",
+    "updated": "2026-10-22T13:08:36+05:30",
+    "category": [
+      "ai"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  },
+  {
     "title": "Get a Free Non-Commercial QNX 8.0 License",
     "href": "get-non-commercial-qnx-license/index.html",
     "id": "get-non-commercial-qnx-license",

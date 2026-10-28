@@ -1,0 +1,267 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Set up the QNX agent-skills repository</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="../js/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="qnx-agent-skills"
+                  title="Set up the QNX agent-skills repository"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Introduction" duration="2">
+        <p>A coding agent on its own knows little that is specific to QNX and tends to fall back on Linux assumptions. The <code>qnx-agent-skills</code> repository fixes that: it is a drop-in set of QNX skills that turns a skills-capable agent into a QNX 8.0 porting companion, covering platform facts, Alpine aports porting, packaging, patch creation, and port reporting.</p>
+<p><strong>What you will learn:</strong></p>
+<ul>
+<li>Where the repository lives and how to clone it</li>
+<li>How the skills are organized, and how the agent navigates them</li>
+<li>Which agents are supported, and how others can use it</li>
+<li>How to point your agent at the repository and tell it about your target</li>
+<li>The three prompts that take you from a fresh clone to a validated port</li>
+<li>Sample tasks the skill set drives, from adapting an APKBUILD to the validation gate</li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A QNX 8.0 self-hosted target (a Quick Start Target Image or Custom Target Image on QEMU or Raspberry Pi).</li>
+<li>A skills-capable agent (Claude Code or Codex) installed on your development host. The agent connects over SSH to the QNX self-hosted target, where builds run natively.</li>
+<li><code>git</code>, and <code>sshpass</code> if you use password-based SSH to the target.</li>
+</ul>
+<p>Here is the whole flow at a glance:</p>
+<p class="image-container"><img alt="The QNX Agent Skills flow: you ask the agent, it routes through the skills, connects to the target, builds natively, produces a package and a report, and confirmed learnings feed back into the skills" src="img/7905a82be7cdfa8d.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Get the repository" duration="2">
+        <pre><code language="language-bash" class="language-bash">git clone https://github.com/qnx/qnx-agent-skills.git
+cd qnx-agent-skills
+</code></pre>
+<p>The tracked top-level layout on the repository&#39;s <code>main</code> branch:</p>
+<pre><code>.agents/                contains skills -&gt; ../skills for skills-capable agents
+.claude/                contains skills -&gt; ../skills for Claude Code
+.codex/                 contains skills -&gt; ../skills for Codex
+.gitignore              excludes local operator notes from version control
+AGENTS.md               shared instructions: setup, universal rules, skill map
+CLAUDE.md               points Claude Code to AGENTS.md
+README.md               repository orientation and getting started
+TARGET.md               template for QNX target connection and tree details
+projects/               project index template and per-port notes/reports
+run.sh                  optional QEMU launcher for your own QNX image
+settings.template.json  optional Claude Code permission-rule examples
+setup.sh                links skills into a global agent directory if needed
+skills/                 focused skills, one directory per skill
+</code></pre>
+<p>This lists tracked repository content. Git creates <code>.git/</code> locally when you clone; it is repository metadata, not a delivered source entry. Local operator notes are excluded from this layout.</p>
+<p>There is one copy of the skills on disk, in <code>skills/</code>. The <code>skills</code> entries inside <code>.claude/</code>, <code>.codex/</code>, and <code>.agents/</code> are symlinks to <code>../skills</code>, so a fix to a skill is a single edit that every client sees.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="How the skills are organized" duration="4">
+        <p>The skill set is not one large document. It is a small router plus focused skills, so the agent loads only what a task needs.</p>
+<pre><code>qnx-porting (router, read first)
+├── qnx-platform-facts        QNX platform truths (libc gaps, stack, macros, toolchain)
+├── alpine-qnx-porting        APKBUILD adaptation, per build system
+├── qnx-apk-packaging         end-to-end port-to-PR workflow and validation gate
+├── qnx-port-reporting        the after-action REPORT.md written per port
+├── aports-patch-creation     patch workflow and format gate
+└── skill-authoring           how to add or extend a skill in this repo
+</code></pre>
+<p><code>qnx-porting</code> is the entry point. It holds the universal rules that apply to every task (prove claims with command output, never patch an untested change, never push or make the commits a human owns, builds are native on the target) and a router that points at the one focused skill your task needs. Each skill carries a short description of when to use it, so routing is mostly automatic: the agent matches your task to the right skill rather than being told which file to open.</p>
+<p>The set is designed to improve itself. One universal rule tells the agent to record what it proves: a platform gotcha goes to <code>qnx-platform-facts</code>, a build technique to <code>qnx-apk-packaging</code>, a target quirk to <code>TARGET.md</code>. Each port that surfaces something new leaves the set better for the next one. If you extend it, <code>skill-authoring</code> covers the conventions.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Which agents are supported" duration="2">
+        <p>The repository is built on the <a href="https://agentskills.io" target="_blank">Agent Skills</a> open standard, so the same skill set works across clients rather than being tied to one.</p>
+<ul>
+<li><strong>Claude Code</strong> and <strong>Codex</strong> are the officially supported and tested clients.</li>
+<li><strong>Other skills-capable agents</strong> should mostly work: point the agent at the repository, have it read <code>AGENTS.md</code> (the cross-agent standard file), and link <code>skills/</code> into whatever location the client scans. The QNX knowledge in the skills is plain prose and is not client-specific; only the discovery path differs per client.</li>
+</ul>
+<p>Claude Code picks the repository up automatically through <code>CLAUDE.md</code>, which points at <code>AGENTS.md</code>. Codex reads <code>AGENTS.md</code> natively, so it needs no separate file of its own.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Point your agent at the repository" duration="3">
+        <p>Start your agent from inside the cloned folder. For most clients that is all you need: they read the skills and instructions from the directory they start in.</p>
+<pre><code language="language-bash" class="language-bash">cd qnx-agent-skills
+claude      # or: codex
+</code></pre>
+<p>Some clients only look for skills in a fixed global folder (for example <code>~/.claude/skills</code>) rather than the folder you are in. If yours does, the skills will not load from the project directory, and you link them into the global folder once:</p>
+<pre><code language="language-bash" class="language-bash">./setup.sh claude    # or: codex, or: agents
+</code></pre>
+<p>If you are not sure which kind your client is, start from the repository folder first. To confirm the skills loaded, ask the agent something QNX-specific, for example how to install a package here: if it answers in QNX terms (<code>apk</code>, <code>abuild</code>) rather than Linux ones, you are set. If it does not, run <code>setup.sh</code> for your client and restart it.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Tell the agent about your target" duration="3">
+        <p>The agent needs to know how to reach your QNX box: its address, how to authenticate, and where your aports tree lives. You do not edit configuration files by hand for this. Tell the agent in plain language, and it records what you told it in <code>TARGET.md</code> for you. If something it needs is missing later, it asks. That is the whole idea: you talk to the agent, and the agent maintains the files.</p>
+<p><code>TARGET.md</code> also holds a discovery sweep the agent can run on a fresh image to enumerate the <code>aports*</code> trees it finds. Treat what it returns as candidates rather than an answer: an image often carries several trees that share the same fork as their remote and differ only by branch, in which case &#34;the one whose remote is your fork&#34; selects all of them. Name the authoritative one once, and the agent records it so no later session has to ask.</p>
+<p><strong>Warning: </strong><code>TARGET.md</code> is a tracked file. If you tell the agent a password, it lands in a file git will happily commit, and a password pushed to a shared or public repository is exposed permanently. Prefer key-based SSH. If you do fill in a password, keep your copy out of commits with <code>git update-index --skip-worktree TARGET.md</code> — the agent will not run that for you, because it is a decision about your checkout, not a build step.</p>
+<p><strong>Note:</strong> Work happens on the target over SSH: the agent edits and builds there. It stops short of committing and pushing, so a human reviews the change and owns the git history.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Permissions in Claude Code" duration="5">
+        <p>An agent doing real work runs shell commands and edits files on your behalf. Claude Code gates those actions so nothing runs without oversight, and you choose how much oversight you want. This choice matters on QNX because of how the workflow reaches the target.</p>
+<p><strong>Note:</strong> This section is specific to Claude Code. Codex has its own approval controls and prompts before running commands by default; if you use Codex, see its documentation for the equivalent settings. The auto-mode classifier friction described below does not apply to Codex.</p>
+<h2 is-upgraded>The two modes</h2>
+<p><strong>Manual mode is the recommended default.</strong> The agent proposes each action and you approve it. Nothing on your target changes, and you see every command before it runs. To avoid approving the same safe commands over and over, you pre-approve classes of them with allow-rules (below).</p>
+<p><strong>Auto mode</strong> does not ask you. Instead, Claude Code runs a separate safety classifier that reviews each proposed action and blocks anything it judges risky. It is smoother, but it has a specific friction on QNX.</p>
+<h2 is-upgraded>The QNX friction with auto mode</h2>
+<p>The on-target workflow logs in over SSH and runs <code>sudo</code> with a password. Auto mode&#39;s classifier treats sending a password and writing it to a file on the target as unsafe, and blocks it, so the workflow stalls. Nothing is wrong with your setup; the classifier is doing its job. This is why manual mode is the better fit for on-target work today.</p>
+<h2 is-upgraded>Reduce prompting without weakening anything</h2>
+<p>Merge <code>settings.template.json</code> into your <code>~/.claude/settings.json</code>. It carries allow-rules for the commands this workflow repeats, so in manual mode you approve a class of command once instead of every time. The key rule, <code>Bash(sshpass:*)</code>, pre-approves the on-target SSH calls. This gets you most of auto mode&#39;s smoothness while keeping you in the loop and changing nothing on the target. For most people, this is the right setup: manual mode plus these allow-rules.</p>
+<h2 is-upgraded>Faster, less safe options (throwaway local images only)</h2>
+<p>If you are on a disposable local QEMU image and want to remove friction entirely, there are two stronger levers. Neither belongs on real hardware, a shared machine, or anything networked:</p>
+<ul>
+<li>Grant passwordless apk on the target so the password pipe is not needed. <strong>Confirm the real path and user first</strong> — a sudoers rule naming a binary that does not exist parses cleanly, installs cleanly, and then silently never matches, which looks like the rule not working at all: <pre><code language="language-bash" class="language-bash">whoami                # the user the agent logs in as, e.g. qnx
+command -v apk        # the real path, e.g. /usr/bin/apk on the QSTI x86_64 image
+echo &#39;&lt;user&gt; ALL=(ALL) NOPASSWD: &lt;path-to-apk&gt;&#39; | sudo tee /etc/sudoers.d/10-apk-nopasswd
+sudo chmod 440 /etc/sudoers.d/10-apk-nopasswd
+sudo visudo -c        # must report no errors
+</code></pre>
+Add a new drop-in rather than editing an existing one; images often already ship something under <code>/etc/sudoers.d/</code>. This lets anything running as that user install packages as root with no password, and a package can run code on install, so treat it as passwordless root. Convenient on a throwaway image, a real privilege-escalation surface anywhere else.</li>
+<li>Run <code>claude --dangerously-skip-permissions</code> to remove action gating altogether. You become the only safety check.</li>
+</ul>
+<h2 is-upgraded>The clean fix</h2>
+<p>The root problem is handling a plaintext password. Remove it and the friction goes away without weakening the target: use key-based SSH instead of <code>sshpass</code>, so no password ever crosses the wire. Combined with manual mode and the allow-rules above, this is both safer and smoother than either strong lever.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Drive it with three prompts" duration="4">
+        <p>You do not need a script. Three short prompts take you from a fresh clone to a validated port, and they are deliberately vague — the skills carry the detail, so the prompts do not have to.</p>
+<p><strong>1. Can you see the skills? List them.</strong></p>
+<p>Confirms discovery worked before you rely on it. A good answer names the seven skills and identifies <code>qnx-porting</code> as the router. If it describes something generic, or answers in Linux terms, the skills did not load — start the agent from inside the repository, or run <code>setup.sh</code> for your client.</p>
+<p><strong>2. Connect to my target and show me the aports tree.</strong></p>
+<p>The agent will ask for whatever it does not have: user, host, SSH port, credentials, and which tree is authoritative. Answer in plain language. A good answer comes back with real command output — <code>uname -a</code> from the target, the tree path, its branch — rather than a claim that it connected. It records what you told it in <code>TARGET.md</code>, so the next session does not ask again.</p>
+<p><strong>3. Port &lt;package&gt; and write the report.</strong></p>
+<p>The actual work. The agent loads the router, routes to the porting and packaging skills, builds natively on the target, patches what needs patching, runs the validation gate, and writes a <code>REPORT.md</code>. Expect it to show you each failure and its diagnosis along the way — that is the part worth watching, and the part you would otherwise have done yourself.</p>
+<p><strong>Note:</strong> Keep your own prompts in a local <code>PROMPTS.md</code> if you want them consistent between runs. That file is gitignored on purpose: prompts are yours to shape per session, and checking them in tends to turn a three-line exercise into a specification nobody wants to maintain.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Use the skill set" duration="5">
+        <p>With the repository in place, drive real work in plain language. The agent loads the router, routes to the right skill, and follows that skill&#39;s rules. Some representative tasks:</p>
+<p><strong>Adapt an Alpine package for QNX.</strong> Ask it to port a package (for example, &#34;start a QNX aport for json-c from the Alpine aport&#34;). It loads <code>alpine-qnx-porting</code>: renames dependencies, moves the package into <code>core/</code> or <code>extra/</code>, resets <code>pkgrel</code>, and handles build-system walls such as the autotools <code>x86pc</code> build triple or a libtool <code>-fPIC</code> shared-library link error.</p>
+<p><strong>Diagnose a build failure.</strong> Paste an error such as <code>builddeps failed</code>. It loads the packaging skill and checks the apk environment first (a single broken installed package makes every <code>apk add</code> fail), rather than guessing at the recipe.</p>
+<p><strong>Create a patch the QNX way.</strong> When a source change is needed, the agent tests it in the unpacked tree first, then generates the patch and validates it against the QNX-unpacked tree. That validation step is deliberate: QNX&#39;s <code>patch</code> (BusyBox) does not tolerate the fuzz that Alpine&#39;s does, so validating against the QNX tree is what guarantees the patch applies cleanly on the target. Compatible patches come out by default.</p>
+<p><strong>Run the validation gate.</strong> Before calling a port done, it runs the gate:</p>
+<pre><code language="language-bash" class="language-bash">abuild clean &amp;&amp; abuild -K unpack prepare   # patches APPLY here, no Hunk FAILED, no .rej
+abuild clean &amp;&amp; abuild -r -c -K            # builds, tests pass, expected APKs produced
+find pkg -name &#39;*.so*&#39; | sort              # subpackage split correct, nothing orphaned
+readelf -d pkg/*/usr/lib/*.so.* | grep NEEDED   # every non-libc entry covered by depends=
+git status                                 # read-only check: only intended files modified
+</code></pre>
+<p>Two of those lines are worth understanding rather than just running. <code>unpack</code> only extracts the tarball — it is <code>prepare</code> that applies the patches, so the shorter <code>abuild unpack</code> would have you validating against unpatched source. And the <code>readelf</code> line is there because a package with missing runtime dependencies passes every other check: it builds, it tests, it splits correctly, and it only fails on a machine that does not already have the dependency installed.</p>
+<p>Throughout, the universal rules hold: claims are backed by command output, patches are never made from untested changes, and the agent never pushes or writes the commit history a human owns.</p>
+<p><strong>Note:</strong> The agent does use <code>git</code> — freely, for inspection (<code>status</code>, <code>log</code>, <code>diff</code>, <code>show</code>), and it creates a throwaway repository inside <code>src/</code> because that is how a correctly formatted patch is generated. What it never does is <code>git push</code>, commit to a repository a human reviews, or run destructive commands such as <code>reset --hard</code> or <code>checkout --</code>. Seeing it run <code>git diff</code> is the workflow behaving normally.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="The port report" duration="3">
+        <p>When a port finishes or hits a blocker, the agent writes a <code>REPORT.md</code> into that package&#39;s folder under <code>projects/apks/&lt;pkgname&gt;/</code>. It is the document a human reads to review the port without re-running anything or reading the whole session, and it follows a fixed structure so every port reads the same way:</p>
+<ul>
+<li><strong>Summary</strong>: what the port is and where it ended up, in a few sentences.</li>
+<li><strong>What was produced</strong>: the packages and subpackages that were built.</li>
+<li><strong>Changes made</strong>: each APKBUILD change and each patch, with what changed and why.</li>
+<li><strong>Problems hit and how they were resolved</strong>: the walls and their fixes, with the real error text and the root cause. This is the most useful section for the next person.</li>
+<li><strong>Validation</strong>: the commands run and what they showed (build result, tests passed, skipped, or failed).</li>
+<li><strong>Open items / remaining risk</strong>: anything unresolved, stated honestly rather than rounded up to &#34;done.&#34;</li>
+<li><strong>Handoff</strong>: what the human or the next session should do next.</li>
+</ul>
+<p>The report captures this one port. Durable lessons also get recorded back into the skills per the self-improvement rule, so the next port starts ahead of this one. There are two companion documents in the same folder: a <code>PROJECT-INDEX.md</code> entry point, and a living project README that carries the running changelog. The report is the review document; the README is the running history.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Troubleshooting" duration="0">
+        <table>
+<tr><td colspan="1" rowspan="1"><p>Symptom</p>
+</td><td colspan="1" rowspan="1"><p>Likely cause and fix</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Agent gives Linux-style answers (<code>apt</code>, cross-compiling)</p>
+</td><td colspan="1" rowspan="1"><p>Skills not loaded: start the agent from inside the repo, or run <code>setup.sh</code> for your client and restart</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Agent does not seem to use the right skill</p>
+</td><td colspan="1" rowspan="1"><p>The task did not match a skill description; name the task explicitly, or ask it to start from <code>qnx-porting</code></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Agent stalls on an SSH or <code>sudo</code> command in auto mode</p>
+</td><td colspan="1" rowspan="1"><p>Auto mode&#39;s classifier is blocking the password step; switch to manual mode (see Permissions)</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Too many approval prompts</p>
+</td><td colspan="1" rowspan="1"><p>Merge <code>settings.template.json</code> into <code>~/.claude/settings.json</code> to pre-approve the workflow&#39;s repeated commands</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Agent keeps asking how to reach the target</p>
+</td><td colspan="1" rowspan="1"><p>It has not been told yet; give it the target address, auth, and aports tree path and it will record them</p>
+</td></tr>
+</table>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Summary and next steps" duration="1">
+        <p>You cloned <code>qnx-agent-skills</code>, learned how its router and focused skills are organized, pointed your agent at it, told it about your target, and used it to drive native aports work. Each port that surfaces something new can be recorded back into the skills, so the set keeps improving.</p>
+<p>Share what you build or ask for help: file an issue at https://github.com/qnx/codelabs/issues, or join the QNX Everywhere community on Discord (https://discord.gg/Jj4EkkrFTT) and Reddit (https://www.reddit.com/r/qnx).</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="../js/native-shim.js"></script>
+  <script src="../js/custom-elements.min.js"></script>
+  <script src="../js/prettify.js"></script>
+  <script src="../js/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+  <script>
+    
+    navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+
+    if (url.pathname == "/") {
+      window.location.href = "https://qnx.github.io/codelabs/";
+    }
+  });
+  </script>
+
+</body>
+</html>

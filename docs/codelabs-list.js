@@ -191,6 +191,22 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Set up the QNX agent-skills repository",
+    "href": "qnx-agent-skills/index.html",
+    "id": "qnx-agent-skills",
+    "authors": "Elliott Mazzuca",
+    "summary": "Clone the qnx-agent-skills repository, understand how its skills are organized, point Claude Code or Codex (or another skills-capable agent) at it, and use it to drive native aports porting work on a QNX 8.0 self-hosted target",
+    "updated": "2026-10-16T10:11:58-04:00",
+    "category": [
+      "qnx",
+      "ai",
+      "codelabs"
+    ],
+    "tags": [
+      "intermediate"
+    ]
+  },
+  {
     "title": "Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
     "href": "qsti-qemu-on-wsl/index.html",
     "id": "qsti-qemu-on-wsl",

@@ -1,0 +1,27 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-10-16T10:11:58-04:00",
+  "id": "qnx-agent-skills",
+  "duration": 34,
+  "title": "Set up the QNX agent-skills repository",
+  "authors": "Elliott Mazzuca",
+  "summary": "Clone the qnx-agent-skills repository, understand how its skills are organized, point Claude Code or Codex (or another skills-capable agent) at it, and use it to drive native aports porting work on a QNX 8.0 self-hosted target",
+  "source": "./markdown/qnx-agent-skills/qnx-agent-skills.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "qnx",
+    "ai",
+    "codelabs"
+  ],
+  "tags": [
+    "intermediate"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "qnx-agent-skills"
+}

@@ -1,0 +1,25 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-10-30T09:58:43-04:00",
+  "id": "gemini-cli-qnx",
+  "duration": 16,
+  "title": "Use Gemini CLI on QNX Developer Desktop",
+  "authors": "Deep Chordia",
+  "summary": "Learn how to set up and use Gemini CLI for target-aware AI development on QNX 8.",
+  "source": "./markdown/gemini-cli-qnx/gemini-cli-qnx.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "ai"
+  ],
+  "tags": [
+    "beginner"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "gemini-cli-qnx"
+}

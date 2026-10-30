@@ -22,9 +22,9 @@ This codelab follows the [`gemini-cli-qnx` setup guide](https://github.com/qnx/g
 
 Agentic coding tools are even more effective for embedded project development when they run directly on the target system. With Gemini CLI running on your target, you can use it to build, deploy, test, debug, and monitor processes.
 
-This codelab leaves you with a working Gemini CLI installaton, and a sample additional system prompt you can use to make the tool more aware of the QNX system. Out of the box, these tools have a fair knowledge of QNX systems already, so you don't have to do additional work to teach them about using QNX shell commands or QNX APIs.
+This codelab leaves you with a working Gemini CLI installaton, and a sample additional system prompt you can use to make the tool more aware of the QNX system. Out of the box, these tools have a fair knowledge of QNX systems already, so you don't have to do additional work to teach them about using QNX shell commands or QNX APIs. Additionally, you can leverage [qnx-agent-skills](https://github.com/qnx/qnx-agent-skills) to enable skills-capable coding agent as your QNX 8 development companion.
 
-You'll be empowered to write new programs, utilities, libraries or drivers for QNX, or to port existing repositories from other platforms to QNX.
+You'll be empowered to write new programs, utilities, libraries and drivers for QNX, and to port existing repositories from other platforms to QNX.
 
 Let's get started!
 

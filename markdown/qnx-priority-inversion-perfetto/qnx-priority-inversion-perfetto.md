@@ -25,6 +25,7 @@ The QNX kernel can tell you. Its instrumented kernel logs every context switch, 
 - see the inversion on the timeline, and get the same answer as a command-line report
 - fix the bug and prove the fix with a second trace
 - repeat the diagnosis for a mutex whose priority inheritance was disabled
+- compare two captures and share an offline report with exact scheduling evidence
 
 ### What you'll learn
 - How QNX message passing propagates priority from client to server, and how to break it by accident
@@ -39,6 +40,8 @@ The QNX kernel can tell you. Its instrumented kernel logs every context switch, 
 - A web browser
 
 No QNX hardware is needed.
+
+To explore the finished results before installing the SDK, open the [interactive captured examples](https://aschenbath.github.io/kevscope/). Both reports are generated from the repository's controlled QNX traces and run entirely in the browser.
 
 ---
 
@@ -133,7 +136,7 @@ You need `tracelogger` to run while `rtdemo` is busy. `demo/capture.sh` starts `
 3. Rebuilds the image, starts a receiver on the host, and boots QEMU with user-mode networking (the guest reaches the host as `10.0.2.2`).
 
 Negative
-: The script overwrites `data_files.custom` and `post_start.custom` in `~/qnxvm/local/snippets`. Back them up first if you use that image for anything else.
+: Use a dedicated demo image. The script temporarily installs its `data_files.custom` and `post_start.custom`, restores the original snippets on exit, and leaves the generated demo boot image in place. It stops on build or transfer failure, with bounded timeouts and length-checked, acknowledged file transfers. Logs are written to the output directory. If a snippet is modified during capture, its original backup is preserved instead of overwriting the new edit.
 
 Run it:
 
@@ -205,7 +208,7 @@ kevscope report traces/bad.kev
 
 ```
 PRIORITY INVERSION  control (rtdemo 352275/1) (prio 50) waited on sensor (rtdemo 352275/2)
-  27 of 98 messages affected. The server ran at priority 10, below its priority 50 client,
+  27 of 98 messages affected. While READY, the server had priority 10, below its priority 50 client,
   so lower-priority work ran first: 91.2 ms in total, while the client was blocked 146.9 ms.
     logger (rtdemo 352275/3) (prio 30): 91.1 ms
   Worst: at +273.064 ms the client was blocked 8.22 ms, 6.07 ms of it behind lower-priority threads.
@@ -279,7 +282,7 @@ The bundled failure sample reports:
 
 ```text
 MUTEX PRIORITY INVERSION  control (rtdemo 663571/1) (prio 50) waited for a mutex held by sensor (rtdemo 663571/2)
-  6 of 29 waits affected. The owner ran at priority 10, below its priority 50 waiter,
+  6 of 29 waits affected. While READY, the owner had priority 10, below its priority 50 waiter,
   so lower-priority work ran first: 7.5 ms in total, while the waiter was blocked 11.2 ms.
     logger (rtdemo 663571/3) (prio 30): 7.5 ms
   Worst: at +281.141 ms the waiter was blocked 5.28 ms, 4.12 ms of it behind lower-priority threads.
@@ -309,6 +312,45 @@ This exercise uses same-process mutexes and one CPU. Cross-process shared-memory
 
 ---
 
+## Compare Captures and Share the Evidence
+Duration: 4:00
+
+A fix should be checked against the same workload. Compare the mutex captures and save a report that can be opened without Perfetto or a QNX installation:
+
+```bash
+kevscope compare traces/mutex-bad.kev traces/mutex-good.kev --process rtdemo --html comparison.html
+```
+
+Open `comparison.html` in a browser. The bundled example shows 6/29 affected waits becoming 0/38, with maximum mutex wait dropping from 5.277 to 1.439 ms. The protocol change remains visible next to the measurements. Counts and timing will vary in a fresh run.
+
+![Offline comparison with inspectable scheduling evidence](compare-mutex.png)
+
+Expand the baseline finding, then select **Inspect exact intervals and priorities**. Each row identifies the CPU and the three priorities at the same instant: owner ≤ running thread < waiter. A boost later in the wait does not erase an earlier inversion. If the executions surrounding a READY interval use different CPUs, kevscope excludes it and reports the missing migration evidence.
+
+`--process rtdemo` scopes the waits and summary statistics to the application. Other processes remain available as scheduling evidence. This avoids confusing an unrelated background condition-variable wait with missing application data.
+
+For a single trace, use:
+
+```bash
+kevscope report traces/bad.kev --process rtdemo --html report.html
+```
+
+The reports work offline, include no generation timestamp, and escape trace-derived text. Review the report before sharing traces from your own system: thread names and measured scheduling behavior are still part of its contents.
+
+### Automate the comparison
+
+```bash
+kevscope compare traces/mutex-bad.kev traces/mutex-good.kev --process rtdemo --json --strict --fail-on-regression
+```
+
+The comparison pairs process basenames and thread names rather than PIDs or virtual addresses. It refuses ambiguous matches and labels disappearing work **not observed**, not fixed. Regression checks compare the fraction of affected waits rather than the raw count; p99 and maximum latency changes are shown separately.
+
+`--fail-on-regression` exits 3 for a higher affected-wait fraction or a new dependency with a finding. `--strict` exits 4 if there are evidence warnings or incomplete matches, taking precedence over 3. Input/output failures exit 1 and argument errors exit 2. Unfinished waits at the capture boundary are counted and excluded from full-wait statistics.
+
+No detected inversion does not guarantee every deadline was met. The trace spans only part of the program's run, and CPU load, other blocking, interrupts or virtualization can affect cycle timing independently of priority inheritance.
+
+---
+
 ## Congratulations
 Duration: 1:00
 
@@ -320,6 +362,7 @@ You captured kernel traces on QNX 8.0, viewed them in Perfetto, and confirmed fi
 - How to capture a trace with `tracelogger -w`
 - How to read thread states, message-passing slices and mutex waits in Perfetto
 - How to use `kevscope report` to check a whole trace, by hand or in CI
+- How to compare captures, interpret coverage warnings, and share exact evidence in an offline report
 
 ### Try next
 - Trace your own application in wide mode and check the supported trace formats and analysis limits in the kevscope README

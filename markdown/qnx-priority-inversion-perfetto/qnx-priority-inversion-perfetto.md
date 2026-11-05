@@ -1,6 +1,6 @@
 id: qnx-priority-inversion-perfetto
 title: Find a Priority Inversion in a QNX Kernel Trace with Perfetto
-summary: Capture a QNX 8.0 kernel trace, open it in Perfetto with kevscope, and diagnose priority inversions through messages and mutexes
+summary: Capture QNX 8.0 kernel traces, open them in Perfetto, and compare priority-inheritance fixes for messages, mutexes and cross-process IPC
 categories: debugging, tools, real-time
 tags: intermediate
 difficulty: 3
@@ -25,6 +25,7 @@ The QNX kernel can tell you. Its instrumented kernel logs every context switch, 
 - see the inversion on the timeline, and get the same answer as a command-line report
 - fix the bug and prove the fix with a second trace
 - repeat the diagnosis for a mutex whose priority inheritance was disabled
+- follow a client and server in separate processes on different CPUs
 - compare two captures and share an offline report with exact scheduling evidence
 
 ### What you'll learn
@@ -32,6 +33,7 @@ The QNX kernel can tell you. Its instrumented kernel logs every context switch, 
 - How a mutex owner's priority changes when a more urgent thread waits for its lock
 - How to capture a kernel trace with `tracelogger`
 - How to read thread states (RUNNING, READY, SEND/REPLY-blocked) on a timeline
+- How to distinguish time before message acceptance from the accepted-to-reply service interval
 
 ### What you'll need
 - A Linux host or Windows with WSL2 (Ubuntu 22.04/24.04), with KVM available
@@ -41,7 +43,7 @@ The QNX kernel can tell you. Its instrumented kernel logs every context switch, 
 
 No QNX hardware is needed.
 
-To explore the finished results before installing the SDK, open the [interactive captured examples](https://aschenbath.github.io/kevscope/). Both reports are generated from the repository's controlled QNX traces and run entirely in the browser.
+To explore the finished results before installing the SDK, open the [interactive captured examples](https://aschenbath.github.io/kevscope/). All three comparisons are generated from the repository's controlled QNX traces and run entirely in the browser.
 
 ---
 
@@ -88,7 +90,7 @@ git clone https://github.com/Aschenbath/kevscope
 cd kevscope/demo
 ```
 
-`rtdemo.c` is a tiny control system. All of its threads are pinned to CPU 0, so they really compete:
+`rtdemo.c` is a tiny control system. In the initial `bad` and `good` modes, all of its threads are pinned to CPU 0, so they really compete:
 
 | Thread  | Priority | What it does |
 |---------|----------|--------------|
@@ -127,13 +129,13 @@ tracelogger -s 1 -w -b 2048 -k 64 -f /dev/shmem/bad.kev
 | `-b 2048 -k 64` | more kernel buffers, so no events are dropped on a busy system |
 | `-f` | output file. `/dev/shmem` is RAM, so writing it doesn't disturb the timing |
 
-You need `tracelogger` to run while `rtdemo` is busy. `demo/capture.sh` starts `rtdemo bad 3`, waits a second, traces for one second, then repeats for `good`, `mutex-bad` and `mutex-good`. It sends each trace and the corresponding demo output to the host with a tiny TCP client (`kevpush.c`), because the default image has no working ssh server. The last two modes are used in the mutex exercise later in this codelab.
+You need `tracelogger` to run while `rtdemo` is busy. `demo/capture.sh` starts `rtdemo bad 3`, waits a second, traces for one second, then repeats for `good`, `mutex-bad`, `mutex-good`, `ipc-bad` and `ipc-good`. It sends each trace and the corresponding demo output to the host with a tiny TCP client (`kevpush.c`), because the default image has no working ssh server. The receiver expects 12 files for the default six-mode run. The mutex and cross-process IPC modes are used later in this codelab.
 
 `demo/run-capture.sh` does the whole loop from the host:
 
 1. Cross-compiles `rtdemo.c` and `kevpush.c` with `qcc -Vgcc_ntox86_64`.
 2. Adds them to the image through `~/qnxvm/local/snippets/data_files.custom`, and runs `capture.sh` at boot through `post_start.custom`.
-3. Rebuilds the image, starts a receiver on the host, and boots QEMU with user-mode networking (the guest reaches the host as `10.0.2.2`).
+3. Rebuilds the image, starts a receiver on the host, and boots QEMU with two CPUs and user-mode networking (the guest reaches the host as `10.0.2.2`).
 
 Negative
 : Use a dedicated demo image. The script temporarily installs its `data_files.custom` and `post_start.custom`, restores the original snippets on exit, and leaves the generated demo boot image in place. It stops on build or transfer failure, with bounded timeouts and length-checked, acknowledged file transfers. Logs are written to the output directory. If a snippet is modified during capture, its original backup is preserved instead of overwriting the new edit.
@@ -145,13 +147,17 @@ cd ..   # repository root
 demo/run-capture.sh
 ```
 
-The traces are written to the repository's `traces/` directory. Example demo output:
+To select only some modes, provide an output directory followed by mode names, for example `demo/run-capture.sh traces-ipc ipc-bad ipc-good`. The host validates names and rejects duplicates before touching the SDK or VM.
+
+The default run writes to the repository's `traces/` directory. The bundled fixtures have these accompanying demo outputs:
 
 ```
 rtdemo bad: 300 cycles, 55 over the 5 ms budget, mean 3.59 ms, worst 9.24 ms
 rtdemo good: 300 cycles, 0 over the 5 ms budget, mean 2.62 ms, worst 2.96 ms
 rtdemo mutex-bad: 300 cycles, 12 over the 5 ms budget, mean 1.40 ms, worst 6.49 ms
 rtdemo mutex-good: 300 cycles, 0 over the 5 ms budget, mean 1.29 ms, worst 2.48 ms
+rtdemo ipc-bad: 300 cycles, 55 over the 5 ms budget, mean 3.92 ms, worst 9.89 ms
+rtdemo ipc-good: 300 cycles, 0 over the 5 ms budget, mean 2.97 ms, worst 3.46 ms
 ```
 
 Your numbers will differ a little. In `bad` mode, about one cycle in six blows the 5 ms budget. The program knows *that* it was late, but not *why*. The trace will tell you.
@@ -168,7 +174,7 @@ kevscope convert traces/bad.kev
 ```
 
 ```
-wrote traces/bad.pftrace (127 KiB): 108 threads, 1269 context switches, 125 messages, 10 mutex waits, 27 priority inversions (27 message passing, 0 mutex)
+wrote traces/bad.pftrace (139 KiB): 108 threads, 1269 context switches, 125 messages, 10 mutex waits, 29 priority inversions (29 message passing, 0 mutex)
 ```
 
 Open [ui.perfetto.dev](https://ui.perfetto.dev), click **Open trace file**, and choose `traces/bad.pftrace`. The file is processed in your browser and isn't uploaded.
@@ -208,21 +214,24 @@ kevscope report traces/bad.kev
 
 ```
 PRIORITY INVERSION  control (rtdemo 352275/1) (prio 50) waited on sensor (rtdemo 352275/2)
-  27 of 98 messages affected. While READY, the server had priority 10, below its priority 50 client,
-  so lower-priority work ran first: 91.2 ms in total, while the client was blocked 146.9 ms.
-    logger (rtdemo 352275/3) (prio 30): 91.1 ms
+  29 of 100 messages affected. While READY, the server had priority 10, below its priority 50 client,
+  so lower-priority work ran first: 94.5 ms in total, while the client was blocked 154.4 ms.
+    logger (rtdemo 352275/3) (prio 30): 94.2 ms
   Worst: at +273.064 ms the client was blocked 8.22 ms, 6.07 ms of it behind lower-priority threads.
+  Phases: 0.001 ms before acceptance, 8.218 ms accepted to reply.
   Likely cause: the server does not inherit its client's priority. Check for a channel
   created with _NTO_CHF_FIXED_PRIORITY, or a server that sets its own priority.
 
 Message passing (client -> server, time blocked per MsgSend):
-     98  p50   2.135  p99   8.137  max   8.219 ms  control (rtdemo 352275/1) -> sensor (rtdemo 352275/2)  <- 27 inversions
+    100  p50   2.139  p99   8.137  max   8.219 ms  control (rtdemo 352275/1) -> sensor (rtdemo 352275/2)  <- 29 inversions
 ```
 
-How kevscope decides: for every `MsgSend` it finds the server thread that received and replied to the message. If the server ran below the client's priority, it then looks at the stretches where the server was READY (preempted). If threads with priority below the client's held the server's CPU during those stretches, the message counts as an inversion, and those threads are listed as the culprits.
+These are excerpts from the bundled failure fixture; a fresh capture will differ. The full report also warns about a READY interval without an execution boundary and excludes it from attribution. The original sample contains 100 control replies. kevscope 0.3.0 corrects the earlier global-ID message join, which had let background replies terminate two application calls; the sample's event payloads are unchanged.
+
+How kevscope decides: it correlates the send, the actual receiving thread, and the reply using the event-specific process/thread identities. Starting at acceptance, it compares the server, running thread and client priorities at the same instant. If the lower-priority server is READY and work with priority below the client's holds that same CPU, the call counts as an inversion. Time before acceptance is measured separately and is not assigned to the eventual receiver.
 
 Other useful sections of the report:
-- **Message passing**: p50, p99 and max blocking time for every client → server pair
+- **Message passing**: p50, p99 and max blocking time for every client → server pair, plus pre-acceptance and accepted-to-reply phases
 - **Mutex waits**: p50, p99 and max blocking time per waiter and lock, when wide mutex arguments are available
 - **Wake-up latency**: the time from READY to RUNNING for each thread
 - **CPU time** per thread
@@ -248,10 +257,10 @@ kevscope report traces/good.kev
 ```
 
 ```
-No priority inversion found in message passing or mutex waits.
+No priority inversion found in the analyzed message and mutex waits.
 
 Message passing (client -> server, time blocked per MsgSend):
-     99  p50   2.043  p99   2.249  max   2.260 ms  control (rtdemo 598035/1) -> sensor (rtdemo 598035/2)
+    100  p50   2.053  p99   2.249  max   2.260 ms  control (rtdemo 598035/1) -> sensor (rtdemo 598035/2)
 ```
 
 The worst `MsgSend` dropped from 8.2 ms to 2.3 ms in these samples. Convert the good trace with `kevscope convert traces/good.kev` and open `good.pftrace` in Perfetto. Sensor now runs at priority 50 while it serves control, so logger waits until the reply has been sent.
@@ -308,7 +317,46 @@ The bundled fixed trace has 38 control waits, no detected inversion, and a worst
 
 `--fail-on-inversion` returns 3 for the failure trace and 0 for the fixed trace, just as it does for message passing. JSON uses `mutex_priority_inversion` for these findings and includes the mutex address and protocol. The original message-passing finding kind remains `priority_inversion`.
 
-This exercise uses same-process mutexes and one CPU. Cross-process shared-memory lock identity, general condition-variable dependencies, and full SMP scheduler/affinity analysis remain outside the validated cases. Missing owner events or truncated waits can prevent a finding.
+This exercise uses same-process mutexes and one CPU. Process-shared mutexes lack a cross-process object identity in this model, so their waits produce a coverage warning and are excluded from causal attribution. General condition-variable dependency chains and full SMP scheduler/affinity analysis are not reconstructed. Missing owner events or truncated waits can prevent a finding.
+
+---
+
+## Follow IPC Across Processes and CPUs
+Duration: 6:00
+
+`ipc-bad` keeps control on CPU 1 and forks sensor into a separate process on CPU 0. Logger stays in control's process but runs on CPU 0 beside sensor. Control can be blocked while CPU 1 is available because its reply depends on work on CPU 0.
+
+The child creates its channel and passes the channel ID to the parent through a pipe. The parent calls `ConnectAttach` with the child's PID, then uses the same `MsgSend` loop. `ipc-good` enables the default channel priority inheritance. Both modes require at least two CPUs.
+
+```bash
+kevscope report traces/ipc-bad.kev --process rtdemo
+kevscope convert traces/ipc-bad.kev
+kevscope compare traces/ipc-bad.kev traces/ipc-good.kev --process rtdemo --html ipc.html
+```
+
+`--process rtdemo` matches both processes by executable basename. Use a specific client PID when you need narrower scope; server and background threads still supply scheduling evidence.
+
+| Bundled capture | Client CPU | Server CPU / priority | Affected calls | Maximum MsgSend |
+|-----------------|------------|-----------------------|----------------|-----------------|
+| `ipc-inversion.kev` | 1 | 0 / 10 | 25 of 100 | 9.119 ms |
+| `ipc-inherit.kev` | 1 | 0 / 50 | 0 of 100 | 2.495 ms |
+
+![Cross-process IPC comparison](compare-ipc.png)
+
+The failure sample attributes 92.446 ms to lower-priority work on the server's CPU, mostly logger. Both traces contain 100 completed calls with correlated service evidence and no dropped or truncated records. The failure trace also has one unbounded READY interval; that evidence is excluded, and `--strict` returns 4 for the comparison. In Perfetto, expand both `rtdemo` process groups and follow the flow from control's CPU 1 call to sensor on CPU 0.
+
+### Read the two phases
+
+QNX logs send and receive records as `(rcvid, destination_pid)`, but reply and error records as `(client_tid, client_pid)`. Receive IDs are scoped to the destination process. The [official traceprinter walkthrough](https://www.qnx.com/developers/docs/8.0/com.qnx.doc.sat/topic/datainterpretation_Using_traceprinter.html) shows why one global receive-ID lookup cannot safely join these events.
+
+Acceptance is established by the earlier of control entering REPLY state and the receive event. The receiver may not log `REC_MESSAGE` until it gets CPU again, even though the kernel already accepted the request. The report therefore separates:
+
+- **Before acceptance**: time from send to acceptance, including kernel processing and any SEND queueing. The eventual receiver is not blamed for this phase.
+- **Accepted to reply**: the service interval, including CPU time and delays before the validated reply. Receiver scheduling interference is attributed only within this interval.
+
+The baseline phase maxima are 0.070 ms before acceptance and 9.101 ms accepted to reply; the candidate values are 0.002 ms and 2.494 ms. These maxima may come from different calls and do not necessarily sum to the longest call.
+
+This validates a pinned cross-process topology. Ambiguous CPU migrations, message forwarding and worker handoffs without an ownership-transfer event remain outside causal attribution. Missing receives or conflicting identities keep their measured completed-call latency but produce coverage warnings.
 
 ---
 
@@ -354,7 +402,7 @@ No detected inversion does not guarantee every deadline was met. The trace spans
 ## Congratulations
 Duration: 1:00
 
-You captured kernel traces on QNX 8.0, viewed them in Perfetto, and confirmed fixes for priority inversions through both message passing and a mutex.
+You captured kernel traces on QNX 8.0, viewed them in Perfetto, and compared priority-inheritance fixes for messages, mutexes and a cross-process client/server pair on different CPUs.
 
 ### What you've learned
 - QNX servers inherit their client's priority while serving a message, unless the channel uses `_NTO_CHF_FIXED_PRIORITY`
@@ -362,6 +410,7 @@ You captured kernel traces on QNX 8.0, viewed them in Perfetto, and confirmed fi
 - How to capture a trace with `tracelogger -w`
 - How to read thread states, message-passing slices and mutex waits in Perfetto
 - How to use `kevscope report` to check a whole trace, by hand or in CI
+- How cross-process message identity and acceptance boundaries keep IPC evidence correctly attributed
 - How to compare captures, interpret coverage warnings, and share exact evidence in an offline report
 
 ### Try next

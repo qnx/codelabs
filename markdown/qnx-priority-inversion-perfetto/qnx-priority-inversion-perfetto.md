@@ -397,6 +397,19 @@ The comparison pairs process basenames and thread names rather than PIDs or virt
 
 `--fail-on-regression` exits 3 for a higher affected-wait fraction or a new dependency with a finding. `--strict` exits 4 if there are evidence warnings or incomplete matches, taking precedence over 3. Input/output failures exit 1 and argument errors exit 2. Unfinished waits at the capture boundary are counted and excluded from full-wait statistics.
 
+### Check a latency budget
+
+Zero inversions can coexist with an over-budget wait. Starting with v0.3.2, add an absolute maximum or p99 limit to either `report` or `compare`:
+
+```bash
+kevscope report tests/data/ipc-inherit.kev --process rtdemo --max-wait-ms 2 --json
+kevscope compare traces/mutex-bad.kev traces/mutex-good.kev --process rtdemo --max-wait-ms 2 --p99-wait-ms 2 --strict --html budget.html
+```
+
+The first uses the bundled fixed capture: no inversion is found, but the longest `MsgSend` is 2.495 ms, so the 2 ms budget exits **3**. In a comparison, limits apply separately to each dependency in the candidate; the baseline is not budget-checked. Inspect `wait_budget` in report JSON, `candidate.wait_budget` in comparison JSON, or the budget section in the HTML.
+
+Limits must be finite and positive. Checks use durations before display rounding, allow equality, and retain each dependency's sample count; p99 follows the existing nearest-index percentile. No completed reportable waits means exit **4**. `--strict` also rejects the existing coverage or matching warnings and keeps precedence over an exceeded budget. Budgets describe the observed completed message and mutex waits, not whole-cycle deadlines; a small sample is not a reliable tail-latency guarantee.
+
 No detected inversion does not guarantee every deadline was met. The trace spans only part of the program's run, and CPU load, other blocking, interrupts or virtualization can affect cycle timing independently of priority inheritance.
 
 ---

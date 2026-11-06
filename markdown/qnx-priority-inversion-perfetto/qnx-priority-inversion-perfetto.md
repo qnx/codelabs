@@ -233,8 +233,10 @@ How kevscope decides: it correlates the send, the actual receiving thread, and t
 Other useful sections of the report:
 - **Message passing**: p50, p99 and max blocking time for every client → server pair, plus pre-acceptance and accepted-to-reply phases
 - **Mutex waits**: p50, p99 and max blocking time per waiter and lock, when wide mutex arguments are available
-- **Wake-up latency**: the time from READY to RUNNING for each thread
+- **Wake-up latency**: the time from a captured wake transition into READY to RUNNING for each thread
 - **CPU time** per thread
+
+QNX may log another READY record when a runnable thread inherits a new priority. That updates its scheduling priority without waking it again. kevscope keeps the original wake time and counts the interval once; preemption and a capture starting mid-READY do not establish a wake boundary. A READY interval cancelled or cut off before execution has no completed latency sample. For example, sensor in the bundled mutex inheritance capture has 153 completed wakeups and 38 READY priority updates. Versions before 0.3.1 counted those updates as extra wakeups.
 
 Positive
 : `kevscope report trace.kev --json` prints the same data as JSON, and `--fail-on-inversion` exits with code 3 when an inversion is found. Add a trace capture to a nightly hardware or QEMU test, and the build fails the day someone adds the flag.

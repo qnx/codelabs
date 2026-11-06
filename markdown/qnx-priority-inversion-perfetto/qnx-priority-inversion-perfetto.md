@@ -304,6 +304,8 @@ Open `mutex-bad.pftrace` in Perfetto, expand the findings and `rtdemo` tracks, a
 
 ![Mutex priority inversion in Perfetto](perfetto-mutex-inversion.png)
 
+Starting with 0.3.3, `mutex unlock call` marks an observed matching `SyncMutexUnlock` call at its captured timestamp. `mutex wait ended` marks the waiter leaving MUTEX state, which can occur later and does not by itself prove successful acquisition. Without a captured unlock call there is no return arrow. If ownership is unknown, changes during the wait, or lacks cross-process object identity, a complete wait remains visible as `mutex wait (owner uncertain)` without owner arrows. Clipped waits or waits without a lock address remain scheduling evidence rather than complete dependency slices. The screenshot and 0.3.1 video show the earlier labels.
+
 The model gets the lock address, protocol flags and owner word from the wide `SyncMutexLock` event. MUTEX state transitions bound the wait. Owner READY intervals and the threads running on its CPU provide the scheduling evidence. The protocol alone is not enough to flag an inversion.
 
 ### Enable inheritance and compare

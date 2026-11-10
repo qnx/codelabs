@@ -2,37 +2,39 @@
 name: Notify Discord about new codelabs
 
 on:
-  deployment_status:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/codelabs-list.js
 
 permissions:
   contents: read
 
 jobs:
   notify:
-    if: >-
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment == 'github-pages'
-
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check for new codelabs and notify Discord
+      - name: Detect new codelabs
+        id: detect
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
-          DEPLOY_SHA: ${{ github.event.deployment.sha }}
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          CURRENT_SHA: ${{ github.sha }}
+          PREVIOUS_SHA: ${{ github.event.before }}
         run: |
           node <<'NODE'
-          const API = `https://api.github.com/repos/${process.env.REPOSITORY}`;
-          const HEADERS = {
+          const fs = require('fs');
+
+          const api = `https://api.github.com/repos/${process.env.REPOSITORY}`;
+          const headers = {
             Authorization: `Bearer ${process.env.GH_TOKEN}`,
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
+            Accept: 'application/vnd.github+json'
           };
 
-          async function github(url) {
-            const response = await fetch(url, { headers: HEADERS });
+          async function getJson(url) {
+            const response = await fetch(url, { headers });
             if (!response.ok) {
               throw new Error(`GitHub API ${response.status}: ${await response.text()}`);
             }
@@ -40,74 +42,68 @@ jobs:
           }
 
           async function getCodelabs(sha) {
-            const file = await github(
-              `${API}/contents/docs/codelabs-list.js?ref=${sha}`
+            const file = await getJson(
+              `${api}/contents/docs/codelabs-list.js?ref=${sha}`
             );
 
-            const source = Buffer
-              .from(file.content.replace(/\s/g, ''), 'base64')
-              .toString('utf8');
-
+            const source = Buffer.from(file.content, 'base64').toString('utf8');
             const match = source.match(
               /window\.CODELABS\s*=\s*(\[[\s\S]*\])\s*;?\s*$/
             );
 
             if (!match) {
-              throw new Error('Could not find window.CODELABS array.');
+              throw new Error('Could not parse window.CODELABS array.');
             }
 
             return JSON.parse(match[1]);
           }
 
           async function main() {
-            const sha = process.env.DEPLOY_SHA;
+            const previousSha = process.env.PREVIOUS_SHA;
 
-            // Find the commit immediately before the deployed commit.
-            const commit = await github(`${API}/commits/${sha}`);
-            const parentSha = commit.parents?.[0]?.sha;
-
-            if (!parentSha) {
-              console.log('No parent commit. Nothing to compare.');
+            if (!previousSha || /^0+$/.test(previousSha)) {
+              console.log('No previous commit to compare.');
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, 'added=[]\n');
               return;
             }
 
-            // First check whether the codelab list file changed.
-            const comparison = await github(
-              `${API}/compare/${parentSha}...${sha}`
-            );
-
-            const listChanged = (comparison.files || []).some(
-              file => file.filename === 'docs/codelabs-list.js'
-            );
-
-            if (!listChanged) {
-              console.log('Codelab list unchanged. No notification needed.');
-              return;
-            }
-
-            // Compare IDs in the old and new lists.
-            const oldLabs = await getCodelabs(parentSha);
-            const newLabs = await getCodelabs(sha);
+            const [oldLabs, newLabs] = await Promise.all([
+              getCodelabs(previousSha),
+              getCodelabs(process.env.CURRENT_SHA)
+            ]);
 
             const oldIds = new Set(oldLabs.map(lab => lab.id));
+            const added = newLabs.filter(lab => !oldIds.has(lab.id));
 
-            const addedLabs = newLabs.filter(
-              lab => !oldIds.has(lab.id)
+            fs.appendFileSync(
+              process.env.GITHUB_OUTPUT,
+              `added=${JSON.stringify(added)}\n`
             );
 
-            if (addedLabs.length === 0) {
-              console.log('No new codelab IDs found. No notification needed.');
-              return;
-            }
+            console.log(`New codelabs found: ${added.length}`);
+          }
 
-            console.log(`Found ${addedLabs.length} new codelab(s).`);
+          main().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
 
-            // Send one Discord message per newly added codelab.
-            for (const lab of addedLabs) {
+      - name: Notify Discord
+        if: steps.detect.outputs.added != '[]'
+        env:
+          DISCORD_CODELAB_WEBHOOK: ${{ secrets.DISCORD_CODELAB_WEBHOOK }}
+          ADDED_CODELABS: ${{ steps.detect.outputs.added }}
+        run: |
+          node <<'NODE'
+          async function main() {
+            const labs = JSON.parse(process.env.ADDED_CODELABS);
+
+            for (const lab of labs) {
               const href = String(lab.href).replace(/^\/+/, '');
               const url = `https://qnx.github.io/codelabs/${href}`;
 
-              const message = [
+              const content = [
                 '📘 **New QNX Codelab Published**',
                 `**${lab.title}**`,
                 `**Author:** ${lab.authors || 'Not specified'}`,
@@ -116,18 +112,16 @@ jobs:
               ].join('\n');
 
               const response = await fetch(
-                process.env.DISCORD_WEBHOOK,
+                process.env.DISCORD_CODELAB_WEBHOOK,
                 {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ content: message })
+                  body: JSON.stringify({ content })
                 }
               );
 
               if (!response.ok) {
-                throw new Error(
-                  `Discord error ${response.status}: ${await response.text()}`
-                );
+                throw new Error(`Discord returned ${response.status}: ${await response.text()}`);
               }
 
               console.log(`Notification sent: ${lab.title}`);

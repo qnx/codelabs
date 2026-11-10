@@ -287,4 +287,19 @@ window.CODELABS = [
       "beginner"
     ]
   }
+  {
+    "title": "Discord notification test",
+    "href": "test/index.html",
+    "id": "discord_notification_test",
+    "authors": "Shweta Mazumder",
+    "summary": "Test codelab add to test discord notifications",
+    "updated": "2026-11-30T14:58:04-04:00",
+    "category": [
+      "qnx",
+      "test"
+    ],
+    "tags": [
+      "beginner"
+    ]
+  }
 ];

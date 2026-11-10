@@ -288,12 +288,12 @@ window.CODELABS = [
     ]
   },
   {
-    "title": "Running the Quick Start Target Image (QSTI) on QEMU using Ubuntu",
-    "href": "setup-qsti-qemu-on-ubuntu/index.html",
-    "id": "setup-qsti-qemu-on-ubuntu",
-    "authors": "Anna Likozar",
-    "summary": "Learn how to setup QSTI on QEMU and verify compiler setup",
-    "updated": "2026-04-30T14:58:04-04:00",
+    "title": "test",
+    "href": "test/index.html",
+    "id": "test",
+    "authors": "Shweta",
+    "summary": "test discord",
+    "updated": "2026-11-30T14:58:04-04:00",
     "category": [
       "qnx",
       "qemu"
@@ -301,6 +301,6 @@ window.CODELABS = [
     "tags": [
       "beginner"
     ]
-  }  
+  } 
 
 ];

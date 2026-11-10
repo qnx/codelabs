@@ -1,0 +1,113 @@
+
+name: Notify Discord - New Codelab
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/codelabs-list.js'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect newly added codelabs
+        id: detect
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+
+          function parse(content) {
+            const start = content.indexOf('[');
+            const end = content.lastIndexOf(']');
+
+            if (start < 0 || end < start) {
+              throw new Error('Could not find CODELABS array');
+            }
+
+            return JSON.parse(content.slice(start, end + 1));
+          }
+
+          const current = parse(
+            fs.readFileSync('docs/codelabs-list.js', 'utf8')
+          );
+
+          let previous = [];
+
+          if (!/^0+$/.test(process.env.BEFORE)) {
+            const oldContent = cp.execFileSync(
+              'git',
+              ['show', `${process.env.BEFORE}:docs/codelabs-list.js`],
+              { encoding: 'utf8' }
+            );
+            previous = parse(oldContent);
+          }
+
+          const oldIds = new Set(previous.map(lab => lab.id));
+
+          const added = current.filter(
+            lab => !oldIds.has(lab.id)
+          );
+
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `added=${JSON.stringify(added)}\n`
+          );
+
+          console.log(`New codelabs found: ${added.length}`);
+          NODE
+
+      - name: Send Discord notification
+        if: steps.detect.outputs.added != '[]'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          ADDED: ${{ steps.detect.outputs.added }}
+        run: |
+          node <<'NODE'
+          const labs = JSON.parse(process.env.ADDED);
+
+          const content = labs.map(lab => {
+            const url =
+              `https://qnx.github.io/codelabs/${lab.href}`;
+
+            return [
+              `🎓 **${lab.title}**`,
+              `Author: ${lab.authors}`,
+              lab.summary,
+              `Read the codelab: ${url}`
+            ].join('\n');
+          }).join('\n\n');
+
+          const payload = JSON.stringify({
+            content: `🚀 **New QNX Codelab Published!**\n\n${content}`
+          });
+
+          fetch(process.env.DISCORD_WEBHOOK, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: payload
+          }).then(async response => {
+            if (!response.ok) {
+              throw new Error(
+                `Discord error: ${response.status} ${await response.text()}`
+              );
+            }
+
+            console.log('Discord notification sent!');
+          }).catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE

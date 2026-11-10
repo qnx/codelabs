@@ -287,20 +287,6 @@ window.CODELABS = [
       "beginner"
     ]
   },
-  {
-    "title": "test",
-    "href": "test/index.html",
-    "id": "test",
-    "authors": "Shweta",
-    "summary": "test discord",
-    "updated": "2026-11-30T14:58:04-04:00",
-    "category": [
-      "qnx",
-      "qemu"
-    ],
-    "tags": [
-      "beginner"
-    ]
-  } 
+
 
 ];

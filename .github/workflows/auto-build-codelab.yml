@@ -1,0 +1,44 @@
+name: Auto Build Codelab Docs
+
+on:
+  push:
+    branches:
+      - docs/qnx8-deterministic-ipc-safety-cage
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/qnx8-deterministic-ipc-safety-cage
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Export HTML with claat, update catalog, and clean up workflow
+        run: |
+          go install github.com/googlecodelabs/tools/claat@latest
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          if [ -f package.json ]; then npm install; fi
+          mkdir -p docs
+          claat export -o docs markdown/qnx8-deterministic-ipc-safety-cage/qnx8-deterministic-ipc-safety-cage.md
+          if [ -f generate-codelabs.js ]; then node generate-codelabs.js; fi
+          git rm -f .github/workflows/auto-build-codelab.yml
+          git config user.name "mynameisprem-pj"
+          git config user.email "mynameisprem-pj@users.noreply.github.com"
+          git add -A markdown/ docs/ .github/
+          git commit -m "docs(codelab): generate published HTML and catalog entry [skip ci]"
+          git push origin HEAD:docs/qnx8-deterministic-ipc-safety-cage

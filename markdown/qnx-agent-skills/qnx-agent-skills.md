@@ -1,9 +1,9 @@
 id: qnx-agent-skills
 title: Set up the QNX agent-skills repository
 summary: Clone the qnx-agent-skills repository, understand how its skills are organized, point Claude Code or Codex (or another skills-capable agent) at it, and use it to drive native aports porting work on a QNX 8.0 self-hosted target
-categories: qnx, ai, codelabs
+categories: AI & ML
 tags: intermediate
-difficulty: 2
+published: 2026-09-28
 status: published
 authors: Elliott Mazzuca
 feedback_link: https://github.com/qnx/codelabs/issues

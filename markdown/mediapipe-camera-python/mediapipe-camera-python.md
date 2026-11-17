@@ -1,9 +1,10 @@
 id: mediapipe-camera-python
 title: Run MediaPipe face detection from a QNX camera with Python
 summary: Install prebuilt MediaPipe on QNX and run live face detection with Raspberry Pi Camera Module 3.
-categories: qnx, mediapipe, qnx-sensor-framework, AI, camera
+categories: AI & ML, Camera & Sensors
 tags: intermediate
-difficulty: 2
+platforms: Raspberry Pi 5
+published: 2026-09-28
 status: published
 authors: Elliott Mazzuca
 feedback_link: https://github.com/qnx/codelabs/issues

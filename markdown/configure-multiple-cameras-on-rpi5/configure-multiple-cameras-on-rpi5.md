@@ -1,9 +1,10 @@
 id: configure-multiple-camera-sources-on-RPI5
 title: Configure multiple camera sources on Raspberry Pi 5
 summary: Learn how to configure multiple camera sources on a Raspberry Pi 5 target with QNX 8.0.
-categories: codelabs, setup, qnx-sensor-framework, camera
+categories: Camera & Sensors
 tags: beginner
-difficulty: 1
+platforms: Raspberry Pi 5
+published: 2026-06-18
 status: published
 authors: Terence Ang
 feedback_link: https://github.com/qnx/codelabs/issues

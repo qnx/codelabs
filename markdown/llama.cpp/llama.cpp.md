@@ -1,9 +1,10 @@
 id: running-llama-cpp-qnx
 title: Running llama.cpp on QNX 8.0 with Vulkan GPU Acceleration
 summary: Install the llama.cpp packages on QNX 8.0, set up a Vulkan-capable QEMU target, load a model, and run LLM inference on CPU and on the GPU
-categories: qnx, llama.cpp, vulkan, ai
+categories: AI & ML, Graphics & Games
 tags: intermediate
-difficulty: 2
+platforms: QEMU
+published: 2026-06-18
 status: published
 authors: Elliott Mazzuca
 feedback_link: https://github.com/qnx/codelabs/issues

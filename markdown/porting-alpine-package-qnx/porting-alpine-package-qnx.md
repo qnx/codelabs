@@ -1,9 +1,9 @@
 id: porting-alpine-package-qnx
 title: Porting an Alpine Linux Package to QNX 8.0
 summary: A step-by-step guide to porting an existing Alpine Linux package (APKBUILD) to the QNX aports repository, using gtk4 as the worked example
-categories: qnx, alpine, porting
+categories: Porting & Open Source
 tags: intermediate
-difficulty: 3
+published: 2026-05-28
 status: published
 authors: Elliott Mazzuca
 feedback_link: https://github.com/qnx/codelabs/issues

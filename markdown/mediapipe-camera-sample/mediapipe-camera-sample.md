@@ -2,9 +2,10 @@
 id: mediapipe-camera-sample
 title: MediaPipe Camera Sample
 summary: Write a camera application with MediaPipe and native QNX APIs
-categories: qnx, mediapipe, qnx-sensor-framework, AI, camera
+categories: AI & ML, Camera & Sensors
 tags: advanced
-difficulty: 5
+platforms: Raspberry Pi 5
+published: 2026-06-18
 status: published
 authors: Ethan Leir
 feedback_link: https://github.com/qnx/codelabs/issues

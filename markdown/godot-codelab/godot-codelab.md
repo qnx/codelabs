@@ -2,9 +2,9 @@
 id: godot-codelab
 title: Godot on QNX
 summary: Running Pong with Godot on QNX
-categories: qnx, godot
+categories: Graphics & Games
 tags: beginner
-difficulty: 1
+published: 2026-03-20
 status: published
 authors: Yun Lee
 feedback_link: https://github.com/qnx/codelabs/issues

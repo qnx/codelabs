@@ -1,9 +1,10 @@
 id: claude-code
 title: Use Claude Code on QNX Developer Desktop
 summary: Learn how to leverage Claude Code for target-aware AI development on QNX 8.
-categories: AI
+categories: AI & ML
 tags: beginner
-difficulty: 1
+platforms: QNX Developer Desktop
+published: 2026-04-22
 status: published
 authors: QNX Developer Relations
 feedback_link: https://github.com/qnx/codelabs/issues

@@ -2,9 +2,10 @@
 id: build-maelstrom-on-qnx
 title: Building Maelstrom on QNX
 summary: Learn how to modify and build the game Maelstrom on QNX
-categories: self-hosting , SDL games
+categories: Graphics & Games, Porting & Open Source
 tags: intermediate
-difficulty: 3
+platforms: QNX Developer Desktop
+published: 2026-03-20
 status: published
 authors: Roberto Speranza
 feedback_link: https://github.com/qnx/codelabs/issues

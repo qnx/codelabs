@@ -126,17 +126,29 @@ git clone git@github.com:your-username/codelabs.git
 <li>Create a New Folder for your codelab at <code>~./markdown/<name-of-your-codelab></code>:<pre><code language="language-bash" class="language-bash">mkdir -p ./codelabs/markdown/&lt;name-of-your-codelab&gt;
 </code></pre>
 </li>
-<li>Copy <code>markdown-template.md</code> into your newly created directory, from the `codelabs/ dir, to  ensure the required tags are included in hyour draft.The <code>id</code> tag must exactly match the <code>.md</code> filename for Claat to work correctly.<pre><code language="language-bash" class="language-bash">id: name-of-your-codelab
-title: template to create codelabs
-summary: Learn how to add new Codelabs
-categories: codelabs, setup
-tags: beginner
-difficulty: 1
-status: published
-authors: Your Team
-feedback_link: https://github.com/qnx/codelabs/issues
-
+<li>Copy the template from <code>codelabs/markdown/markdown-template.md</code> into your newly created directory, so that your draft includes all the required metadata.<pre><code language="language-bash" class="language-bash">cp ./codelabs/markdown/markdown-template.md ./codelabs/markdown/&lt;name-of-your-codelab&gt;/
 </code></pre>
+The metadata block at the very top of the file looks like this:<pre><code language="language-text" class="language-text">id: name-of-your-codelab
+title: Title of Your Codelab
+summary: One or two sentences describing what the reader will build or learn.
+categories: Getting Started
+tags: beginner
+platforms: Raspberry Pi 5
+published: YYYY-MM-DD
+featured: false
+status: draft
+authors: Your Name
+feedback_link: https://github.com/qnx/codelabs/issues
+</code></pre>
+The landing page uses these fields to sort, filter and feature codelabs:<ul>
+<li><code>id</code> must exactly match the <code>.md</code> filename for Claat to work correctly.</li>
+<li><code>categories</code> lists the <strong>topics</strong> shown as filters on the landing page, with 1-2 per codelab, written the way you want them displayed (for example <code>AI & ML, Camera & Sensors</code>). Reuse an existing topic where you can. A new label automatically becomes a new filter.</li>
+<li><code>tags</code> sets the <strong>level</strong>, which must be exactly one of <code>beginner</code>, <code>intermediate</code> or <code>advanced</code>.</li>
+<li><code>platforms</code> is optional. List the hardware or host your codelab targets, for example <code>Raspberry Pi 5, QEMU</code>.</li>
+<li><code>published</code> is the date your codelab first goes live, as <code>YYYY-MM-DD</code>. Set it once and don&#39;t change it later, because the landing page shows the newest codelabs first.</li>
+<li><code>featured: true</code> shows the codelab in the Featured row at the top of the landing page, which holds 3 codelabs at most. Leave it as <code>false</code> unless a maintainer asks you to change it.</li>
+<li><code>status</code> should be <code>published</code> once your codelab is ready. Codelabs marked <code>draft</code> are left off the landing page.</li>
+</ul>
 </li>
 <li>Rename the markdown file as <code><name-of-your-codelab>.md</code></li>
 <li>(Optional) Run <code>claat</code> to view your <code><name-of-your-codelab>.md</code> file locally as HTML. Otherwise, skip to step 7.<pre><code language="language-bash" class="language-bash"># cd out from ~./markdown/&lt;name-of-your-codelab&gt; dir to ~./codelabs

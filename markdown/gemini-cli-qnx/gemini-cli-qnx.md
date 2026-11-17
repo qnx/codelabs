@@ -1,9 +1,10 @@
 id: gemini-cli-qnx
 title: Use Gemini CLI on QNX Developer Desktop
 summary: Learn how to set up and use Gemini CLI for target-aware AI development on QNX 8.
-categories: AI
+categories: AI & ML
 tags: beginner
-difficulty: 1
+platforms: QNX Developer Desktop
+published: 2026-10-30
 status: published
 authors: Deep Chordia
 feedback_link: https://github.com/qnx/codelabs/issues

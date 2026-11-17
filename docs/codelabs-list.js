@@ -221,6 +221,26 @@ window.CODELABS = [
     ]
   },
   {
+    "title": "Defeating Priority Lowering & Starvation on QNX 8.0",
+    "href": "qnx8-deterministic-ipc-safety-cage/index.html",
+    "id": "qnx8-deterministic-ipc-safety-cage",
+    "authors": "Prem Jha (mynameisprem-pj)",
+    "summary": "Build a deterministic QNX 8.0 watchdog supervisor from scratch—reproducing silent IPC priority lowering, catching deadlocked threads with 1kHz kernel pulses, and locking down untrusted processes with procmgr_ability.",
+    "updated": "2026-11-17T01:36:24Z",
+    "category": [
+      "ipc",
+      "real-time",
+      "security"
+    ],
+    "tags": [
+      "ipc",
+      "qnx8",
+      "rtos",
+      "security",
+      "watchdog"
+    ]
+  },
+  {
     "title": "Running the Quick Start Target Image (QSTI) on QEMU using Windows Subsystem for Linux (WSL)",
     "href": "qsti-qemu-on-wsl/index.html",
     "id": "qsti-qemu-on-wsl",
@@ -286,7 +306,5 @@ window.CODELABS = [
     "tags": [
       "beginner"
     ]
-  },
-
-
+  }
 ];

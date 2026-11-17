@@ -1,0 +1,31 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-11-17T01:36:24Z",
+  "id": "qnx8-deterministic-ipc-safety-cage",
+  "duration": 28,
+  "title": "Defeating Priority Lowering \u0026 Starvation on QNX 8.0",
+  "authors": "Prem Jha (mynameisprem-pj)",
+  "summary": "Build a deterministic QNX 8.0 watchdog supervisor from scratch—reproducing silent IPC priority lowering, catching deadlocked threads with 1kHz kernel pulses, and locking down untrusted processes with procmgr_ability.",
+  "source": "markdown/qnx8-deterministic-ipc-safety-cage/qnx8-deterministic-ipc-safety-cage.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "ipc",
+    "real-time",
+    "security"
+  ],
+  "tags": [
+    "ipc",
+    "qnx8",
+    "rtos",
+    "security",
+    "watchdog"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "qnx8-deterministic-ipc-safety-cage"
+}

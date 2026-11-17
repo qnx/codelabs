@@ -3,270 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to QNX Codelabs</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #f5f7fa;
-      color: #1a1f2e;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #fff;
-      border-bottom: 1px solid #e2e6ed;
-      padding: 2rem 1.5rem;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    /* Header row: logo left, title right */
-    .header-row {
-      display: flex;
-      align-items: center; /* vertically center logo and title */
-      gap: 1rem;           /* space between logo and title */
-      margin-bottom: 0.5rem;
-    }
-
-    .logo {
-      width: 50px; 
-      height: 50px;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      flex-shrink: 0; /* prevent shrinking */
-    }
-
-    .logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    h1 { 
-      font-size: 2rem; 
-      font-weight: 700; 
-    }
-
-    header p { 
-      font-size: 0.95rem; 
-      color: #6b7280; 
-      margin-top: 0.25rem; 
-    }
-
-    main { padding: 2rem 1.5rem; }
-
-    /* Search Bar */
-    .search-bar {
-      width: 100%;
-      margin-bottom: 2rem;
-    }
-
-    .search-bar input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #e2e6ed;
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: all 0.3s;
-    }
-
-    .search-bar input:focus {
-      outline: none;
-      border-color: #FF4539;
-      box-shadow: 0 0 10px rgba(255,69,57,0.2);
-    }
-
-    /* Cards grid */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #e2e6ed;
-      border-radius: 12px;
-      padding: 1.5rem;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .card:hover {
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      border-color: rgba(26, 153, 136, 0.4);
-      transform: translateY(-3px);
-    }
-
-    .card-body { flex: 1; }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .badge {
-      width: 32px; height: 32px;
-      background: #e6f7f5;
-      color: #1a7a6d;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.875rem; font-weight: 600;
-    }
-
-    .duration {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .card h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      transition: color 0.2s;
-    }
-
-    .card:hover h3 { color: #FF4539; }
-
-    .card p {
-      font-size: 0.875rem;
-      color: #6b7280;
-      line-height: 1.5;
-      margin-top: 0.25rem;
-    }
-
-    .arrow {
-      width: 40px; height: 40px;
-      background: #f0f2f5;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      color: #6b7280;
-      transition: all 0.3s;
-      flex-shrink: 0;
-    }
-
-    .card:hover .arrow {
-      background: #FF4539;
-      color: #fff;
-    }
-
-    .tag {
-      display: inline-block;
-      background: #e2e6ed;
-      color: #1a1f2e;
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      margin-right: 4px;
-      margin-top: 4px;
-    }
-
-    .count {
-      text-align: center;
-      margin-top: 2rem;
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-  </style>
+  <title>QNX Codelabs</title>
+  <meta name="description" content="Hands-on tutorials for building with QNX: AI, cameras, porting, graphics and more.">
+  <link rel="icon" href="qnx-logo.png">
+  <link rel="stylesheet" href="js/landing.css">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <div class="header-row">
-        <div class="logo">
-          <img src="qnx-logo.png" alt="QNX Logo">
-        </div>
-        <h1>Welcome to QNX Codelabs</h1>
+  <a class="skip-link" href="#results">Skip to codelabs</a>
+
+  <header class="masthead">
+    <div class="wrap">
+      <div class="brand-row">
+        <a class="brand" href="./">
+          <img src="qnx-logo.png" alt="" width="44" height="44">
+          <span>QNX Codelabs</span>
+        </a>
+        <nav class="site-nav" aria-label="QNX resources">
+          <a href="https://www.youtube.com/watch?v=iX4iWnKJRaA" target="_blank" rel="noopener">Get a license</a>
+          <a href="https://www.qnx.com/developers/docs/qnxeverywhere/index.html" target="_blank" rel="noopener">Docs</a>
+          <a href="https://qnx.software/en/blog?type=qnx+everywhere" target="_blank" rel="noopener">Developer Blog</a>
+          <a href="https://www.reddit.com/r/QNX/?ref=codelabs" target="_blank" rel="noopener">Reddit</a>
+          <span class="nav-icons">
+            <a class="icon-link" href="https://discord.gg/Jj4EkkrFTT" target="_blank" rel="noopener" aria-label="QNX Everywhere on Discord" title="Discord"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.3 4.4a19.8 19.8 0 0 0-4.9-1.5l-.6 1.2a18.3 18.3 0 0 0-5.5 0l-.6-1.2a19.7 19.7 0 0 0-4.9 1.5C.5 9-.3 13.6.1 18.1a19.9 19.9 0 0 0 6 3l1.3-2a12.9 12.9 0 0 1-2-.9l.5-.4a14.2 14.2 0 0 0 12.1 0l.5.4a12.3 12.3 0 0 1-1.9.9l1.2 2a19.8 19.8 0 0 0 6-3c.6-5.2-.8-9.7-3.5-13.7zM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg></a>
+            <a class="icon-link" href="https://github.com/qnx/codelabs" target="_blank" rel="noopener" aria-label="QNX Codelabs on GitHub" title="GitHub"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg></a>
+          </span>
+        </nav>
       </div>
-      <p>This site provides tutorials that give a guided, hands-on experience with the <a href="https://www.qnx.com" target="_blank">QNX Platform</a>. 
-    Each codelab will either guide you through building applications with QNX, demonstrate how to use a specific feature, or show how to integrate QNX with other technologies.<br><br>
 
-    Explore our non-commercial initiative - <a href="https://qnx.software/en/developers/get-started/qnx-everywhere" target="_blank">QNX Everywhere</a><br>
-    Majority of the codelabs will require you to get a non-commercial QNX Everywhere License. Watch the YouTube video <a href="https://www.youtube.com/watch?v=DtWA5E-cFCo&list=PL7D-rKNQhkfKU5PAvjyEBq6KbusRVVb5r&index=1" target="_blank">here</a> to get a license.<br>
-    QNX Everywhere Technical Documentation can be found <a href="https://www.qnx.com/developers/docs/qnxeverywhere/index.html" target="_blank">here</a><br><br>
+      <h1 class="headline">Build something on QNX, one guided step at a time.</h1>
+      <p class="lede">Hands-on open-source tutorials for building projects on QNX.</p>
 
-    Visit our <a href="https://devblog.qnx.com/" target="_blank">Developer Blog</a><br>
-    Join the community -  <a href="https://www.reddit.com/r/QNX/?ref=devblog.qnx.com" target="_blank">Reddit</a> and <a href="https://discord.com/channels/1386792248221503641/1387123844082438164" target="_blank">QNX Everywhere Discord</a>
-      </p>
+      <details class="newcomer">
+        <summary>New to QNX? Start here</summary>
+        <div class="newcomer-body">
+          <p>Each codelab either guides you through building an application with QNX, demonstrates a specific feature, or shows how to integrate QNX with other technologies.</p>
+          <p>Most codelabs need a free non-commercial license from <a href="https://qnx.software/en/developers/get-started/qnx-everywhere" target="_blank" rel="noopener">QNX Everywhere</a>, our non-commercial initiative. <a href="https://www.youtube.com/watch?v=iX4iWnKJRaA" target="_blank" rel="noopener">Watch the video on getting a license</a>.</p>
+          <p>The <a href="https://www.qnx.com/developers/docs/qnxeverywhere/index.html" target="_blank" rel="noopener">QNX Everywhere technical documentation</a> covers everything else. You can also read the <a href="https://qnx.software/en/blog?type=qnx+everywhere" target="_blank" rel="noopener">Developer Blog</a>, or join the community on <a href="https://www.reddit.com/r/QNX/?ref=codelabs" target="_blank" rel="noopener">Reddit</a> and the <a href="https://discord.gg/Jj4EkkrFTT" target="_blank" rel="noopener">QNX Everywhere Discord</a>.</p>
+        </div>
+      </details>
+
+      <section id="featured" class="featured" aria-labelledby="featured-title" hidden>
+        <h2 id="featured-title" class="featured-title">Featured</h2>
+        <div id="featured-list" class="featured-list"></div>
+      </section>
     </div>
   </header>
 
-  <main>
-    <div class="container">
-      <!-- Search Bar -->
-      <div class="search-bar">
-        <input type="text" id="search" placeholder="Search codelabs...">
+  <main class="wrap catalog">
+    <div id="filter-backdrop" class="filter-backdrop" hidden></div>
+    <aside id="filters" class="filters" aria-label="Filter codelabs">
+      <div class="filters-head">
+        <h2>Filter</h2>
+        <button type="button" id="filters-close" class="icon-btn filters-close" aria-label="Close filters">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <fieldset class="facet">
+        <legend>Topic</legend>
+        <div class="facet-options" id="facet-topic"></div>
+      </fieldset>
+      <fieldset class="facet">
+        <legend>Level</legend>
+        <div class="facet-options" id="facet-level"></div>
+      </fieldset>
+      <fieldset class="facet">
+        <legend>Platform</legend>
+        <div class="facet-options" id="facet-platform"></div>
+      </fieldset>
+      <button type="button" id="filters-done" class="btn btn-primary filters-done">Show results</button>
+    </aside>
+
+    <section id="results" class="results" aria-label="Codelabs" tabindex="-1">
+      <div class="search">
+        <label for="search" class="visually-hidden">Search codelabs</label>
+        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="search" placeholder="Search by title, topic, platform or author" autocomplete="off" spellcheck="false">
       </div>
 
-      <!-- Cards Grid -->
-      <div class="cards" id="cards"></div>
-      <p class="count" id="count"></p>
-    </div>
+      <div class="toolbar">
+        <button type="button" id="filters-open" class="btn filters-open" aria-controls="filters" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Filters</span><span id="filters-count" class="pill-count" hidden></span>
+        </button>
+        <p id="result-count" class="result-count" aria-live="polite"></p>
+        <div class="sort">
+          <label for="sort">Sort by</label>
+          <select id="sort">
+            <option value="newest">Newest</option>
+            <option value="az">Title A–Z</option>
+            <option value="shortest">Shortest</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="active" class="active-filters" hidden>
+        <ul id="active-list" class="active-list"></ul>
+        <button type="button" id="clear-all" class="link-btn">Clear all</button>
+      </div>
+
+      <div id="grid" class="grid"></div>
+
+      <div id="empty" class="empty" hidden>
+        <h2>No codelabs match these filters</h2>
+        <p>Remove a filter or change your search to see more codelabs.</p>
+        <button type="button" id="empty-clear" class="btn btn-primary">Clear filters</button>
+      </div>
+    </section>
   </main>
 
-  <!-- Include generated codelabs list -->
+  <footer class="wrap site-footer">
+    <p>Have an idea for a codelab? <a href="https://github.com/qnx/codelabs" target="_blank" rel="noopener">Contribute on GitHub</a>.</p>
+  </footer>
+
+  <noscript><p class="wrap">This page needs JavaScript to list the codelabs.</p></noscript>
+
   <script src="codelabs-list.js"></script>
-
-  <script>
-    const cardsContainer = document.getElementById('cards');
-    const searchInput = document.getElementById('search');
-    const countEl = document.getElementById('count');
-
-    function renderCards(codelabs) {
-      cardsContainer.innerHTML = '';
-      codelabs.forEach((lab, index) => {
-        const card = document.createElement('a');
-        card.className = 'card';
-        card.href = lab.href;
-
-        const tagsHTML = lab.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ');
-
-        card.innerHTML = `
-          <div class="card-body">
-            <!--
-            <div class="card-meta">
-              <span class="badge">${index + 1}</span>
-            </div> -->
-            <h3>${lab.title}</h3>
-            <p>${lab.summary}</p>
-            <div>${tagsHTML}</div>
-          </div>
-          <div class="arrow">→</div>
-        `;
-
-        cardsContainer.appendChild(card);
-      });
-
-      countEl.textContent = `${codelabs.length} codelabs available`;
-    }
-
-    renderCards(window.CODELABS);
-
-    searchInput.addEventListener('input', () => {
-      const query = searchInput.value.toLowerCase();
-      const filtered = window.CODELABS.filter(lab =>
-        lab.title.toLowerCase().includes(query) ||
-        lab.category.join(' ').toLowerCase().includes(query) ||
-        lab.tags.join(' ').toLowerCase().includes(query)
-      );
-      renderCards(filtered);
-    });
-  </script>
+  <script src="js/landing-core.js"></script>
+  <script src="js/landing.js"></script>
 </body>
 </html>

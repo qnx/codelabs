@@ -1,9 +1,10 @@
 id: mobilenet-tflite-qnx
 title: Run MobileNet Inference on QNX with TensorFlow Lite
 summary: Run image classification, object detection, and semantic segmentation on QNX 8.0 using the TFLite runtime and MobileNet family models.
-categories: qnx, ai
+categories: AI & ML
 tags: intermediate
-difficulty: 2
+platforms: Raspberry Pi 5
+published: 2026-09-28
 status: published
 authors: Cris Sinnott
 feedback_link: https://github.com/qnx/codelabs/issues

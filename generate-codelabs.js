@@ -1,44 +1,63 @@
+// Builds docs/codelabs-list.js for the landing page.
+// Run after any `claat export`, or after editing a codelab's front matter
+// (e.g. featured: true):   node generate-codelabs.js
 const fs = require('fs');
 const path = require('path');
+const meta = require('./lib/codelab-meta');
+const { sortLabs } = require('./docs/js/landing-core');
 
 const rootDir = __dirname;
 const codelabsDir = path.join(rootDir, 'docs');
 const outputFile = path.join(codelabsDir, 'codelabs-list.js');
 
-const codelabs = [];
+const entries = [];
+const origins = [];
+const warnings = [];
+const skipped = [];
 
-fs.readdirSync(codelabsDir, { withFileTypes: true }).forEach(dir => {
+fs.readdirSync(codelabsDir, { withFileTypes: true }).forEach((dir) => {
   if (!dir.isDirectory()) return;
 
   const folderPath = path.join(codelabsDir, dir.name);
   const jsonPath = path.join(folderPath, 'codelab.json');
   const indexPath = path.join(folderPath, 'index.html');
 
-  // Skip if neither codelab.json nor index.html exists
+  // Skip folders that aren't codelabs (e.g. docs/js)
   if (!fs.existsSync(jsonPath) && !fs.existsSync(indexPath)) return;
 
-  let data = {};
+  let json = {};
   if (fs.existsSync(jsonPath)) {
     try {
-      data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
     } catch (err) {
-      console.warn(`⚠️ Failed to parse JSON in ${jsonPath}:`, err.message);
+      warnings.push(`${dir.name}: failed to parse codelab.json (${err.message})`);
     }
   }
 
-  codelabs.push({
-    title: data.title || dir.name,
-    //duration: data.duration ? `${data.duration} min` : 'N/A',
-    href: fs.existsSync(indexPath) ? `${dir.name}/index.html` : '#',
-    id: data.id || dir.name,
-    authors: data.authors || [],
-    summary: data.summary || "No summary.",
-    updated: data.updated || null,
-    category: data.category || 'Uncategorized',
-    tags: data.tags || []
-  });
+  const id = json.id || dir.name;
+  const src = meta.locateSource(rootDir, json.source, id);
+  let fm = null;
+  if (src) {
+    fm = meta.parseFrontMatter(fs.readFileSync(src, 'utf8'));
+  } else {
+    warnings.push(`${id}: SOURCE MARKDOWN NOT FOUND (${json.source || 'no source in codelab.json'})`);
+  }
+  const reason = meta.skipReason(fm);
+  if (reason) {
+    skipped.push(`${id} (status: ${reason})`);
+    return;
+  }
+
+  const { entry, warnings: w } = meta.buildEntry(json, fm, dir.name, fs.existsSync(indexPath));
+  entries.push(entry);
+  origins.push({ dir: dir.name, source: src });
+  warnings.push(...w);
 });
 
-// Write output
-fs.writeFileSync(outputFile, `window.CODELABS = ${JSON.stringify(codelabs, null, 2)};`);
-console.log(`✅ codelabs-list.js generated in docs/ (${codelabs.length} codelabs found)`);
+warnings.push(...meta.validateCollection(entries, origins));
+const sorted = sortLabs(entries, 'newest');
+
+fs.writeFileSync(outputFile, `window.CODELABS = ${JSON.stringify(sorted, null, 2)};\n`);
+warnings.forEach((w) => console.warn(`⚠️  ${w}`));
+skipped.forEach((s) => console.log(`ℹ️  not listed on the landing page: ${s}`));
+console.log(`✅ codelabs-list.js generated in docs/ (${sorted.length} codelabs, ${skipped.length} skipped, ${warnings.length} warnings)`);

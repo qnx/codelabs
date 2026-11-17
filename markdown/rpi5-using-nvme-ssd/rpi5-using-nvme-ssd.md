@@ -2,9 +2,10 @@
 id: rpi5-using-nvme-ssd
 title: Using NVMe SSD on Raspberry Pi 5
 summary: Learn how to install the NVMe disk driver to access NVMe SSD.
-categories: qnx, embedded, raspberry-pi
-tags: qnx, rpi5, embedded-linux, nvme, ssd
-difficulty: 1
+categories: Storage & Hardware
+tags: beginner
+platforms: Raspberry Pi 5
+published: 2026-03-02
 status: published
 authors: Karol Frackiewicz
 feedback_link: https://github.com/qnx/codelabs/issues

@@ -2,9 +2,9 @@
 id: get-non-commercial-qnx-license
 title: How to get a Free Non-commercial QNX License
 summary: Learn how to get a non-commercial QNX License for use with QNXe
-categories: qnx, setup
+categories: Getting Started
 tags: beginner
-difficulty: 1
+published: 2026-04-13
 status: published
 authors: Anna Likozar
 feedback_link: https://github.com/qnx/codelabs/issues

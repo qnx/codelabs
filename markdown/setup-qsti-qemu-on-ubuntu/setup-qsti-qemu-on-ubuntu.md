@@ -2,9 +2,10 @@
 id: setup-qsti-qemu-on-ubuntu
 title: How to setup and run the Quick Start Target Image (QSTI) on QEMU using Ubuntu
 summary: Learn how to setup QSTI on QEMU and verify compiler setup
-categories: qnx, qemu
+categories: Getting Started
 tags: beginner
-difficulty: 1
+platforms: QEMU, Ubuntu
+published: 2026-04-10
 status: published
 authors: Anna Likozar
 feedback_link: https://github.com/qnx/codelabs/issues

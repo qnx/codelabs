@@ -1,9 +1,11 @@
 id: write-qnx-resource-manager-rust
 title: Write a QNX resource manager in Rust
 summary: Serve your own /dev file from safe Rust on QNX 8.0, then use it from the QNX shell and from C.
-categories: qnx, rust, resource managers
+categories: Drivers & Services
 tags: intermediate
-difficulty: 2
+platforms: QEMU, Windows (WSL)
+published: 2026-11-15
+featured: false
 status: published
 authors: Jake Hoffman
 feedback_link: https://github.com/jakethehoffer/qnx-ipc/issues

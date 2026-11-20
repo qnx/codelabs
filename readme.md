@@ -1,8 +1,8 @@
 # QNX Codelabs
 
 Found within this repo is the source code for the QNX codelabs hosted at https://qnx.github.io/codelabs/.
+Follow [`Create your OWn Codelab and Contribute to QNX`](https://qnx.github.io/codelabs/codelab-to-create-codelab/#0) for contributions.
 
-_Coming soon: contribution process and contributor guidelines._
 
 ## Metadata standard
 

@@ -698,7 +698,7 @@ int main(void)
 EOF
 ```
 
-`open_both()` opens the two devices, and tries again every 10 ms while no driver answers. The main loop blocks in `CAN_DEVCTL_READ_CANMSG_EXT` until a frame arrives. When the driver dies, that `devctl()` returns an error, so the program closes both devices and calls `open_both()` again.
+The same program is in this codelab's folder in the qnx/codelabs repository as `my-node.c`. `open_both()` opens the two devices, and tries again every 10 ms while no driver answers. The main loop blocks in `CAN_DEVCTL_READ_CANMSG_EXT` until a frame arrives. When the driver dies, that `devctl()` returns an error, so the program closes both devices and calls `open_both()` again. To stay short, the program treats every failed `devctl()` as a lost driver; real code would check `errno` and report errors that a restart cannot fix.
 
 Build it with the SDP's compiler, copy it to node 1 and start it there in the background:
 

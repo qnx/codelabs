@@ -318,21 +318,5 @@ window.CODELABS = [
     ],
     "level": "beginner",
     "platforms": []
-  },
-  {
-    "id": "codelab-to-create-codelab_test",
-    "title": "Create Your Own Codelab and Contribute to QNX",
-    "summary": "Learn how to contribute to QNX Codelabs",
-    "authors": "Shweta Mazumder",
-    "href": "codelab-to-create-codelab/index.html",
-    "duration": 13,
-    "updated": "2026-11-17T17:04:29-05:00",
-    "published": "2026-02-12",
-    "featured": false,
-    "topics": [
-      "Contributing"
-    ],
-    "level": "beginner",
-    "platforms": []
   }
 ];

@@ -55,6 +55,9 @@ jobs:
               throw new Error('Could not parse window.CODELABS array.');
             }
 
+          // DEBUG: Print extracted codelab data
+            console.log('Extracted CODELABS:', match[1]);
+
             return JSON.parse(match[1]);
           }
 

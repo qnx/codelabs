@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 310" width="840" height="310" font-family="Roboto, 'Segoe UI', Arial, sans-serif" font-size="14">
+  <title>cl-client -w: the 100 Hz loop keeps time while its worker is stuck on a frozen server</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#202124"/></marker>
+  </defs>
+  <rect width="840" height="310" fill="#ffffff"/>
+  <!-- client process -->
+  <rect x="20" y="20" width="580" height="270" rx="10" fill="#f8f9fa" stroke="#dadce0"/>
+  <text x="36" y="46" font-weight="500">cl-client -w</text>
+  <!-- loop lane -->
+  <text x="36" y="80" font-size="13">control loop, SCHED_FIFO 20</text>
+  <line x1="40" y1="100" x2="580" y2="100" stroke="#1a73e8" stroke-width="2"/>
+  <g fill="#1a73e8">
+    <circle cx="60" cy="100" r="5"/><circle cx="112" cy="100" r="5"/><circle cx="164" cy="100" r="5"/><circle cx="216" cy="100" r="5"/>
+    <circle cx="268" cy="100" r="5"/><circle cx="320" cy="100" r="5"/><circle cx="372" cy="100" r="5"/><circle cx="424" cy="100" r="5"/>
+    <circle cx="476" cy="100" r="5"/><circle cx="528" cy="100" r="5"/><circle cx="580" cy="100" r="5"/>
+  </g>
+  <text x="40" y="124" font-size="12" fill="#5f6368">one tick every 10 ms, about 1 ms late at worst</text>
+  <!-- hand-off from one tick -->
+  <line x1="320" y1="106" x2="320" y2="190" stroke="#202124" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="330" y="146" font-size="12">sem_post(): "send one ping"</text>
+  <text x="330" y="164" font-size="12" fill="#5f6368">later ticks find the worker busy, and move on</text>
+  <!-- worker lane -->
+  <text x="36" y="186" font-size="13">worker, SCHED_FIFO 15</text>
+  <rect x="320" y="194" width="260" height="24" fill="#fce8e6" stroke="#c5221f"/>
+  <text x="330" y="211" font-size="13" fill="#c5221f">MsgSend(): REPLY-blocked</text>
+  <text x="40" y="250" font-size="13">Each 100 ms window: worst tick about 1 ms late, 0 answers.</text>
+  <text x="40" y="270" font-size="13">A real controller would hold its last output, then go to a safe state.</text>
+  <!-- server -->
+  <rect x="640" y="166" width="180" height="80" rx="10" fill="#fef7e0" stroke="#e37400"/>
+  <text x="730" y="194" text-anchor="middle" font-weight="500">cl-server</text>
+  <text x="730" y="216" text-anchor="middle" font-size="13">frozen with SIGSTOP:</text>
+  <text x="730" y="234" text-anchor="middle" font-size="13">never replies</text>
+  <line x1="582" y1="206" x2="638" y2="206" stroke="#202124" stroke-width="1.4" marker-end="url(#a)"/>
+</svg>

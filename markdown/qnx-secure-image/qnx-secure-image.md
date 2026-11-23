@@ -1,6 +1,6 @@
 id: qnx-secure-image
 title: Lock a QNX 8.0 system to its design with a security policy
-summary: Teach secpolgenerate what your system does, check what it learned, boot QNX 8.0 in fully secure mode, prove the kernel runs your policy, and find its refusals in a kernel trace. Run from scratch on QNX 8.0 x86_64 in QEMU by the author and checked again from an empty folder by AI agents that had never seen it.
+summary: Teach secpolgenerate what your system does, check what it learned, boot QNX 8.0 in fully secure mode, prove the kernel runs your policy, and find its refusals in a kernel trace. Run from scratch on QNX 8.0 x86_64 in QEMU by the author and again by an AI agent with no access to our notes; also run on aarch64 for Apple Silicon.
 categories: Security
 tags: intermediate
 difficulty: 3
@@ -91,6 +91,35 @@ installs it as an empty `UNKNOWN` package without saying so.
 python3 -m venv $LAB/.venv && $LAB/.venv/bin/pip install $LAB/../qnx-blueprint
 export PATH=$LAB/.venv/bin:$PATH && blueprint --help
 ```
+
+Positive
+: **On Apple Silicon.** QNX SDP 8.0 has host tools only for x86_64 Linux and
+Windows, so run `qcc`, `mkqnximage` and `secpolcompile` in an x86_64 Linux VM
+or container that sees your lab folder at the same path. Build for aarch64 and
+boot the image with `qemu-system-aarch64`. Three commands change, in every
+step that uses them:
+
+```console
+qcc -Vgcc_ntoaarch64le -o cockpit cockpit.c
+mkqnximage --type=qemu --arch=aarch64le ...      # the rest of the line as written
+
+qemu-system-aarch64 -machine virt -cpu max -m 1G -smp 2 -display none \
+  -serial file:serial.log -kernel output/ifs.bin \
+  -drive file=output/disk-qemu.vmdk,if=none,id=drv0 \
+  -device virtio-blk-device,drive=drv0 \
+  -netdev user,id=net0,hostfwd=tcp::2230-:22 \
+  -device virtio-net-device,netdev=net0 \
+  -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-device,rng=rng0 &
+```
+
+Keep the disk device before the network device, or the image finds no disk.
+Keep the rng device too: without it the image has no `/dev/random`, the
+network stack stays down and ssh times out. For the secure image, change the
+`hostfwd` ports the same way the step does. An AI agent ran every step this
+way on 22 November 2026 (QEMU 6.2 in a container on an M2 Mac, no hardware
+acceleration) and got the same results; the policy length, its md5 and the
+refusal count differ, as they do on x86_64. Its report:
+[docs/codelab/secure-image/ARM_RUN.md](https://github.com/DmitriyTopka/qnx-blueprint/blob/main/docs/codelab/secure-image/ARM_RUN.md).
 
 ---
 

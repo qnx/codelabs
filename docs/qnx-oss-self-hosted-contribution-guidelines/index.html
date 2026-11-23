@@ -1,0 +1,364 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Contributing Self-Hosted Open-Source Packages to QNX OSS</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="qnx-oss-self-hosted-contribution-guidelines"
+                  title="Contributing Self-Hosted Open-Source Packages to QNX OSS"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Overview" duration="3">
+        <p>QNX Software Systems maintains a public open-source software (OSS) repository and package server (<a href="https://oss.qnx.com" target="_blank">oss.qnx.com</a>) built around the Alpine Package Keeper (<code>apk</code>) format.</p>
+<p>This codelab sets out the official requirements and recommendations for contributing self-hosted open-source software packages to <a href="https://github.com/qnx-ports" target="_blank">github.com/qnx-ports</a> for inclusion in oss.qnx.com.</p>
+<table>
+<tr><td colspan="2" rowspan="1"></td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Target Repository</strong></p>
+</td><td colspan="1" rowspan="1"><p><a href="https://github.com/qnx-ports" target="_blank">github.com/qnx-ports</a></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Package Server</strong></p>
+</td><td colspan="1" rowspan="1"><p><a href="https://oss.qnx.com" target="_blank">oss.qnx.com</a></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Package Format</strong></p>
+</td><td colspan="1" rowspan="1"><p>Alpine Package Keeper (APK) via <code>APKBUILD</code></p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Document Status</strong></p>
+</td><td colspan="1" rowspan="1"><p>Approved Guidelines (v1.2)</p>
+</td></tr>
+</table>
+<h2 is-upgraded>Guiding principles</h2>
+<ul>
+<li><strong>Upstreaming QNX code:</strong> Contributors upstream the code that makes the tool work on QNX into their own open-source repo. The QNX team does not do the port to QNX.</li>
+<li><strong>APK build instructions:</strong> Once porting is finished, contributors open a PR with the QNX build instructions for the tool in <a href="https://github.com/qnx-ports/aports" target="_blank">qnx-ports/aports</a>. This is where we keep APK build instructions for all ports where we have not forked the open-source repo (that is, where the src in the OSS portal is GitHub).</li>
+<li><strong>Publishing in the OSS portal:</strong> The QNX team reviews the PR submitted to <a href="https://github.com/qnx-ports/aports" target="_blank">qnx-ports/aports</a>. Once it is accepted, we publish the APK through our package server and make the source code available on <a href="https://oss.qnx.com/" target="_blank">oss.qnx.com</a>, where the src column lists the contributor&#39;s name and their project repo logo.</li>
+</ul>
+<h2 class="checklist" is-upgraded>What you&#39;ll learn</h2>
+<ul class="checklist">
+<li>The requirements every submitted package must meet</li>
+<li>How to version a package with <code>$pkgver</code> and <code>$pkgrel</code></li>
+<li>How to write a <code>check()</code> step that produces JUnit XML results</li>
+<li>Packaging best practices for patches, paths and subpackages</li>
+<li>The end-to-end submission workflow</li>
+</ul>
+<h2 is-upgraded>What you&#39;ll need</h2>
+<ul>
+<li>A QNX Self-Hosted Distribution target (hardware or VM)</li>
+<li>A public GitHub repository containing your QNX port, with tagged releases</li>
+<li>Familiarity with the basic <code>APKBUILD</code> structure</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Requirements at a glance" duration="2">
+        <table>
+<tr><td colspan="1" rowspan="1"><p>#</p>
+</td><td colspan="1" rowspan="1"><p>Requirement</p>
+</td><td colspan="1" rowspan="1"><p>Description</p>
+</td><td colspan="1" rowspan="1"><p>Deliverable / Evidence</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>1</p>
+</td><td colspan="1" rowspan="1"><p>Target Runtime &amp; Distro</p>
+</td><td colspan="1" rowspan="1"><p>Software must compile, link, install, and run natively on the QNX Self-Hosted Distribution.</p>
+</td><td colspan="1" rowspan="1"><p>Verified build log and runtime execution on target hardware/VM.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>2</p>
+</td><td colspan="1" rowspan="1"><p>Source Repo &amp; Tagging</p>
+</td><td colspan="1" rowspan="1"><p>QNX source code must be in a public GitHub repo with formal Git release tags (SemVer preferred).</p>
+</td><td colspan="1" rowspan="1"><p>Immutable Git release tag URL (e.g. <code>v1.2.3</code>).</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>3</p>
+</td><td colspan="1" rowspan="1"><p>APK Versioning</p>
+</td><td colspan="1" rowspan="1"><p>Must adhere to Alpine <code>$pkgver</code> and <code>$pkgrel</code> version revision rules.</p>
+</td><td colspan="1" rowspan="1"><p>Valid <code>$pkgver</code> and <code>$pkgrel</code> fields in <code>APKBUILD</code>.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>4</p>
+</td><td colspan="1" rowspan="1"><p>Packaging Recipe</p>
+</td><td colspan="1" rowspan="1"><p>Packaging instructions must be provided as an <code>APKBUILD</code> script submitted via Pull Request.</p>
+</td><td colspan="1" rowspan="1"><p>PR against <a href="https://github.com/qnx-ports/aports" target="_blank">qnx-ports/aports</a> with <code>APKBUILD</code> + patches.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>5</p>
+</td><td colspan="1" rowspan="1"><p>AI &amp; Human Accountability</p>
+</td><td colspan="1" rowspan="1"><p><code>APKBUILD</code> and patches must be human-authored/reviewed; maintainer must be identified by name/email.</p>
+</td><td colspan="1" rowspan="1"><p><code># Maintainer: Name <email></code> header and human review assurance.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>6</p>
+</td><td colspan="1" rowspan="1"><p>FOSS &amp; Dependency Audit</p>
+</td><td colspan="1" rowspan="1"><p>Submitter is responsible for auditing licenses (SPDX) and all build/runtime dependencies.</p>
+</td><td colspan="1" rowspan="1"><p>Audited <code>$license</code>, <code>$depends</code>, and <code>$makedepends</code> in <code>APKBUILD</code>.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>7</p>
+</td><td colspan="1" rowspan="1"><p>Automated Testing</p>
+</td><td colspan="1" rowspan="1"><p><code>check()</code> function must execute unit tests and emit results in JUnit XML format.</p>
+</td><td colspan="1" rowspan="1"><p>JUnit XML test report output path inside <code>check()</code>.</p>
+</td></tr>
+</table>
+<p>The following steps cover each requirement in detail.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Target platform and distro compatibility" duration="2">
+        <h2 is-upgraded>QNX self-hosted execution</h2>
+<ul>
+<li>The application or library must compile, install, and execute natively on the QNX Self-Hosted Distribution.</li>
+<li>Contributors are responsible for resolving POSIX differences, memory management constraints, stack size defaults, and dynamic library linking behavior specific to QNX OS before submission.</li>
+</ul>
+<h2 is-upgraded>Architecture support</h2>
+<ul>
+<li>Packages must be validated for all target architectures supported by the QNX release (e.g., <code>x86_64</code>, <code>aarch64le</code>), except in special cases such as firmware for specific aarch64 devices.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Source repository and release tagging" duration="2">
+        <h2 is-upgraded>Public repository</h2>
+<ul>
+<li>Contributors must host their QNX-modified source code in a publicly accessible GitHub repository (e.g., <code>github.com/<partner>/<project>-qnx</code>).</li>
+</ul>
+<h2 is-upgraded>Mandatory release tagging</h2>
+<ul>
+<li>Upstream repositories must use a formal Git release tagging system. Downloading source archives from floating branch tips (<code>main</code>, <code>master</code>) or untagged commit hashes is strictly prohibited.</li>
+<li>Semantic Versioning (SemVer) format (<code>vMAJOR.MINOR.PATCH</code>, e.g., <code>v1.2.3</code>) is strongly preferred.</li>
+<li>Release tags must generate immutable tarball/zip source archives to guarantee reproducible builds and stable checksums.</li>
+</ul>
+<h2 is-upgraded>Upstream first policy</h2>
+<ul>
+<li>Contributors are encouraged to submit QNX-specific porting fixes back to the original upstream project repositories whenever possible.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="APK versioning with $pkgver and $pkgrel" duration="3">
+        <p>Packages submitted to <code>qnx-ports</code> must strictly follow Alpine Package Keeper (<code>apk</code>) versioning rules.</p>
+<h2 is-upgraded>Package version (<code>$pkgver</code>)</h2>
+<ul>
+<li><code>$pkgver</code> must match the upstream release tag version, omitting any leading <code>v</code> (e.g. <code>pkgver="1.2.3"</code> for tag <code>v1.2.3</code>).</li>
+<li>Pre-release and patch-level suffixes must follow Alpine syntax: <ul>
+<li>Pre-releases: <code>_alpha</code>, <code>_beta</code>, <code>_pre</code>, <code>_rc</code> (e.g., <code>1.2.3_rc1</code>).</li>
+<li>Patch levels: <code>_p</code> (e.g., <code>1.2.3_p2</code>).</li>
+</ul>
+</li>
+</ul>
+<h2 is-upgraded>Package revision (<code>$pkgrel</code>)</h2>
+<p><code>$pkgrel</code> tracks package build revisions for the same upstream version (<code>$pkgver</code>).</p>
+<ul>
+<li><strong>Initial release: </strong><code>pkgrel=0</code> when a new <code>$pkgver</code> is introduced.</li>
+<li><strong>QNX maintenance revisions:</strong> Whenever the <code>APKBUILD</code> changes without an upstream version bump (adding QNX patches, altering compiler flags, fixing dependencies, or rebuilding against updated shared libraries), increment <code>$pkgrel</code> by 1 (<code>pkgrel=1</code>, <code>pkgrel=2</code>).</li>
+<li><strong>Upstream version bump:</strong> When upgrading to a new upstream release (<code>pkgver="1.2.4"</code>), <code>$pkgrel</code> resets to <code>0</code>.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="AI-generated code and human accountability" duration="2">
+        <h2 is-upgraded>Third-party upstream code</h2>
+<ul>
+<li>QNX accepts that upstream or third-party repository code may include AI-generated or AI-assisted content, provided all open-source licensing, copyright, and patent obligations are met.</li>
+</ul>
+<h2 is-upgraded>Human packaging ownership</h2>
+<ul>
+<li>All <code>APKBUILD</code> packaging scripts, build options, environment configurations, and accompanying patch files must be explicitly authored or reviewed by a human.</li>
+<li>The submitter must fully understand all build steps, configuration flags, and runtime implications. Bot-generated or unverified automated submissions will be rejected.</li>
+</ul>
+<h2 is-upgraded>Named human maintainer</h2>
+<p>Every <code>APKBUILD</code> must identify a responsible human maintainer at the top of the file:</p>
+<pre><code language="language-bash" class="language-bash"># Maintainer: Firstname Lastname &lt;email@example.com&gt;
+</code></pre>
+<p>If the <code>APKBUILD</code> is based on a package from another distribution, it must also say so:</p>
+<pre><code language="language-bash" class="language-bash"># Alpine-Maintainer: Firstname Lastname &lt;email@example.com&gt;
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="License disclosure and dependency audit" duration="2">
+        <h2 is-upgraded>FOSS license audit</h2>
+<ul>
+<li>The submitter is solely responsible for auditing all licenses in play across the codebase and bundled sub-components.</li>
+<li>The <code>$license</code> variable in <code>APKBUILD</code> must use standard <a href="https://spdx.org/licenses/" target="_blank">SPDX License Identifiers</a> (e.g., <code>MIT</code>, <code>Apache-2.0</code>, <code>GPL-2.0-or-later WITH Classpath-exception-2.0</code>).</li>
+<li>License and copyright files must be installed to <code>/usr/share/licenses/$pkgname/</code> during <code>package()</code>.</li>
+</ul>
+<h2 is-upgraded>Dependency disclosure</h2>
+<ul>
+<li>The submitter must audit and list all direct build-time dependencies (<code>$makedepends</code>) and runtime dependencies (<code>$depends</code>).</li>
+<li>All declared dependencies must already exist on oss.qnx.com or be submitted as prerequisite package PRs.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Automated testing and JUnit XML reporting" duration="3">
+        <h2 is-upgraded>Mandatory check() step</h2>
+<p>The <code>check()</code> function in <code>APKBUILD</code> must run the project&#39;s test suite.</p>
+<aside class="special"><p><strong>NOTE:</strong> Disabling checks with <code>options="!check"</code> is not allowed without explicit OSPO exception approval. </p>
+</aside>
+<h2 is-upgraded>JUnit XML output</h2>
+<ul>
+<li>Tests run inside <code>check()</code> must export their results in JUnit XML format.</li>
+<li>Write results to a standardized path (e.g. <code>${builddir}/test-results/junit-*.xml</code>) so the QNX CI build servers can collect them.</li>
+</ul>
+<h2 is-upgraded>Integration examples</h2>
+<p>CMake / CTest:</p>
+<pre><code language="language-bash" class="language-bash">ctest --output-on-failure --output-junit ${builddir}/test-results/junit-ctest.xml
+</code></pre>
+<p>GoogleTest:</p>
+<pre><code language="language-bash" class="language-bash">./test_runner --gtest_output=xml:${builddir}/test-results/junit-gtest.xml
+</code></pre>
+<p>PyTest:</p>
+<pre><code language="language-bash" class="language-bash">pytest --junitxml=${builddir}/test-results/junit-pytest.xml
+</code></pre>
+<p>Cargo (Rust):</p>
+<pre><code language="language-bash" class="language-bash">cargo nextest run --reporter junit --junit-path ${builddir}/test-results/junit-cargo.xml
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Packaging best practices" duration="3">
+        <p>To keep the repository consistent, follow these best practices, which are drawn from major Linux distribution standards (Alpine Linux, Fedora, Debian, Nixpkgs).</p>
+<h2 is-upgraded>Supply chain security and integrity</h2>
+<ul>
+<li><strong>DCO sign-off:</strong> Commits in pull requests must include a Developer Certificate of Origin sign-off (<code>git commit -s</code>, <code>Signed-off-by: Real Name <email></code>).</li>
+<li><strong>Immutable downloads:</strong> Declare all sources in the <code>$source</code> section with checksum verification (<code>sha512sums</code>). Downloading source manually anywhere else in the <code>APKBUILD</code> is strongly discouraged. Some build systems must download from the internet during the build (for example, <code>cargo</code> for Rust); in that case, a lock file for the build tool must be in place so the build cannot pull in unwanted libraries.</li>
+</ul>
+<h2 is-upgraded>Patch management hygiene</h2>
+<ul>
+<li><strong>Atomic patches:</strong> Split fixes into granular patch files rather than one monolithic patch.</li>
+<li><strong>DEP-3 patch headers:</strong> Include a patch description, author, and upstream tracking status:</li>
+</ul>
+<pre><code language="language-text" class="language-text">From: Jane Developer &lt;jane.developer@example.com&gt;
+Subject: [PATCH] Fix POSIX pthread_setname_np signature on QNX OS
+Upstream-Status: Submitted [https://github.com/upstream/project/pull/42]
+---
+</code></pre>
+<h2 is-upgraded>Package lifecycle and SLA</h2>
+<ul>
+<li><strong>Security SLA:</strong> Maintainers agree to respond to build failures or CVE security issues within 14 calendar days. Unmaintained packages may be flagged as orphaned or removed from oss.qnx.com.</li>
+</ul>
+<h2 is-upgraded>File system and subpackage conventions</h2>
+<ul>
+<li><strong>Standard paths (FHS):</strong> Install files into <code>/usr/bin</code>, <code>/usr/lib</code>, <code>/usr/include</code> and <code>/usr/share</code>. Never hardcode <code>/usr/local</code>.</li>
+<li><strong>Development and doc subpackages:</strong> Split development headers into <code>$pkgname-dev</code> and documentation into <code>$pkgname-doc</code> using Alpine&#39;s <code>$subpackages</code> feature.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Submission workflow" duration="2">
+        <ol type="1">
+<li>Port the app on the QNX Self-Hosted Distribution.</li>
+<li>Tag a release in your public repo using SemVer (e.g. <code>v1.2.3</code>).</li>
+<li>Write the <code>APKBUILD</code> yourself, with <code>pkgver=1.2.3</code> and <code>pkgrel=0</code>.</li>
+<li>Audit licenses and declare the full dependency tree.</li>
+<li>Implement <code>check()</code> with JUnit XML output, and add the maintainer header.</li>
+<li>Submit a DCO-signed pull request to <a href="https://github.com/qnx-ports" target="_blank">github.com/qnx-ports</a>.</li>
+<li>QNX CI runs the <code>APKBUILD</code> and parses the JUnit XML results: <ul>
+<li><strong>Tests pass and audit is clean:</strong> the <code>.apk</code> package is built and published to oss.qnx.com.</li>
+<li><strong>Tests fail or rules are violated:</strong> PR feedback is sent to the maintainer for fixes.</li>
+</ul>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="APKBUILD reference template" duration="3">
+        <p>Use this template as a starting point for your <code>APKBUILD</code>:</p>
+<pre><code language="language-bash" class="language-bash"># Maintainer: Jane Developer &lt;jane.developer@example.com&gt;
+# Contributor: John Co-Maintainer &lt;john.smith@example.com&gt;
+# Alpine-Maintainer: Joe Doe &lt;joe.doe@example.com&gt;
+
+pkgname=&#34;example-lib&#34;
+pkgver=&#34;1.2.3&#34;
+pkgrel=0
+pkgdesc=&#34;Example open source library ported to QNX&#34;
+url=&#34;https://github.com/example/example-lib&#34;
+arch=&#34;x86_64 aarch64&#34;
+license=&#34;MIT AND Apache-2.0&#34;
+depends=&#34;qnx-base-libs zlib&#34;
+makedepends=&#34;cmake ninja googletest-dev zlib-dev&#34;
+source=&#34;https://github.com/partner-org/example-lib-qnx/archive/refs/tags/v${pkgver}.tar.gz
+        0001-fix-posix-pthread-qnx.patch&#34;
+subpackages=&#34;$pkgname-dev $pkgname-doc&#34;
+
+build() {
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=ON
+    cmake --build build
+}
+
+check() {
+    cd &#34;$builddir&#34;/build
+    mkdir -p &#34;${builddir}/test-results&#34;
+
+    # Run unit tests and emit JUnit XML results for QNX CI server
+    ctest --output-on-failure --output-junit &#34;${builddir}/test-results/junit-results.xml&#34;
+}
+
+package() {
+    DESTDIR=&#34;$pkgdir&#34; cmake --install build
+
+    # Install license file into standard location
+    install -Dm644 &#34;$builddir/LICENSE&#34; &#34;$pkgdir/usr/share/licenses/$pkgname/LICENSE&#34;
+}
+
+sha512sums=&#34;
+a1b2c3d4e5f67890...  v1.2.3.tar.gz
+f6e5d4c3b2a10987...  0001-fix-posix-pthread-qnx.patch
+&#34;
+</code></pre>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

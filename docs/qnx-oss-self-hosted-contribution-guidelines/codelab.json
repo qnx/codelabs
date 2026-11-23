@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-11-23T10:55:46-05:00",
+  "id": "qnx-oss-self-hosted-contribution-guidelines",
+  "duration": 27,
+  "title": "Contributing Self-Hosted Open-Source Packages to QNX OSS",
+  "authors": "Shweta Mazumder",
+  "summary": "The requirements, best practices and submission workflow for contributing APKBUILD packages to qnx-ports for publication on oss.qnx.com.",
+  "source": "./markdown/qnx-oss-self-hosted-contribution-guidelines/qnx-oss-self-hosted-contribution-guidelines.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "contributing",
+    "porting\u0026opensource"
+  ],
+  "tags": [
+    "beginner"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "qnx-oss-self-hosted-contribution-guidelines"
+}

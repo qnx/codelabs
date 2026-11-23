@@ -1,5 +1,39 @@
 window.CODELABS = [
   {
+    "id": "qnx-oss-self-hosted-contribution-guidelines",
+    "title": "Contributing Self-Hosted Open-Source Packages to QNX OSS",
+    "summary": "The requirements, best practices and submission workflow for contributing APKBUILD packages to qnx-ports for publication on oss.qnx.com.",
+    "authors": "Shweta Mazumder",
+    "href": "qnx-oss-self-hosted-contribution-guidelines/index.html",
+    "duration": 27,
+    "updated": "2026-11-23T10:55:46-05:00",
+    "published": "2026-11-23",
+    "featured": false,
+    "topics": [
+      "Contributing",
+      "Porting & Open Source"
+    ],
+    "level": "beginner",
+    "platforms": []
+  },
+  {
+    "id": "codelab-to-create-codelab",
+    "title": "Create Your Own Codelab and Contribute to QNX",
+    "summary": "Learn how to contribute to QNX Codelabs",
+    "authors": "Shweta Mazumder",
+    "href": "codelab-to-create-codelab/index.html",
+    "duration": 13,
+    "updated": "2026-11-17T17:04:29-05:00",
+    "published": "2026-11-23",
+    "featured": false,
+    "topics": [
+      "Contributing",
+      "Porting & Open Source"
+    ],
+    "level": "beginner",
+    "platforms": []
+  },
+  {
     "id": "mender-installation-and-setup-rpi5",
     "title": "Mender Client installation and setup on Raspberry Pi 5",
     "summary": "Learn how to install and setup the Mender Client on a Raspberry Pi 5 running QNX",
@@ -321,21 +355,5 @@ window.CODELABS = [
     "platforms": [
       "Raspberry Pi 5"
     ]
-  },
-  {
-    "id": "codelab-to-create-codelab",
-    "title": "Create Your Own Codelab and Contribute to QNX",
-    "summary": "Learn how to contribute to QNX Codelabs",
-    "authors": "Shweta Mazumder",
-    "href": "codelab-to-create-codelab/index.html",
-    "duration": 13,
-    "updated": "2026-11-17T17:04:29-05:00",
-    "published": "2026-02-12",
-    "featured": false,
-    "topics": [
-      "Contributing"
-    ],
-    "level": "beginner",
-    "platforms": []
   }
 ];

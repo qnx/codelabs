@@ -4,9 +4,8 @@ summary: Learn how to install and setup the Mender Client on a Raspberry Pi 5 ru
 categories: OTA, Getting Started
 tags: beginner
 platforms: Raspberry Pi 5
-published: YYYY-MM-DD
-featured: false
-status: draft
+published: 2026-11-23
+status: published
 authors: Vratislav Podzimek
 feedback_link: https://github.com/qnx/codelabs/issues
 

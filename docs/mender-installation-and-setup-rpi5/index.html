@@ -1,0 +1,181 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Mender Client installation and setup on Raspberry Pi 5</title>
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+
+  
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+
+     
+    google-codelab #done {
+      display: none !important;
+    }
+
+     
+    google-codelab #arrow-back {
+      display: none !important;
+    }
+  </style>
+
+</head>
+<body>
+
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="mender-installation-and-setup-rpi5"
+                  title="Mender Client installation and setup on Raspberry Pi 5"
+                  environment="web"
+                  feedback-link="https://github.com/qnx/codelabs/issues">
+    
+      <google-codelab-step label="Welcome" duration="0">
+        <p>This codelab describes how the Mender over-the-air (OTA) update manager Client can be installed and set up on a Raspberry Pi 5 running QNX 8 (the Quick Start Target Image).</p>
+<p>You&#39;ll learn how to:</p>
+<ul>
+<li>Install and configure the Mender Client.</li>
+<li>Set the system up for Mender.</li>
+<li>Make sure the Mender Client is started automatically on boot.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Prerequisites" duration="0">
+        <p>This guide requires:</p>
+<ul>
+<li>A Raspberry Pi 5 board (further referred to as <em>device</em>)</li>
+<li>QNX OS is installed on the device <ul>
+<li>Follow the instructions in the <a href="https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.target_images/topic/qsti/intro.html" target="_blank">Quick Start Target Image (QSTI)</a> documentation to install QNX OS on Raspberry Pi 5.</li>
+</ul>
+</li>
+<li>An account on a Mender Server <ul>
+<li>The easiest option is to create a free trial account at <a href="https://hosted.mender.io/ui/signup" target="_blank">hosted Mender</a>.</li>
+</ul>
+</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Installing Mender Client" duration="0">
+        <p>The Mender Client is available in the <a href="https://oss.qnx.com/" target="_blank">QNX Open-Source Software repository</a> as the <code>mender</code> package.</p>
+<p>Run the following commands on your device:</p>
+<ol type="1">
+<li>Update the apk repositories:<pre><code language="language-bash" class="language-bash">sudo apk update
+</code></pre>
+</li>
+<li>Install the <code>mender</code> and <code>mender-doc</code> packages:<pre><code language="language-bash" class="language-bash">sudo apk add mender mender-doc
+</code></pre>
+</li>
+<li>Optionally, you can now check the contents of the installed packages:<pre><code language="language-bash" class="language-bash">apk info -L mender mender-doc
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Preparing the device" duration="0">
+        <p>The <code>mender-doc</code> package ships the <code>/usr/share/doc/mender/README_setup.md</code> file describing how the device can be set up for running the Mender Client. Feel free to read the full instructions (or get back to them later), here we will go through the steps in a concise way.</p>
+<p>Persistent storage needs to be provided to Mender using a directory on the <code>/data</code> partition. This can be done by running:</p>
+<pre><code language="language-bash" class="language-bash">sudo mv /var/lib/mender /var/lib/mender.orig
+sudo mkdir /data/mender
+sudo ln -s /data/mender /var/lib/mender
+sudo mv /var/lib/mender.orig/* /var/lib/mender/
+sudo rmdir /var/lib/mender.orig
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Configuring device type" duration="0">
+        <p>With persistent storage available, several parameters of the Mender Client need to be configured. The <code>device_type</code> string is mandatory for Mender match Artifacts onto compatible devices. It can be modified from the default by running:</p>
+<pre><code language="language-bash" class="language-bash">sudo sed -i &#39;s/device_type=.*/device_type=YOUR_CHOSEN_DEVICE_TYPE/&#39; /var/lib/mender/device_type
+</code></pre>
+<p>replacing <code>YOUR_CHOSEN_DEVICE_TYPE</code> with an alpha-numerical string of your choice (incl. <code>-</code> and <code>_</code>), identifying the type of your device, for example <code>qnx-rpi5</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Client configuration" duration="0">
+        <p>Mender Client also needs to know which server to connect to and, on hosted and Enterprise servers, which organization the device belongs to. This can be done by modifying the <code>/etc/mender/mender.conf</code> file.</p>
+<p>The <code>mender</code> package ships a default configuration file with the following contents:</p>
+<pre><code language="language-json" class="language-json">{
+  &#34;ServerURL&#34;: &#34;https://hosted.mender.io/&#34;,
+  &#34;TenantToken&#34;: &#34;Paste your Tenant token here&#34;
+}
+</code></pre>
+<p>Depending on your setup, the following modifications might be required:</p>
+<ol type="1">
+<li>If your Mender server account is not at <code>hosted.mender.io</code>, change the <code>ServerURL</code> to the URL of your Mender Server.</li>
+<li>If your Mender server account is at hosted or on-premises instance of Mender Enteprise, set the <code>TenantToken</code> to the <em>Organization token</em> of your organization. This secret is available at https://hosted.mender.io/ui/settings/organization or the respective page of your Mender Server instance.If using a Mender Server instance without organizations, delete the whole <code>TenantToken</code> line <strong>and the comma on the line above it</strong> from the configuration file.</li>
+<li>Optionally, add the following parameters to the configuration file:<pre><code>&#34;UpdatePollIntervalSeconds&#34;: 1800,
+&#34;InventoryPollIntervalSeconds&#34;: 28800,
+&#34;RetryPollIntervalSeconds&#34;: 300,
+</code></pre>
+to set the intervals in seconds for update check, inventory submission and failed communication retry, respectively. The above example shows the default values that can be decreased for demo and testing purposes (rate limits are applied, though, so don&#39;t go too low).</li>
+</ol>
+<p>The full documentation of the Mender Client configuration file is available in <a href="https://docs.mender.io/client-installation/configuration" target="_blank">Mender docs</a>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Checking the Mender Client" duration="0">
+        <p>With the device set up and the Mender Client configured, it&#39;s time to run the Client. The main executable is <code>mender-update</code> and to make sure it works as expected, the following command should be run:</p>
+<pre><code language="language-bash" class="language-bash">sudo mender-update daemon
+</code></pre>
+<p>This will start the <code>mender-update</code> binary in a daemon mode, i.e. periodically checking for new deployments and submitting device inventory. It&#39;s not a <em>daemon</em> mode strictly speaking because all log messages go to standard output, but that&#39;s handy for our use case.</p>
+<p>In the output from the process you can see some initialization steps and a message starting with <code>Authentication error trying server</code>. This is because the device has not been accepted on the server. To address that, visit https://hosted.mender.io/ui/devices/any or the respective URL for your Mender Server where you should see a new device with pending authorization request. The device can be authorized by clicking on it and accepting its authentication set (key).</p>
+<p>Once accepted on the server, there should be a message in the <code>mender-update</code> process output starting with <code>Successfully received new authorization data from server</code>, indicating that the Client was able to authenticate to the server, followed by <code>Inventory data submitted successfully</code> and <code>No update available</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Running Mender Client on boot" duration="0">
+        <p>For the Mender Client, being an OTA agent, it is sensible to start automatically on boot. The most straightforward way to achieve that is to add the following line to the <code>/system/etc/startup/post_startup.sh</code> post-startup script:</p>
+<pre><code language="language-bash" class="language-bash">mender-update --log-file /var/log/mender.log daemon &amp;
+</code></pre>
+<p>this line <strong>needs to be added above the </strong></p>
+<p><strong><code>exit 0</code></strong></p>
+<p><strong> line</strong> in the file.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Next steps" duration="0">
+        <p>The <code>mender</code> package ships multiple scripts in the <code>/usr/share/mender/inventory/</code> directory which are used for gathering inventory data from the device. These can be modified or extended with extra scripts to provide custom inventory information for the device.</p>
+<p>There are two Update Modules provided by the <code>mender</code> package:</p>
+<pre><code>/usr/share/mender/modules/v3/directory
+/usr/share/mender/modules/v3/single-file
+</code></pre>
+<p>which can be used for deploying Mender Artifacts of the respective types to the device. That is, however, beyond the scope of this Mender Client installation and setup codelab.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>

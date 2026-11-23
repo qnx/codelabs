@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430" font-family="Roboto, 'Segoe UI', Arial, sans-serif" font-size="14">
+  <title>A slow server and a 5 ms TimerTimeout: the client waits 30 ms</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#202124"/></marker>
+    <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c5221f"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#ffffff"/>
+  <!-- heads -->
+  <g font-weight="500" text-anchor="middle">
+    <rect x="70" y="16" width="140" height="34" rx="6" fill="#e8f0fe" stroke="#1a73e8"/><text x="140" y="38">cl-client</text>
+    <rect x="340" y="16" width="140" height="34" rx="6" fill="#f1f3f4" stroke="#5f6368"/><text x="410" y="38">kernel</text>
+    <rect x="610" y="16" width="140" height="34" rx="6" fill="#e8f0fe" stroke="#1a73e8"/><text x="680" y="38">cl-server</text>
+  </g>
+  <g stroke="#9aa0a6" stroke-dasharray="4 4"><line x1="140" y1="50" x2="140" y2="410"/><line x1="410" y1="50" x2="410" y2="410"/><line x1="680" y1="50" x2="680" y2="410"/></g>
+  <!-- time axis -->
+  <text x="12" y="420" font-size="12" fill="#5f6368">Time runs down the page, not to scale.</text>
+  <g fill="#5f6368" font-size="12" text-anchor="end"><text x="40" y="86">0 ms</text><text x="40" y="272">&#8942;</text><text x="40" y="186">5 ms</text><text x="40" y="356">30 ms</text></g>
+  <!-- client blocked bar -->
+  <rect x="132" y="82" width="16" height="270" fill="#fce8e6" stroke="#c5221f"/>
+  <text x="122" y="226" font-size="13" fill="#c5221f" text-anchor="end">REPLY-blocked</text>
+  <text x="122" y="244" font-size="13" fill="#c5221f" text-anchor="end">for 30 ms</text>
+  <!-- send -->
+  <line x1="148" y1="82" x2="672" y2="82" stroke="#202124" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="300" y="74">MsgSend()  + TimerTimeout(5 ms)</text>
+  <!-- server busy -->
+  <rect x="672" y="86" width="16" height="262" fill="#fef7e0" stroke="#e37400"/>
+  <text x="698" y="104" font-size="13">MsgReceive() gets it,</text>
+  <text x="698" y="122" font-size="13">then nanosleep(30 ms)</text>
+  <text x="698" y="140" font-size="13">while holding it</text>
+  <!-- timeout -->
+  <circle cx="410" cy="182" r="9" fill="#ffffff" stroke="#c5221f" stroke-width="2"/>
+  <line x1="410" y1="182" x2="410" y2="176" stroke="#c5221f" stroke-width="2"/><line x1="410" y1="182" x2="414" y2="184" stroke="#c5221f" stroke-width="2"/>
+  <text x="426" y="172" font-size="13" fill="#c5221f">timeout fires</text>
+  <line x1="420" y1="200" x2="672" y2="200" stroke="#c5221f" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#p)"/>
+  <text x="440" y="222" font-size="13" fill="#c5221f">_PULSE_CODE_UNBLOCK</text>
+  <text x="440" y="240" font-size="13" fill="#5f6368">queued: the server is asleep</text>
+  <text x="440" y="270" font-size="13" fill="#5f6368">The channel has _NTO_CHF_UNBLOCK,</text>
+  <text x="440" y="288" font-size="13" fill="#5f6368">so the kernel doesn't release the client.</text>
+  <!-- reply -->
+  <line x1="672" y1="352" x2="152" y2="352" stroke="#202124" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="440" y="344">MsgReply()</text>
+  <text x="140" y="394" text-anchor="middle" font-weight="500">"reply after 30.3 ms"</text>
+</svg>

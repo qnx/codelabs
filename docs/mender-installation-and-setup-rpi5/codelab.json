@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-11-23T10:37:52-05:00",
+  "id": "mender-installation-and-setup-rpi5",
+  "duration": 0,
+  "title": "Mender Client installation and setup on Raspberry Pi 5",
+  "authors": "Vratislav Podzimek",
+  "summary": "Learn how to install and setup the Mender Client on a Raspberry Pi 5 running QNX",
+  "source": "./markdown/mender-installation-and-setup-rpi5/mender-installation-and-setup-rpi5.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "ota",
+    "gettingstarted"
+  ],
+  "tags": [
+    "beginner"
+  ],
+  "feedback": "https://github.com/qnx/codelabs/issues",
+  "url": "mender-installation-and-setup-rpi5"
+}

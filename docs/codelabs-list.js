@@ -1,5 +1,24 @@
 window.CODELABS = [
   {
+    "id": "mender-installation-and-setup-rpi5",
+    "title": "Mender Client installation and setup on Raspberry Pi 5",
+    "summary": "Learn how to install and setup the Mender Client on a Raspberry Pi 5 running QNX",
+    "authors": "Vratislav Podzimek",
+    "href": "mender-installation-and-setup-rpi5/index.html",
+    "duration": 0,
+    "updated": "2026-11-23T10:37:52-05:00",
+    "published": "2026-11-23",
+    "featured": false,
+    "topics": [
+      "OTA",
+      "Getting Started"
+    ],
+    "level": "beginner",
+    "platforms": [
+      "Raspberry Pi 5"
+    ]
+  },
+  {
     "id": "gemini-cli-qnx",
     "title": "Use Gemini CLI on QNX Developer Desktop",
     "summary": "Learn how to set up and use Gemini CLI for target-aware AI development on QNX 8.",

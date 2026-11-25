@@ -5,7 +5,6 @@ categories: Security
 tags: intermediate
 platforms: QEMU
 published: 2026-11-13
-difficulty: 3
 status: published
 authors: Dmytro Topka
 feedback_link: https://github.com/DmitriyTopka/qnx-blueprint/issues

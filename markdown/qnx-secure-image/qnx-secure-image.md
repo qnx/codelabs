@@ -3,6 +3,8 @@ title: Lock a QNX 8.0 system to its design with a security policy
 summary: Teach secpolgenerate what your system does, check what it learned, boot QNX 8.0 in fully secure mode, prove the kernel runs your policy, and find its refusals in a kernel trace. Run from scratch on QNX 8.0 x86_64 in QEMU by the author and again by an AI agent with no access to our notes; also run on aarch64 for Apple Silicon.
 categories: Security
 tags: intermediate
+platforms: QEMU
+published: 2026-11-13
 difficulty: 3
 status: published
 authors: Dmytro Topka

@@ -34,6 +34,7 @@ PCR 4 changes. This is the first link of measured boot.
 - A Linux x86_64 host with the QNX SDP 8.0 installed (QNX Everywhere licence) and `qnxsdp-env.sh`
 - `qemu-system-x86_64` (tested with 10.2.1), `swtpm` (0.10.1), OVMF (`ovmf` package, 2025.11)
 - `git`, `make`, and Python 3.10+ with `uv`
+- An SSH key `~/.ssh/id_ed25519` (`ssh-keygen -t ed25519`); the image accepts it for root
 
 Every command below was run as written, from a fresh clone, on 2026-11-27, the last step included:
 the PCR 4 that QNX read from the TPM equalled the host's prediction, and after the boot script
@@ -48,6 +49,7 @@ The TPM driver `dev-tpm-tis` is a QNX resource manager: it maps the TPM's TIS re
 reads one response.
 
 ```bash
+cd ~
 git clone https://github.com/shiran-yu/witness-qnx witness && cd witness
 source ~/qnx800/qnxsdp-env.sh
 make                      # qcc -Vgcc_ntox86_64: build/x86_64/dev-tpm-tis, tpm-raw, ...

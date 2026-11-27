@@ -106,7 +106,7 @@ mkqnximage --type=qemu --arch=aarch64le ...      # the rest of the line as writt
 
 qemu-system-aarch64 -machine virt -cpu max -m 1G -smp 2 -display none \
   -serial file:serial.log -kernel output/ifs.bin \
-  -drive file=output/disk-qemu.vmdk,if=none,id=drv0 \
+  -drive file=output/disk-qemu.vmdk,format=vmdk,if=none,id=drv0 \
   -device virtio-blk-device,drive=drv0 \
   -netdev user,id=net0,hostfwd=tcp::2230-:22 \
   -device virtio-net-device,netdev=net0 \
@@ -114,6 +114,9 @@ qemu-system-aarch64 -machine virt -cpu max -m 1G -smp 2 -display none \
 ```
 
 Keep the disk device before the network device, or the image finds no disk.
+Keep `format=vmdk` as well: `disk-qemu.vmdk` is a small text file that points
+at `disk-qemu`, and read as a raw disk it has no partitions, so `/boot`,
+`/system` and `/data` fail to mount with `Invalid argument`.
 Keep the rng device too: without it the image has no `/dev/random`, the
 network stack stays down and ssh times out. For the secure image, change the
 `hostfwd` ports the same way the step does. An AI agent ran every step this

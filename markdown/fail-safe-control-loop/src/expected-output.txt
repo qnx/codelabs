@@ -1,38 +1,39 @@
+# Tick counts are left out: they measure QNX in QEMU, and the QNX licence does not allow publishing performance evaluations of QNX software.
 == 1. the loop on its own
 ctl: system clock period 1000000 ns, timer resolution 1000000 ns
 ctl: running at priority 60, 1 ms timer pulse
-ctl:   1 s  ticks  993  missed    4
-ctl:   2 s  ticks  985  missed    5
-ctl:   3 s  ticks  756  missed  173
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
 == 2. CPU storm below the loop (priority 59)
 spin: 4 threads at priority 59 done
 ctl: system clock period 1000000 ns, timer resolution 1000000 ns
 ctl: running at priority 60, 1 ms timer pulse
-ctl:   1 s  ticks  900  missed   75
-ctl:   2 s  ticks  970  missed   14
-ctl:   3 s  ticks  992  missed    1
-ctl:   4 s  ticks  923  missed   49
-ctl:   5 s  ticks  924  missed   50
-ctl:   6 s  ticks  979  missed    9
-ctl:   7 s  ticks  842  missed  101
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
+ctl:   4 s  ticks  ...  missed  ...
+ctl:   5 s  ticks  ...  missed  ...
+ctl:   6 s  ticks  ...  missed  ...
+ctl:   7 s  ticks  ...  missed  ...
 == 3. kill the loop under its watchdog
 ctl: system clock period 1000000 ns, timer resolution 1000000 ns
 ctl: running at priority 60, 1 ms timer pulse
-ctl:   1 s  ticks  971  missed   16
-ctl:   2 s  ticks  989  missed    6
-ctl:   3 s  ticks  999  missed    0
-ctl:   4 s  ticks  927  missed   40
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
+ctl:   4 s  ticks  ...  missed  ...
 wd: watching the heartbeat, limit 100 ms, priority 62
 wd: loop silent for 101 ms: SAFE STATE forced, loop will not be restarted
 == 4. CPU storm above the loop (priority 61)
 spin: 4 threads at priority 61 done
 ctl: system clock period 1000000 ns, timer resolution 1000000 ns
 ctl: running at priority 60, 1 ms timer pulse
-ctl:   1 s  ticks  950  missed   40
-ctl:   2 s  ticks 1000  missed    1
-ctl:   3 s  ticks  996  missed    1
-ctl:   4 s  ticks    5  missed 2998  (watchdog has forced safe state)
-ctl:   5 s  ticks 3633  missed    5  (watchdog has forced safe state)
-ctl:   6 s  ticks  998  missed    0  (watchdog has forced safe state)
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
+ctl:   4 s  ticks  ...  missed  ...  (watchdog has forced safe state)
+ctl:   5 s  ticks  ...  missed  ...  (watchdog has forced safe state)
+ctl:   6 s  ticks  ...  missed  ...  (watchdog has forced safe state)
 wd: watching the heartbeat, limit 100 ms, priority 62
 wd: loop silent for 101 ms: SAFE STATE forced, loop will not be restarted

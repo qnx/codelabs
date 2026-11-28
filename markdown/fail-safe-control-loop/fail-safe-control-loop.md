@@ -125,18 +125,18 @@ cd /data/codelab
 ./ctl -s 3
 ```
 
-On QNX 8.0 in QEMU we see:
+The output has this shape (we leave the counts out, see the note below):
 
 ```text
 ctl: system clock period 1000000 ns, timer resolution 1000000 ns
 ctl: running at priority 60, 1 ms timer pulse
-ctl:   1 s  ticks  993  missed    4
-ctl:   2 s  ticks  985  missed    5
-ctl:   3 s  ticks  756  missed  173
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
 ```
 
 Negative
-: **A mistake we made.** Early on, one run of our controller counted only about 850 ticks a second, and we "fixed" it by asking QNX for a 0.5 ms system tick with `ClockPeriod(CLOCK_REALTIME, &new, NULL, 0)`. The next runs looked better, so we believed it. When we finally tested that call on its own, it returned `ENOTSUP`: on QNX 8.0 in QEMU the clock period is a fixed 1 ms. The call had never done anything, and the slow run was the virtual machine. Read the tick, check the return value of every call that changes the system, and measure before you credit a fix.
+: **A mistake we made.** Early on, one run of our controller counted far fewer ticks than it should, and we "fixed" it by asking QNX for a 0.5 ms system tick with `ClockPeriod(CLOCK_REALTIME, &new, NULL, 0)`. The next runs looked better, so we believed it. When we finally tested that call on its own, it returned `ENOTSUP`: on QNX 8.0 in QEMU the clock period is a fixed 1 ms. The call had never done anything, and the slow run was the virtual machine. Read the tick, check the return value of every call that changes the system, and measure before you credit a fix.
 
 ## Measure every missed tick
 Duration: 6:00
@@ -158,7 +158,7 @@ last = now;
 The rule of half a period stops ordinary jitter from being counted as a missed tick. Once a second it prints the ticks it ran and the ticks it missed.
 
 Positive
-: In the output above, the third second missed 173 ticks with nothing else running. That is not QNX: QEMU is a virtual machine, its virtual CPUs are threads on the host, and the host sometimes parks them. On real hardware these numbers are what you would judge your loop by. In a virtual machine, judge the loop by what it achieves, not by its missed tick count.
+: Your counts will vary from second to second, and in QEMU some seconds miss many ticks with nothing else running. That is the virtual machine: its virtual CPUs are threads on the host, and the host sometimes parks them. On real hardware these counts are what you would judge your loop by. In a virtual machine, judge the loop by what it achieves, not by its missed tick count. We leave our own counts out of this codelab, because the QNX licence does not allow publishing performance evaluations of QNX software.
 
 ## Priorities: a storm below the loop
 Duration: 6:00
@@ -174,16 +174,16 @@ sleep 2; cat /tmp/ctl.txt
 
 ```text
 spin: 4 threads at priority 59 done
-ctl:   1 s  ticks  900  missed   75
-ctl:   2 s  ticks  970  missed   14
-ctl:   3 s  ticks  992  missed    1
-ctl:   4 s  ticks  923  missed   49
-ctl:   5 s  ticks  924  missed   50
-ctl:   6 s  ticks  979  missed    9
-ctl:   7 s  ticks  842  missed  101
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
+ctl:   4 s  ticks  ...  missed  ...
+ctl:   5 s  ticks  ...  missed  ...
+ctl:   6 s  ticks  ...  missed  ...
+ctl:   7 s  ticks  ...  missed  ...
 ```
 
-Four threads that never stop, on two CPUs, and the loop still runs around 900 to 990 times a second, the same as when it ran alone. With `SCHED_FIFO`, a thread at 59 simply cannot take the CPU from a ready thread at 60.
+Four threads that never stop, on two CPUs, and the loop keeps running about as often as when it ran alone. With `SCHED_FIFO`, a thread at 59 simply cannot take the CPU from a ready thread at 60.
 
 Positive
 : `spin` makes each busy thread stop itself after the time is up. A main thread at normal priority could never get the CPU back from spinners running far above it to tell them to stop.
@@ -253,20 +253,20 @@ sleep 2; slay -f ctl wd; cat /tmp/ctl.txt /tmp/wd.txt
 ```
 
 ```text
-ctl:   1 s  ticks  950  missed   40
-ctl:   2 s  ticks 1000  missed    1
-ctl:   3 s  ticks  996  missed    1
-ctl:   4 s  ticks    5  missed 2998  (watchdog has forced safe state)
-ctl:   5 s  ticks 3633  missed    5  (watchdog has forced safe state)
-ctl:   6 s  ticks  998  missed    0  (watchdog has forced safe state)
+ctl:   1 s  ticks  ...  missed  ...
+ctl:   2 s  ticks  ...  missed  ...
+ctl:   3 s  ticks  ...  missed  ...
+ctl:   4 s  ticks  ...  missed  ...  (watchdog has forced safe state)
+ctl:   5 s  ticks  ...  missed  ...  (watchdog has forced safe state)
+ctl:   6 s  ticks  ...  missed  ...  (watchdog has forced safe state)
 wd: watching the heartbeat, limit 100 ms, priority 62
 wd: loop silent for 101 ms: SAFE STATE forced, loop will not be restarted
 ```
 
 Two things happened:
 
-1. The storm starved the loop completely: 5 ticks in a whole second. The watchdog, above the storm, caught it after 101 ms and forced the safe state. This is why the watchdog must sit above anything that could starve the loop.
-2. In the next second the loop counted **3,633 ticks**. The timer kept firing while the loop was starved, the pulses queued up, and they were all delivered in a burst when the storm ended.
+1. The storm starved the loop almost completely for that second. The watchdog, above the storm, caught it after 101 ms and forced the safe state. This is why the watchdog must sit above anything that could starve the loop.
+2. In the next second the loop counted **far more than 1,000 ticks**. The timer kept firing while the loop was starved, the pulses queued up, and they were all delivered in a burst when the storm ended.
 
 Negative
 : **The second mistake we made.** After a stall, our controller replayed the ticks it had missed, and fed each replayed tick the newest sensor sample. The first replayed tick saw the whole movement of the stall as if it had happened in one millisecond, which looked like a very fast actuator, so a force guard tripped early and every stroke came up short. Count time with `ClockCycles`, not with pulses, and measure speed over the real time between sensor samples, never per tick.
